@@ -4,13 +4,12 @@
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
-  xmlns:cc="clr-namespace:Kaxaml.CodeCompletion"
-  xmlns:ic="clr-namespace:ICSharpCode.TextEditor;assembly=ICSharpCode.TextEditor"
-  xmlns:settings="clr-namespace:Kaxaml.Properties">
+  xmlns:textEditor="clr-namespace:ICSharpCode.TextEditor;assembly=ICSharpCode.TextEditorEx"
+  >
 
   <wfi:WindowsFormsHost x:Name="FormsHost" AllowDrop="True" >
 
-    <ic:TextEditorControl
+    <textEditor:TextEditorControl
       AllowDrop="True"
       x:Name="TextEditor"
       IndentStyle="Smart"
@@ -23,7 +22,7 @@
       ShowSpaces="False"
       ShowHRuler="False"
       ShowVRuler="False"
-      UseAntiAliasFont="True" />
+    />
 
   </wfi:WindowsFormsHost>
 
