@@ -53,7 +53,7 @@ namespace Kaxaml.DocumentViews
             Dispatcher.UnhandledException += new DispatcherUnhandledExceptionEventHandler(Dispatcher_UnhandledException);
 
             string schemafile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.StartupPath + "\\"), Kaxaml.Properties.Settings.Default.WPFSchema);
-            XmlCompletionDataProvider.LoadSchema(schemafile);
+            Dispatcher.InvokeAsync(() => XmlCompletionDataProvider.LoadSchema(schemafile));
         }
 
         #endregion Constructors

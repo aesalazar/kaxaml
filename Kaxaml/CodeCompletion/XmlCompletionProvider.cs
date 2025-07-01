@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Threading;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Gui.CompletionWindow;
 using PixelLab.Common;
@@ -39,16 +41,12 @@ namespace Kaxaml.CodeCompletion
 
         public static void LoadSchema(string filename)
         {
-            Func<Exception> doLoad = () => LoadSchemaFromFile(filename);
-            doLoad.BeginInvoke((result) =>
+            var ex = LoadSchemaFromFile(filename);
+            if (ex is not null)
             {
-                var ex = doLoad.EndInvoke(result);
-                if (ex != null)
-                {
-                    MessageBox.Show("Failed to load schema");
-                    Debug.WriteLine(ex);
-                }
-            }, null);
+                MessageBox.Show("Failed to load schema");
+                Debug.WriteLine(ex);
+            }
         }
 
         private static Exception LoadSchemaFromFile(string filename)
