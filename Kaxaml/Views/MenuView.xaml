@@ -17,7 +17,7 @@
 
     <MenuItem Header="_File"  >
       <MenuItem Command="k:MainWindow.NewWPFTabCommand" InputGestureText="Ctrl+T" />
-      <MenuItem Command="k:MainWindow.NewAgTabCommand" InputGestureText="Ctrl+L" />
+      <MenuItem Command="k:MainWindow.NewAgTabCommand" InputGestureText="Ctrl+L" IsEnabled="False" />
       <MenuItem Command="k:MainWindow.CloseTabCommand" InputGestureText="Ctrl+W" />
       <Separator />
       <MenuItem Command="k:MainWindow.OpenCommand" InputGestureText="Ctrl+O" />
