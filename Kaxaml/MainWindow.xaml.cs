@@ -10,7 +10,6 @@ using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using Microsoft.Win32;
-using PixelLab.Common;
 
 namespace Kaxaml
 {

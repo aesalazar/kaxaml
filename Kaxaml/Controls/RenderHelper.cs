@@ -3,7 +3,6 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using PixelLab.Contracts;
 
 namespace Kaxaml.Controls
 {
@@ -105,7 +104,7 @@ namespace Kaxaml.Controls
 
         public static BitmapSource VisualToBitmap(Visual e, int Width, int Height, GrayscaleParameters parameters)
         {
-            Contract.Requires(e != null);
+            ArgumentNullException.ThrowIfNull(e);
             e.VerifyAccess();
 
             RenderTargetBitmap src = new RenderTargetBitmap(Width, Height, 96, 96, PixelFormats.Pbgra32);

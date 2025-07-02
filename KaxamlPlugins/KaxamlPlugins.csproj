@@ -6,9 +6,4 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
 	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="CommonServiceLocator" Version="1.0" />
-		<PackageReference Include="PixelLab.BOT" Version="1.1.0" />
-		<PackageReference Include="Prism" Version="4.0.0.0" />
-	</ItemGroup>
 </Project>

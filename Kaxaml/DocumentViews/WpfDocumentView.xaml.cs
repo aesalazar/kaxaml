@@ -12,7 +12,6 @@ using Kaxaml.Controls;
 using Kaxaml.Documents;
 using Kaxaml.Properties;
 using KaxamlPlugins;
-using PixelLab.Common;
 
 namespace Kaxaml.DocumentViews
 {
@@ -38,6 +37,8 @@ namespace Kaxaml.DocumentViews
 
 
         private bool UnhandledExceptionRaised;
+
+        private readonly Brush _defaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40));
 
         #endregion Fields
 
@@ -412,7 +413,7 @@ namespace Kaxaml.DocumentViews
                             {
                                 Border bd = new Border()
                                 {
-                                    Background = Color.FromRgb(0x40, 0x40, 0x40).ToCachedBrush()
+                                    Background = _defaultBackgroundBrush
                                 };
 
                                 TextBlock tb = new TextBlock()

@@ -90,11 +90,8 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CommonServiceLocator" Version="1.0" />
 		<PackageReference Include="ICSharpCode.TextEditorEx" Version="1.3.0" />
-		<PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.0-preview.*" />
-		<PackageReference Include="PixelLab.BOT" Version="1.1.0" />
-		<PackageReference Include="Prism" Version="4.0.0.0" />
+		<PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.6" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\ColorPickerPlugin\ColorPickerPlugin.csproj">
@@ -118,8 +115,7 @@
 		<ItemGroup>
 			<PluginAssemblies Include="@(PluginAssembly)" />
 		</ItemGroup>
-		<Copy SourceFiles="@(PluginAssemblies)" DestinationFolder="$(OutputPath)Plugins\" SkipUnchangedFiles="true"
-		      OverwriteReadOnlyFiles="true" />
+		<Copy SourceFiles="@(PluginAssemblies)" DestinationFolder="$(OutputPath)Plugins\" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
 	</Target>
 
 </Project>

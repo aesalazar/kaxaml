@@ -31,11 +31,6 @@
 		<EmbeddedResource Include="Images\icon.png" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="CommonServiceLocator" Version="1.0" />
-		<PackageReference Include="PixelLab.BOT" Version="1.1.0" />
-		<PackageReference Include="Prism" Version="4.0.0.0" />
-	</ItemGroup>
-	<ItemGroup>
 	  <Resource Include="Images\add.png" />
 	  <Resource Include="Images\connect.png" />
 	  <Resource Include="Images\disconnect.png" />

@@ -10,7 +10,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Xml;
 using ICSharpCode.TextEditor.Gui.CompletionWindow;
-using PixelLab.Common;
+using KaxamlPlugins;
 
 namespace Kaxaml.Plugins.Default
 {
