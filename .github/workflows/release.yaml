@@ -1,0 +1,60 @@
+name: Build and Release Kaxaml
+
+on:
+  push:
+    tags:
+      - 'v*'  # Tag requires a v prefix
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    env:
+      TAG_NAME: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version and tag message
+        id: extract
+        run: |
+          $tag = "${{ github.ref_name }}".Replace("refs/tags/", "")
+          $version = $tag.TrimStart("v")
+          $message = git for-each-ref refs/tags/$tag --format="%(contents)"
+          $lines = $message -split "`n", 2
+          $title = $lines[0].Trim()
+          $body = if ($lines.Length -gt 1) { $lines[1].Trim() } else { "" }
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          echo "RELEASE_TITLE=$title" >> $env:GITHUB_ENV
+          echo "RELEASE_BODY=$body" >> $env:GITHUB_ENV
+
+      - name: Restore dependencies
+        run: dotnet restore Kaxaml.sln
+
+      - name: Clean publish folder
+        run: Remove-Item -Recurse -Force "${{ github.workspace }}\publish" -ErrorAction SilentlyContinue
+
+      - name: Build and publish with version
+        run: dotnet publish Kaxaml/Kaxaml.csproj -c Release -o "${{ github.workspace }}\publish" /p:Version=${{ env.VERSION }}
+
+      - name: List publish contents (debug)
+        run: Get-ChildItem -Recurse "${{ github.workspace }}\publish"
+
+      - name: Zip output with version
+        run: Compress-Archive -Path "${{ github.workspace }}\publish\*" -DestinationPath "kaxaml-${{ env.VERSION }}.zip"
+
+      - name: Create GitHub Release and upload asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_TITLE }}
+          body: ${{ env.RELEASE_BODY }}
+          files: "kaxaml-${{ env.VERSION }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
