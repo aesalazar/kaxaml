@@ -43,6 +43,7 @@ namespace Kaxaml.Plugins.Default
         public Snippets()
         {
             // load the snippets file from the disk
+            SnippetCategories = new();
             ReadValues();
             InitializeComponent();
         }
@@ -54,8 +55,7 @@ namespace Kaxaml.Plugins.Default
 
         public ObservableCollection<SnippetCategory> SnippetCategories
         {
-            get { return _SnippetCategories; }
-            set { _SnippetCategories = value; }
+            get;
         }
 
 
@@ -350,7 +350,7 @@ namespace Kaxaml.Plugins.Default
 
         public void ReadValues()
         {
-            SnippetCategories = new ObservableCollection<SnippetCategory>();
+            SnippetCategories.Clear();
 
             XmlDocument xml = new XmlDocument();
 
@@ -707,21 +707,13 @@ namespace Kaxaml.Plugins.Default
 
         #region Fields
 
-
-        private readonly ObservableCollection<Snippet> _Snippets = new ObservableCollection<Snippet>();
-
         private string _Name;
 
         #endregion Fields
 
         #region Properties
 
-
-        public ObservableCollection<Snippet> Snippets
-        {
-            get { return _Snippets; }
-        }
-
+        public ObservableCollection<Snippet> Snippets { get; } = new();
 
         public string Name
         {
