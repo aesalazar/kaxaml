@@ -10,7 +10,6 @@ using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using Microsoft.Win32;
-using PixelLab.Common;
 
 namespace Kaxaml
 {
@@ -49,11 +48,11 @@ namespace Kaxaml
             this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.T, ModifierKeys.Control, "Ctrl+T")));
             this.CommandBindings.Add(binding);
 
-            binding = new CommandBinding(NewAgTabCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.NewAgTab_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.NewAgTab_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.L, ModifierKeys.Control, "Ctrl+L")));
-            this.CommandBindings.Add(binding);
+            //binding = new CommandBinding(NewAgTabCommand);
+            //binding.Executed += new ExecutedRoutedEventHandler(this.NewAgTab_Executed);
+            //binding.CanExecute += new CanExecuteRoutedEventHandler(this.NewAgTab_CanExecute);
+            //this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.L, ModifierKeys.Control, "Ctrl+L")));
+            //this.CommandBindings.Add(binding);
 
             binding = new CommandBinding(CloseTabCommand);
             binding.Executed += new ExecutedRoutedEventHandler(this.CloseTab_Executed);

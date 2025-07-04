@@ -10,7 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Plugins;
 using Kaxaml.Plugins.Default;
-using PixelLab.Common;
+using KaxamlPlugins;
 
 namespace Kaxaml.Views
 {

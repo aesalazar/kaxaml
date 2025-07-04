@@ -93,8 +93,7 @@
         <Setter Property="AllowDrop" Value="True" />
         <Setter Property="ContextMenu" Value="{DynamicResource CategoryContextMenu}" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
-        <Setter Property="Header" Value="{Binding Name}" />
-        <Setter Property="Content" Value="{Binding Root}" />
+        <Setter Property="Header" Value="{Binding Path=(l:SnippetCategory.Name)}" />
         <Setter Property="OverridesDefaultStyle" Value="true" />
         <Setter Property="Template">
           <Setter.Value>

@@ -10,7 +10,6 @@ using ICSharpCode.TextEditor.Document;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
-using PixelLab.Common;
 
 namespace Kaxaml.Controls
 {
@@ -142,7 +141,7 @@ namespace Kaxaml.Controls
             if (obj is KaxamlTextEditor)
             {
                 KaxamlTextEditor owner = (KaxamlTextEditor)obj;
-                owner.TextEditor.ActiveTextAreaControl.Caret.Position = new System.Drawing.Point((int)args.NewValue, owner.TextEditor.ActiveTextAreaControl.Caret.Position.Y);
+                owner.TextEditor.ActiveTextAreaControl.Caret.Position = new TextLocation((int)args.NewValue, owner.TextEditor.ActiveTextAreaControl.Caret.Position.Y);
             }
         }
 
@@ -673,7 +672,7 @@ namespace Kaxaml.Controls
                     break;
             }
             int currentLineNr = TextEditor.ActiveTextAreaControl.TextArea.Caret.Line;
-            int delta = TextEditor.Document.FormattingStrategy.FormatLine(TextEditor.ActiveTextAreaControl.TextArea, currentLineNr, TextEditor.Document.PositionToOffset(TextEditor.ActiveTextAreaControl.TextArea.Caret.Position), ch);
+            TextEditor.Document.FormattingStrategy.FormatLine(TextEditor.ActiveTextAreaControl.TextArea, currentLineNr, TextEditor.Document.PositionToOffset(TextEditor.ActiveTextAreaControl.TextArea.Caret.Position), ch);
 
             TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
         }
@@ -1140,8 +1139,8 @@ namespace Kaxaml.Controls
         {
             try
             {
-                System.Drawing.Point from = TextEditor.Document.OffsetToPosition(fromOffset);
-                System.Drawing.Point to = TextEditor.Document.OffsetToPosition(toOffset);
+                var from = TextEditor.Document.OffsetToPosition(fromOffset);
+                var to = TextEditor.Document.OffsetToPosition(toOffset);
 
                 if (suppressSelectionChangedEvent)
                 {
@@ -1168,11 +1167,11 @@ namespace Kaxaml.Controls
 
             try
             {
-                System.Drawing.Point startPoint = new System.Drawing.Point(0, lineNumber);
-                System.Drawing.Point endPoint = new System.Drawing.Point(0, lineNumber + 1);
+                var startPoint = new TextLocation(0, lineNumber);
+                var endPoint = new TextLocation(0, lineNumber + 1);
 
                 TextEditor.ActiveTextAreaControl.SelectionManager.SetSelection(startPoint, endPoint);
-                TextEditor.ActiveTextAreaControl.Caret.Position = new System.Drawing.Point(0, lineNumber);
+                TextEditor.ActiveTextAreaControl.Caret.Position = new TextLocation(0, lineNumber);
             }
             catch (Exception ex)
             {

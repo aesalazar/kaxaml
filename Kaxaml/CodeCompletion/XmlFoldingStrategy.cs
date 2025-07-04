@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using ICSharpCode.TextEditor.Document;
-using PixelLab.Common;
+using KaxamlPlugins;
 
 namespace Kaxaml.CodeCompletion
 {
@@ -120,9 +120,9 @@ namespace Kaxaml.CodeCompletion
                 {
                     using (var reader = new XmlTextReader(stringReader))
                     {
+                        var stack = new Stack();
                         while (reader.Read())
                         {
-                            var stack = new Stack();
                             switch (reader.NodeType)
                             {
                                 case XmlNodeType.Element:

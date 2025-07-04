@@ -8,7 +8,7 @@ namespace Kaxaml.CodeCompletion
     /// Holds the text for  namespace, child element or attribute 
     /// autocomplete (intellisense).
     /// </summary>
-    public class XmlCompletionData : ICompletionData
+    public class XmlCompletionData : ICompletionData, IComparable
     {
         string text;
         DataType dataType = DataType.XmlElement;

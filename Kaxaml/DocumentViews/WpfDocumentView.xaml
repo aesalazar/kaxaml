@@ -163,8 +163,9 @@
       </c:ZoomFrame.Template>
     </c:ZoomFrame>
 
+    <!--GREY SHADING WHEN XAML ERROR-->
     <Border x:Name="ErrorOverlay" Grid.Row="1" Opacity="0" IsHitTestVisible="False">
-      <Image x:Name="ErrorOverlayImage" Stretch="None" Source="{Binding Path=XamlDocument.PreviewImage}" />
+      <Image x:Name="ErrorOverlayImage" Stretch="None" />
     </Border>
 
 

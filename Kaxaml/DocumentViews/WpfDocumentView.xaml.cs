@@ -12,7 +12,6 @@ using Kaxaml.Controls;
 using Kaxaml.Documents;
 using Kaxaml.Properties;
 using KaxamlPlugins;
-using PixelLab.Common;
 
 namespace Kaxaml.DocumentViews
 {
@@ -39,6 +38,8 @@ namespace Kaxaml.DocumentViews
 
         private bool UnhandledExceptionRaised;
 
+        private readonly Brush _defaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40));
+
         #endregion Fields
 
         #region Constructors
@@ -53,7 +54,7 @@ namespace Kaxaml.DocumentViews
             Dispatcher.UnhandledException += new DispatcherUnhandledExceptionEventHandler(Dispatcher_UnhandledException);
 
             string schemafile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.StartupPath + "\\"), Kaxaml.Properties.Settings.Default.WPFSchema);
-            XmlCompletionDataProvider.LoadSchema(schemafile);
+            Dispatcher.InvokeAsync(() => XmlCompletionDataProvider.LoadSchema(schemafile));
         }
 
         #endregion Constructors
@@ -412,7 +413,7 @@ namespace Kaxaml.DocumentViews
                             {
                                 Border bd = new Border()
                                 {
-                                    Background = Color.FromRgb(0x40, 0x40, 0x40).ToCachedBrush()
+                                    Background = _defaultBackgroundBrush
                                 };
 
                                 TextBlock tb = new TextBlock()
