@@ -23,15 +23,29 @@ jobs:
 
       - name: Extract version and tag message
         id: extract
+        shell: pwsh
         run: |
+          git fetch --tags --force
           $tag = "${{ github.ref_name }}".Replace("refs/tags/", "")
           $version = $tag.TrimStart("v")
-          $message = git for-each-ref refs/tags/$tag --format="%(contents)"
+
+          # Try to get annotated tag message
+          $message = git tag -l $tag --format="%(contents)"
           $lines = $message -split "`n", 2
-          $title = $lines[0].Trim()
+          $titleLine = $lines[0].Trim()
           $body = if ($lines.Length -gt 1) { $lines[1].Trim() } else { "" }
+
+          # Fallback to commit message if tag is lightweight
+          if (-not $titleLine) {
+            Write-Host "No annotated tag found. Falling back to commit message."
+            $titleLine = git log -1 --pretty=format:"%s" $tag
+            $body = git log -1 --pretty=format:"%b" $tag
+          }
+
+          $fullTitle = "${version}: $titleLine"
+
           echo "VERSION=$version" >> $env:GITHUB_ENV
-          echo "RELEASE_TITLE=$title" >> $env:GITHUB_ENV
+          echo "RELEASE_TITLE=$fullTitle" >> $env:GITHUB_ENV
           echo "RELEASE_BODY=$body" >> $env:GITHUB_ENV
 
       - name: Restore dependencies
