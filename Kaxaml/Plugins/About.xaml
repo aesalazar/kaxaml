@@ -315,7 +315,23 @@
     </Viewport3D>
 
 
-    <TextBlock Canvas.Left="100" Canvas.Top="27" Foreground="White"><Run FontFamily="\Fonts\#Miramonte" FontSize="24" Text="Kaxaml"/><Run Text=" "/><Run FontFamily="\Fonts\#Miramonte" FontSize="24" Foreground="#FFFFA500" Text="v1.7"/><Run FontFamily="\Fonts\#Miramonte" FontSize="9" Foreground="#FFFFA500" Text="BETA"/><LineBreak/><Run Text="© 2009 Robby Ingebretsen"/><LineBreak/><Hyperlink Foreground="#FFFFFFFF"><Run Text="www.kaxaml.com"/></Hyperlink></TextBlock>
+    <TextBlock Canvas.Left="100" Canvas.Top="27" Foreground="White">
+        <Run FontFamily="\Fonts\#Miramonte" FontSize="24" Text="Kaxaml"/>
+        <Run Text=" "/>
+        <Run
+            x:Name="VersionTextBlock"
+            FontFamily="\Fonts\#Miramonte" 
+            FontSize="24" 
+            Foreground="#FFFFA500" 
+            Text="v1.7"
+        />
+        <LineBreak/>
+        <Run Text="© 2009 Robby Ingebretsen"/>
+        <LineBreak/>
+        <Hyperlink Foreground="#FFFFFFFF">
+            <Run Text="www.kaxaml.com"/>
+        </Hyperlink>
+    </TextBlock>
 
     <TextBlock Canvas.Left="20" Canvas.Top="110" TextWrapping="Wrap" Width="220" Foreground="#C0C0C0">
     <TextBlock.Resources>

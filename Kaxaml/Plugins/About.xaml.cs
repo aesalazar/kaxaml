@@ -1,28 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Diagnostics;
 
 namespace Kaxaml.Plugins
+
 {
-    /// <summary>
-    /// Interaction logic for About.xaml
-    /// </summary>
     public partial class About : UserControl
     {
         public About()
         {
             InitializeComponent();
-            this.AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(this.HandleRequestNavigate), false);
+            AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(this.HandleRequestNavigate), false);
+            Loaded += About_Loaded;
+        }
+
+        private void About_Loaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= About_Loaded;
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            VersionTextBlock.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
         }
 
         void HandleRequestNavigate(object sender, RoutedEventArgs e)
