@@ -36,9 +36,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public SolidColorBrush ColorBrush
-        {
-            get { return (SolidColorBrush)GetValue(ColorBrushProperty); }
-            set { SetValue(ColorBrushProperty, value); }
+        { get => (SolidColorBrush)GetValue(ColorBrushProperty); set => SetValue(ColorBrushProperty, value);
         }
         public static readonly DependencyProperty ColorBrushProperty =
             DependencyProperty.Register("ColorBrush", typeof(SolidColorBrush), typeof(ColorPicker), new UIPropertyMetadata(Brushes.Black));
@@ -72,7 +70,7 @@ namespace Kaxaml.Plugins.Controls
 
                     c.HSBSetInternally = true;
 
-                    c.Alpha = (double)(color.A / 255);
+                    c.Alpha = color.A / 255;
                     c.Hue = H;
                     c.Saturation = S;
                     c.Brightness = B;
@@ -100,13 +98,7 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public Color Color
-        {
-            get { return (Color)GetValue(ColorProperty); }
-            set
-            {
-                SetValue(ColorProperty, value);
-
-            }
+        { get => (Color)GetValue(ColorProperty); set => SetValue(ColorProperty, value);
         }
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register("Color", typeof(Color), typeof(ColorPicker), new UIPropertyMetadata(Colors.Black, OnColorChanged));
@@ -116,9 +108,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public double Hue
-        {
-            get { return (double)GetValue(HueProperty); }
-            set { SetValue(HueProperty, value); }
+        { get => (double)GetValue(HueProperty); set => SetValue(HueProperty, value);
         }
 
         public static readonly DependencyProperty HueProperty =
@@ -140,9 +130,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public double Brightness
-        {
-            get { return (double)GetValue(BrightnessProperty); }
-            set { SetValue(BrightnessProperty, value); }
+        { get => (double)GetValue(BrightnessProperty); set => SetValue(BrightnessProperty, value);
         }
 
         public static readonly DependencyProperty BrightnessProperty =
@@ -164,9 +152,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public double Saturation
-        {
-            get { return (double)GetValue(SaturationProperty); }
-            set { SetValue(SaturationProperty, value); }
+        { get => (double)GetValue(SaturationProperty); set => SetValue(SaturationProperty, value);
         }
 
         public static readonly DependencyProperty SaturationProperty =
@@ -188,9 +174,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public double Alpha
-        {
-            get { return (double)GetValue(AlphaProperty); }
-            set { SetValue(AlphaProperty, value); }
+        { get => (double)GetValue(AlphaProperty); set => SetValue(AlphaProperty, value);
         }
 
         public static readonly DependencyProperty AlphaProperty =
@@ -230,9 +214,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public int R
-        {
-            get { return (int)GetValue(RProperty); }
-            set { SetValue(RProperty, value); }
+        { get => (int)GetValue(RProperty); set => SetValue(RProperty, value);
         }
 
         public static readonly DependencyProperty RProperty =
@@ -247,9 +229,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public int G
-        {
-            get { return (int)GetValue(GProperty); }
-            set { SetValue(GProperty, value); }
+        { get => (int)GetValue(GProperty); set => SetValue(GProperty, value);
         }
 
         public static readonly DependencyProperty GProperty =
@@ -263,9 +243,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public int B
-        {
-            get { return (int)GetValue(BProperty); }
-            set { SetValue(BProperty, value); }
+        { get => (int)GetValue(BProperty); set => SetValue(BProperty, value);
         }
 
         public static readonly DependencyProperty BProperty =
@@ -280,9 +258,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public int A
-        {
-            get { return (int)GetValue(AProperty); }
-            set { SetValue(AProperty, value); }
+        { get => (int)GetValue(AProperty); set => SetValue(AProperty, value);
         }
 
         public static readonly DependencyProperty AProperty =
@@ -324,14 +300,12 @@ namespace Kaxaml.Plugins.Controls
             EventManager.RegisterRoutedEvent("ColorChanged", RoutingStrategy.Bubble, typeof(EventHandler<ColorChangedEventArgs>), typeof(ColorPicker));
 
         public event EventHandler<ColorChangedEventArgs> ColorChanged
-        {
-            add { AddHandler(ColorChangedEvent, value); }
-            remove { RemoveHandler(ColorChangedEvent, value); }
+        { add => AddHandler(ColorChangedEvent, value); remove => RemoveHandler(ColorChangedEvent, value);
         }
 
         void RaiseColorChangedEvent(Color color)
         {
-            ColorChangedEventArgs newEventArgs = new ColorChangedEventArgs(ColorPicker.ColorChangedEvent, color);
+            ColorChangedEventArgs newEventArgs = new ColorChangedEventArgs(ColorChangedEvent, color);
             RaiseEvent(newEventArgs);
         }
 
@@ -343,15 +317,13 @@ namespace Kaxaml.Plugins.Controls
     {
         public ColorChangedEventArgs(RoutedEvent routedEvent, Color color)
         {
-            this.RoutedEvent = routedEvent;
-            this.Color = color;
+            RoutedEvent = routedEvent;
+            Color = color;
         }
 
         private Color _Color;
         public Color Color
-        {
-            get { return _Color; }
-            set { _Color = value; }
+        { get => _Color; set => _Color = value;
         }
     }
 
@@ -366,9 +338,7 @@ namespace Kaxaml.Plugins.Controls
         /// </summary>
 
         public SolidColorBrush ColorBrush
-        {
-            get { return (SolidColorBrush)GetValue(ColorBrushProperty); }
-            set { SetValue(ColorBrushProperty, value); }
+        { get => (SolidColorBrush)GetValue(ColorBrushProperty); set => SetValue(ColorBrushProperty, value);
         }
         public static readonly DependencyProperty ColorBrushProperty =
             DependencyProperty.Register("ColorBrush", typeof(SolidColorBrush), typeof(ColorTextBox), new UIPropertyMetadata(Brushes.Black));
@@ -380,7 +350,7 @@ namespace Kaxaml.Plugins.Controls
 
         public Color Color
         {
-            get { return (Color)GetValue(ColorProperty); }
+            get => (Color)GetValue(ColorProperty);
             set
             {
                 SetValue(ColorProperty, value);
@@ -402,12 +372,12 @@ namespace Kaxaml.Plugins.Controls
         /// Updates the Color property any time the text changes
         /// </summary>
 
-        protected override void OnTextChanged(System.Windows.Controls.TextChangedEventArgs e)
+        protected override void OnTextChanged(TextChangedEventArgs e)
         {
             base.OnTextChanged(e);
 
             ColorSetInternally = true;
-            Color = ColorPickerUtil.ColorFromString(this.Text);
+            Color = ColorPickerUtil.ColorFromString(Text);
             ColorBrush = new SolidColorBrush(Color);
             ColorSetInternally = false;
         }
@@ -433,7 +403,7 @@ namespace Kaxaml.Plugins.Controls
                     e.Handled = true;
                 }
 
-                if (this.Text.Length >= 8)
+                if (Text.Length >= 8)
                 {
                     e.Handled = true;
                 }
@@ -448,7 +418,7 @@ namespace Kaxaml.Plugins.Controls
 
     public class HueChooser : FrameworkElement
     {
-        protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
@@ -456,11 +426,11 @@ namespace Kaxaml.Plugins.Controls
 
                 if (Orientation == Orientation.Vertical)
                 {
-                    Hue = 1 - (p.Y / this.ActualHeight);
+                    Hue = 1 - (p.Y / ActualHeight);
                 }
                 else
                 {
-                    Hue = 1 - (p.X / this.ActualWidth);
+                    Hue = 1 - (p.X / ActualWidth);
                 }
             }
             base.OnMouseMove(e);
@@ -474,11 +444,11 @@ namespace Kaxaml.Plugins.Controls
 
                 if (Orientation == Orientation.Vertical)
                 {
-                    Hue = 1 - (p.Y / this.ActualHeight);
+                    Hue = 1 - (p.Y / ActualHeight);
                 }
                 else
                 {
-                    Hue = 1 - (p.X / this.ActualWidth);
+                    Hue = 1 - (p.X / ActualWidth);
                 }
             }
 
@@ -488,15 +458,13 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
             base.OnMouseUp(e);
         }
 
 
         public Orientation Orientation
-        {
-            get { return (Orientation)GetValue(OrientationProperty); }
-            set { SetValue(OrientationProperty, value); }
+        { get => (Orientation)GetValue(OrientationProperty); set => SetValue(OrientationProperty, value);
         }
 
         public static readonly DependencyProperty OrientationProperty =
@@ -504,9 +472,7 @@ namespace Kaxaml.Plugins.Controls
 
 
         public double Hue
-        {
-            get { return (double)GetValue(HueProperty); }
-            set { SetValue(HueProperty, value); }
+        { get => (double)GetValue(HueProperty); set => SetValue(HueProperty, value);
         }
 
         public static readonly DependencyProperty HueProperty =
@@ -531,9 +497,7 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public double HueOffset
-        {
-            get { return (double)GetValue(HueOffsetProperty); }
-            private set { SetValue(HueOffsetProperty, value); }
+        { get => (double)GetValue(HueOffsetProperty); private set => SetValue(HueOffsetProperty, value);
         }
         public static readonly DependencyProperty HueOffsetProperty =
             DependencyProperty.Register("HueOffset", typeof(double), typeof(HueChooser), new UIPropertyMetadata(0.0));
@@ -553,26 +517,23 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public Color Color
-        {
-            get { return (Color)GetValue(ColorProperty); }
-            private set { SetValue(ColorProperty, value); }
+        { get => (Color)GetValue(ColorProperty); private set => SetValue(ColorProperty, value);
         }
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register("Color", typeof(Color), typeof(HueChooser), new UIPropertyMetadata(Colors.Red));
 
         public SolidColorBrush ColorBrush
-        {
-            get { return (SolidColorBrush)GetValue(ColorBrushProperty); }
-            private set { SetValue(ColorBrushProperty, value); }
+        { get => (SolidColorBrush)GetValue(ColorBrushProperty); private set => SetValue(ColorBrushProperty, value);
         }
         public static readonly DependencyProperty ColorBrushProperty =
             DependencyProperty.Register("ColorBrush", typeof(SolidColorBrush), typeof(HueChooser), new UIPropertyMetadata(Brushes.Red));
 
         protected override void OnRender(DrawingContext dc)
         {
-            LinearGradientBrush lb = new LinearGradientBrush();
-
-            lb.StartPoint = new Point(0, 0);
+            LinearGradientBrush lb = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0)
+            };
 
             if (Orientation == Orientation.Vertical)
                 lb.EndPoint = new Point(0, 1);
@@ -602,7 +563,7 @@ namespace Kaxaml.Plugins.Controls
 
     public class AlphaChooser : FrameworkElement
     {
-        protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
@@ -610,11 +571,11 @@ namespace Kaxaml.Plugins.Controls
 
                 if (Orientation == Orientation.Vertical)
                 {
-                    Alpha = 1 - (p.Y / this.ActualHeight);
+                    Alpha = 1 - (p.Y / ActualHeight);
                 }
                 else
                 {
-                    Alpha = 1 - (p.X / this.ActualWidth);
+                    Alpha = 1 - (p.X / ActualWidth);
                 }
             }
             base.OnMouseMove(e);
@@ -628,11 +589,11 @@ namespace Kaxaml.Plugins.Controls
 
                 if (Orientation == Orientation.Vertical)
                 {
-                    Alpha = 1 - (p.Y / this.ActualHeight);
+                    Alpha = 1 - (p.Y / ActualHeight);
                 }
                 else
                 {
-                    Alpha = 1 - (p.X / this.ActualWidth);
+                    Alpha = 1 - (p.X / ActualWidth);
                 }
             }
 
@@ -642,14 +603,12 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
             base.OnMouseUp(e);
         }
 
         public Orientation Orientation
-        {
-            get { return (Orientation)GetValue(OrientationProperty); }
-            set { SetValue(OrientationProperty, value); }
+        { get => (Orientation)GetValue(OrientationProperty); set => SetValue(OrientationProperty, value);
         }
 
         public static readonly DependencyProperty OrientationProperty =
@@ -657,9 +616,7 @@ namespace Kaxaml.Plugins.Controls
 
 
         public double Alpha
-        {
-            get { return (double)GetValue(AlphaProperty); }
-            set { SetValue(AlphaProperty, value); }
+        { get => (double)GetValue(AlphaProperty); set => SetValue(AlphaProperty, value);
         }
 
         public static readonly DependencyProperty AlphaProperty =
@@ -684,9 +641,7 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public double AlphaOffset
-        {
-            get { return (double)GetValue(AlphaOffsetProperty); }
-            private set { SetValue(AlphaOffsetProperty, value); }
+        { get => (double)GetValue(AlphaOffsetProperty); private set => SetValue(AlphaOffsetProperty, value);
         }
         public static readonly DependencyProperty AlphaOffsetProperty =
             DependencyProperty.Register("AlphaOffset", typeof(double), typeof(AlphaChooser), new UIPropertyMetadata(0.0));
@@ -706,26 +661,23 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public Color Color
-        {
-            get { return (Color)GetValue(ColorProperty); }
-            private set { SetValue(ColorProperty, value); }
+        { get => (Color)GetValue(ColorProperty); private set => SetValue(ColorProperty, value);
         }
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register("Color", typeof(Color), typeof(AlphaChooser), new UIPropertyMetadata(Colors.Red));
 
         public SolidColorBrush ColorBrush
-        {
-            get { return (SolidColorBrush)GetValue(ColorBrushProperty); }
-            private set { SetValue(ColorBrushProperty, value); }
+        { get => (SolidColorBrush)GetValue(ColorBrushProperty); private set => SetValue(ColorBrushProperty, value);
         }
         public static readonly DependencyProperty ColorBrushProperty =
             DependencyProperty.Register("ColorBrush", typeof(SolidColorBrush), typeof(AlphaChooser), new UIPropertyMetadata(Brushes.Red));
 
         protected override void OnRender(DrawingContext dc)
         {
-            LinearGradientBrush lb = new LinearGradientBrush();
-
-            lb.StartPoint = new Point(0, 0);
+            LinearGradientBrush lb = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0)
+            };
 
             if (Orientation == Orientation.Vertical)
                 lb.EndPoint = new Point(0, 1);
@@ -752,17 +704,13 @@ namespace Kaxaml.Plugins.Controls
     public class SaturationBrightnessChooser : FrameworkElement
     {
         public Thickness OffsetPadding
-        {
-            get { return (Thickness)GetValue(OffsetPaddingProperty); }
-            set { SetValue(OffsetPaddingProperty, value); }
+        { get => (Thickness)GetValue(OffsetPaddingProperty); set => SetValue(OffsetPaddingProperty, value);
         }
         public static readonly DependencyProperty OffsetPaddingProperty =
             DependencyProperty.Register("OffsetPadding", typeof(Thickness), typeof(SaturationBrightnessChooser), new UIPropertyMetadata(new Thickness(0.0)));
 
         public double Hue
-        {
-            private get { return (double)GetValue(HueProperty); }
-            set { SetValue(HueProperty, value); }
+        { private get => (double)GetValue(HueProperty); set => SetValue(HueProperty, value);
         }
         public static readonly DependencyProperty HueProperty =
             DependencyProperty.Register("Hue", typeof(double), typeof(SaturationBrightnessChooser), new
@@ -776,17 +724,13 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public double SaturationOffset
-        {
-            get { return (double)GetValue(SaturationOffsetProperty); }
-            set { SetValue(SaturationOffsetProperty, value); }
+        { get => (double)GetValue(SaturationOffsetProperty); set => SetValue(SaturationOffsetProperty, value);
         }
         public static readonly DependencyProperty SaturationOffsetProperty =
             DependencyProperty.Register("SaturationOffset", typeof(double), typeof(SaturationBrightnessChooser), new UIPropertyMetadata(0.0));
 
         public double Saturation
-        {
-            get { return (double)GetValue(SaturationProperty); }
-            set { SetValue(SaturationProperty, value); }
+        { get => (double)GetValue(SaturationProperty); set => SetValue(SaturationProperty, value);
         }
 
         public static readonly DependencyProperty SaturationProperty =
@@ -813,34 +757,26 @@ namespace Kaxaml.Plugins.Controls
 
 
         public Color Color
-        {
-            get { return (Color)GetValue(ColorProperty); }
-            private set { SetValue(ColorProperty, value); }
+        { get => (Color)GetValue(ColorProperty); private set => SetValue(ColorProperty, value);
         }
         public static readonly DependencyProperty ColorProperty =
             DependencyProperty.Register("Color", typeof(Color), typeof(SaturationBrightnessChooser), new UIPropertyMetadata(Colors.Red));
 
         public SolidColorBrush ColorBrush
-        {
-            get { return (SolidColorBrush)GetValue(ColorBrushProperty); }
-            private set { SetValue(ColorBrushProperty, value); }
+        { get => (SolidColorBrush)GetValue(ColorBrushProperty); private set => SetValue(ColorBrushProperty, value);
         }
         public static readonly DependencyProperty ColorBrushProperty =
             DependencyProperty.Register("ColorBrush", typeof(SolidColorBrush), typeof(SaturationBrightnessChooser), new UIPropertyMetadata(Brushes.Red));
 
 
         public double BrightnessOffset
-        {
-            get { return (double)GetValue(BrightnessOffsetProperty); }
-            set { SetValue(BrightnessOffsetProperty, value); }
+        { get => (double)GetValue(BrightnessOffsetProperty); set => SetValue(BrightnessOffsetProperty, value);
         }
         public static readonly DependencyProperty BrightnessOffsetProperty =
             DependencyProperty.Register("BrightnessOffset", typeof(double), typeof(SaturationBrightnessChooser), new UIPropertyMetadata(0.0));
 
         public double Brightness
-        {
-            get { return (double)GetValue(BrightnessProperty); }
-            set { SetValue(BrightnessProperty, value); }
+        { get => (double)GetValue(BrightnessProperty); set => SetValue(BrightnessProperty, value);
         }
 
         public static readonly DependencyProperty BrightnessProperty =
@@ -875,16 +811,20 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnRender(DrawingContext dc)
         {
-            LinearGradientBrush h = new LinearGradientBrush();
-            h.StartPoint = new Point(0, 0);
-            h.EndPoint = new Point(1, 0);
+            LinearGradientBrush h = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(1, 0)
+            };
             h.GradientStops.Add(new GradientStop(Colors.White, 0.00));
             h.GradientStops.Add(new GradientStop(ColorPickerUtil.ColorFromHSB(Hue, 1, 1), 1.0));
             dc.DrawRectangle(h, null, new Rect(0, 0, ActualWidth, ActualHeight));
 
-            LinearGradientBrush v = new LinearGradientBrush();
-            v.StartPoint = new Point(0, 0);
-            v.EndPoint = new Point(0, 1);
+            LinearGradientBrush v = new LinearGradientBrush
+            {
+                StartPoint = new Point(0, 0),
+                EndPoint = new Point(0, 1)
+            };
             v.GradientStops.Add(new GradientStop(Color.FromArgb(0xFF, 0, 0, 0), 1.00));
             v.GradientStops.Add(new GradientStop(Color.FromArgb(0x80, 0, 0, 0), 0.50));
             v.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, 0, 0, 0), 0.00));
@@ -900,13 +840,13 @@ namespace Kaxaml.Plugins.Controls
             ColorBrush = new SolidColorBrush(Color);
         }
 
-        protected override void OnMouseMove(System.Windows.Input.MouseEventArgs e)
+        protected override void OnMouseMove(MouseEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
                 Point p = e.GetPosition(this);
-                Saturation = (p.X / (this.ActualWidth - OffsetPadding.Right));
-                Brightness = (((this.ActualHeight - OffsetPadding.Bottom) - p.Y) / (this.ActualHeight - OffsetPadding.Bottom));
+                Saturation = (p.X / (ActualWidth - OffsetPadding.Right));
+                Brightness = (((ActualHeight - OffsetPadding.Bottom) - p.Y) / (ActualHeight - OffsetPadding.Bottom));
                 UpdateColor();
             }
             base.OnMouseMove(e);
@@ -915,8 +855,8 @@ namespace Kaxaml.Plugins.Controls
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             Point p = e.GetPosition(this);
-            Saturation = (p.X / (this.ActualWidth - OffsetPadding.Right));
-            Brightness = (((this.ActualHeight - OffsetPadding.Bottom) - p.Y) / (this.ActualHeight - OffsetPadding.Bottom));
+            Saturation = (p.X / (ActualWidth - OffsetPadding.Right));
+            Brightness = (((ActualHeight - OffsetPadding.Bottom) - p.Y) / (ActualHeight - OffsetPadding.Bottom));
             UpdateColor();
 
             Mouse.Capture(this);
@@ -925,7 +865,7 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnMouseUp(MouseButtonEventArgs e)
         {
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
             base.OnMouseUp(e);
         }
     }

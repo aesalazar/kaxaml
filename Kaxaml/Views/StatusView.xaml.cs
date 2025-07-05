@@ -26,9 +26,7 @@ namespace Kaxaml.Views
         #region CurrentLineNumber (DependencyProperty)
 
         public int CurrentLineNumber
-        {
-            get { return (int)GetValue(CurrentLineNumberProperty); }
-            set { SetValue(CurrentLineNumberProperty, value); }
+        { get => (int)GetValue(CurrentLineNumberProperty); set => SetValue(CurrentLineNumberProperty, value);
         }
         public static readonly DependencyProperty CurrentLineNumberProperty =
             DependencyProperty.Register("CurrentLineNumber", typeof(int), typeof(StatusView), new FrameworkPropertyMetadata(1));
@@ -38,9 +36,7 @@ namespace Kaxaml.Views
         #region CurrentLinePosition (DependencyProperty)
 
         public int CurrentLinePosition
-        {
-            get { return (int)GetValue(CurrentLinePositionProperty); }
-            set { SetValue(CurrentLinePositionProperty, value); }
+        { get => (int)GetValue(CurrentLinePositionProperty); set => SetValue(CurrentLinePositionProperty, value);
         }
         public static readonly DependencyProperty CurrentLinePositionProperty =
             DependencyProperty.Register("CurrentLinePosition", typeof(int), typeof(StatusView), new FrameworkPropertyMetadata(1));
@@ -54,9 +50,7 @@ namespace Kaxaml.Views
         /// A description of the property.
         /// </summary>
         public int Zoom
-        {
-            get { return (int)GetValue(ZoomProperty); }
-            set { SetValue(ZoomProperty, value); }
+        { get => (int)GetValue(ZoomProperty); set => SetValue(ZoomProperty, value);
         }
         public static readonly DependencyProperty ZoomProperty =
             DependencyProperty.Register("Zoom", typeof(int), typeof(StatusView), new FrameworkPropertyMetadata(100, new PropertyChangedCallback(ZoomChanged)));
@@ -75,9 +69,7 @@ namespace Kaxaml.Views
         #region Scale (DependencyProperty)
 
         public double Scale
-        {
-            get { return (double)GetValue(ScaleProperty); }
-            set { SetValue(ScaleProperty, value); }
+        { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value);
         }
         public static readonly DependencyProperty ScaleProperty =
             DependencyProperty.Register("Scale", typeof(double), typeof(StatusView), new FrameworkPropertyMetadata(1.0, new PropertyChangedCallback(ScaleChanged)));

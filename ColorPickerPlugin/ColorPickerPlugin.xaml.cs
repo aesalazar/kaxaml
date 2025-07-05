@@ -28,7 +28,7 @@ namespace Kaxaml.Plugins.ColorPicker
         {
             InitializeComponent();
             Colors = new ObservableCollection<Color>();
-            ColorString = Kaxaml.Plugins.ColorPicker.Properties.Settings.Default.Colors;
+            ColorString = Properties.Settings.Default.Colors;
 
             KaxamlInfo.EditSelectionChanged += new KaxamlInfo.EditSelectionChangedDelegate(KaxamlInfo_EditSelectionChanged);
         }
@@ -104,7 +104,7 @@ namespace Kaxaml.Plugins.ColorPicker
                 {
                     if (_ColorChangedTimer == null)
                     {
-                        _ColorChangedTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background, _ColorChangedTimer_Tick, this.Dispatcher);
+                        _ColorChangedTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background, _ColorChangedTimer_Tick, Dispatcher);
                     }
 
                     _ColorChangedTimer.Stop();
@@ -170,9 +170,7 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public ObservableCollection<Color> Colors
-        {
-            get { return (ObservableCollection<Color>)GetValue(ColorsProperty); }
-            set { SetValue(ColorsProperty, value); }
+        { get => (ObservableCollection<Color>)GetValue(ColorsProperty); set => SetValue(ColorsProperty, value);
         }
 
         /// <summary>
@@ -224,9 +222,7 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public string ColorString
-        {
-            get { return (string)GetValue(ColorStringProperty); }
-            set { SetValue(ColorStringProperty, value); }
+        { get => (string)GetValue(ColorStringProperty); set => SetValue(ColorStringProperty, value);
         }
 
         /// <summary>
@@ -245,7 +241,7 @@ namespace Kaxaml.Plugins.ColorPicker
             if (obj is ColorPickerPlugin)
             {
                 ColorPickerPlugin owner = (ColorPickerPlugin)obj;
-                Kaxaml.Plugins.ColorPicker.Properties.Settings.Default.Colors = args.NewValue as string;
+                Properties.Settings.Default.Colors = args.NewValue as string;
 
                 if (!owner.updateinternal)
                 {

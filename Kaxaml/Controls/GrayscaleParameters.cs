@@ -19,33 +19,23 @@ namespace Kaxaml.Controls
 
 
         public double RedDistribution
-        {
-            get { return _RedDistribution; }
-            set { _RedDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _RedDistribution; set => _RedDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double GreenDistribution
-        {
-            get { return _GreenDistribution; }
-            set { _GreenDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _GreenDistribution; set => _GreenDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double BlueDistribution
-        {
-            get { return _BlueDistribution; }
-            set { _BlueDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _BlueDistribution; set => _BlueDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double Compression
-        {
-            get { return _Compression; }
-            set { _Compression = Math.Max(0, Math.Min(1, value)); }
+        { get => _Compression; set => _Compression = Math.Max(0, Math.Min(1, value));
         }
 
         public double Washout
-        {
-            get { return _Washout; }
-            set { _Washout = Math.Max(0, Math.Min(1, value)); }
+        { get => _Washout; set => _Washout = Math.Max(0, Math.Min(1, value));
         }
 
 

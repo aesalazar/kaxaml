@@ -1,6 +1,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -17,7 +18,7 @@ namespace Kaxaml
     /// Interaction logic for Window1.xaml
     /// </summary>
 
-    public partial class MainWindow : System.Windows.Window
+    public partial class MainWindow : Window
     {
         //-------------------------------------------------------------------
         //
@@ -37,16 +38,16 @@ namespace Kaxaml
             // initialize commands
 
             CommandBinding binding = new CommandBinding(ParseCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Parse_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Parse_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.F5)));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Parse_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Parse_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.F5)));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(NewWPFTabCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.NewWPFTab_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.NewWPFTab_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.T, ModifierKeys.Control, "Ctrl+T")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(NewWPFTab_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(NewWPFTab_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.T, ModifierKeys.Control, "Ctrl+T")));
+            CommandBindings.Add(binding);
 
             //binding = new CommandBinding(NewAgTabCommand);
             //binding.Executed += new ExecutedRoutedEventHandler(this.NewAgTab_Executed);
@@ -55,60 +56,60 @@ namespace Kaxaml
             //this.CommandBindings.Add(binding);
 
             binding = new CommandBinding(CloseTabCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.CloseTab_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.CloseTab_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.W, ModifierKeys.Control, "Ctrl+W")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(CloseTab_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(CloseTab_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.W, ModifierKeys.Control, "Ctrl+W")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(SaveCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Save_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Save_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.S, ModifierKeys.Control, "Ctrl+S")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Save_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Save_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.S, ModifierKeys.Control, "Ctrl+S")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(SaveAsCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.SaveAs_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.SaveAs_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.S, ModifierKeys.Control | ModifierKeys.Alt, "Ctrl+Alt+S")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(SaveAs_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(SaveAs_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.S, ModifierKeys.Control | ModifierKeys.Alt, "Ctrl+Alt+S")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(OpenCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Open_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Open_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.O, ModifierKeys.Control, "Ctrl+O")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Open_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Open_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.O, ModifierKeys.Control, "Ctrl+O")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(SaveAsImageCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.SaveAsImage_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.SaveAsImage_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.I, ModifierKeys.Control, "Ctrl+I")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(SaveAsImage_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(SaveAsImage_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.I, ModifierKeys.Control, "Ctrl+I")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(ExitCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Exit_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Exit_CanExecute);
+            binding.Executed += new ExecutedRoutedEventHandler(Exit_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Exit_CanExecute);
             //this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.O, ModifierKeys.Control, "Ctrl+O")));
-            this.CommandBindings.Add(binding);
+            CommandBindings.Add(binding);
 
             // Zoom Commands
 
             binding = new CommandBinding(ZoomInCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.ZoomIn_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.ZoomIn_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.OemPlus, ModifierKeys.Control, "Ctrl++")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(ZoomIn_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(ZoomIn_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.OemPlus, ModifierKeys.Control, "Ctrl++")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(ZoomOutCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.ZoomOut_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.ZoomOut_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.OemMinus, ModifierKeys.Control, "Ctrl+-")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(ZoomOut_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(ZoomOut_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.OemMinus, ModifierKeys.Control, "Ctrl+-")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(ActualSizeCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.ActualSize_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.ActualSize_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.D1, ModifierKeys.Control, "Ctrl+1")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(ActualSize_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(ActualSize_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.D1, ModifierKeys.Control, "Ctrl+1")));
+            CommandBindings.Add(binding);
 
             // Edit Commands 
             // We have an unusual situation here where we need to handle Copy/Paste/etc. from the menu
@@ -118,59 +119,59 @@ namespace Kaxaml
             // because the WinForms controls will handle the keyboards stuff--so this is for Menu only.
 
             binding = new CommandBinding(CopyCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Copy_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Copy_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Copy_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Copy_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(CutCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Cut_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Cut_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Cut_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Cut_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(PasteCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Paste_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Paste_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Paste_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Paste_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(PasteImageCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.PasteImage_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.PasteImage_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.V, ModifierKeys.Control | ModifierKeys.Shift, "Ctrl+Shift+V")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(PasteImage_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(PasteImage_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.V, ModifierKeys.Control | ModifierKeys.Shift, "Ctrl+Shift+V")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(DeleteCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Delete_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Delete_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Delete_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Delete_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(UndoCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Undo_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Undo_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Undo_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Undo_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(RedoCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Redo_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Redo_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Redo_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Redo_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(FindCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Find_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Find_CanExecute);
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Find_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Find_CanExecute);
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(FindNextCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.FindNext_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.FindNext_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.F3, ModifierKeys.None, "F3")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(FindNext_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(FindNext_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.F3, ModifierKeys.None, "F3")));
+            CommandBindings.Add(binding);
 
             binding = new CommandBinding(ReplaceCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Replace_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Replace_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.H, ModifierKeys.Control, "F3")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Replace_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Replace_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.H, ModifierKeys.Control, "F3")));
+            CommandBindings.Add(binding);
 
-            this.PreviewKeyDown += new KeyEventHandler(MainWindow_PreviewKeyDown);
+            PreviewKeyDown += new KeyEventHandler(MainWindow_PreviewKeyDown);
 
             // load or create startup documents
 
@@ -178,7 +179,7 @@ namespace Kaxaml
             {
                 foreach (string s in App.StartupArgs)
                 {
-                    if (System.IO.File.Exists(s))
+                    if (File.Exists(s))
                     {
                         XamlDocument doc = XamlDocument.FromFile(s);
                         XamlDocuments.Add(doc);
@@ -188,7 +189,7 @@ namespace Kaxaml
 
             if (XamlDocuments.Count == 0)
             {
-                WpfDocument doc = new WpfDocument(System.IO.Directory.GetCurrentDirectory());
+                WpfDocument doc = new WpfDocument(Directory.GetCurrentDirectory());
                 XamlDocuments.Add(doc);
             }
 
@@ -212,9 +213,7 @@ namespace Kaxaml
         /// The collection of XamlDocuments that are currently actively being edited.
         /// </summary>
         public ObservableCollection<XamlDocument> XamlDocuments
-        {
-            get { return (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty); }
-            set { SetValue(XamlDocumentsProperty, value); }
+        { get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty); set => SetValue(XamlDocumentsProperty, value);
         }
 
         /// <summary>
@@ -250,9 +249,9 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
-                    this.DocumentsView.SelectedView.Parse();
+                    DocumentsView.SelectedView.Parse();
                 }
             }
         }
@@ -261,7 +260,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
                     args.CanExecute = true;
                 }
@@ -282,10 +281,10 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                WpfDocument doc = new WpfDocument(System.IO.Directory.GetCurrentDirectory());
+                WpfDocument doc = new WpfDocument(Directory.GetCurrentDirectory());
                 XamlDocuments.Add(doc);
 
-                this.DocumentsView.SelectedDocument = doc;
+                DocumentsView.SelectedDocument = doc;
 
             }
         }
@@ -303,18 +302,6 @@ namespace Kaxaml
         #region NewAgTabCommand
 
         public readonly static RoutedUICommand NewAgTabCommand = new RoutedUICommand("New Silverlight Tab", "NewAgTabCommand", typeof(MainWindow));
-
-        void NewAgTab_Executed(object sender, ExecutedRoutedEventArgs args)
-        {
-            if (sender == this)
-            {
-                AgDocument doc = new AgDocument(System.IO.Directory.GetCurrentDirectory());
-                XamlDocuments.Add(doc);
-
-                this.DocumentsView.SelectedDocument = doc;
-
-            }
-        }
 
         void NewAgTab_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
@@ -334,15 +321,15 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                XamlDocument document = null;
+                XamlDocument? document = null;
 
                 if (args.Parameter != null)
                 {
                     document = args.Parameter as XamlDocument;
                 }
-                else if (this.DocumentsView.SelectedView != null)
+                else if (DocumentsView.SelectedView != null)
                 {
-                    document = this.DocumentsView.SelectedView.XamlDocument;
+                    document = DocumentsView.SelectedView.XamlDocument;
                 }
 
                 if (document != null)
@@ -355,7 +342,7 @@ namespace Kaxaml
                         if (result == MessageBoxResult.Cancel) return;
                     }
 
-                    this.DocumentsView.XamlDocuments.Remove(document);
+                    DocumentsView.XamlDocuments.Remove(document);
                 }
             }
         }
@@ -364,7 +351,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.XamlDocuments.Count > 1)
+                if (DocumentsView.XamlDocuments.Count > 1)
                 {
                     args.CanExecute = true;
                 }
@@ -386,9 +373,9 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
-                    XamlDocument document = this.DocumentsView.SelectedView.XamlDocument;
+                    XamlDocument document = DocumentsView.SelectedView.XamlDocument;
                     Save(document);
                 }
             }
@@ -398,7 +385,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
                     args.CanExecute = true;
                 }
@@ -419,9 +406,9 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
-                    XamlDocument document = this.DocumentsView.SelectedView.XamlDocument;
+                    XamlDocument document = DocumentsView.SelectedView.XamlDocument;
                     SaveAs(document);
                 }
             }
@@ -431,7 +418,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                if (this.DocumentsView.SelectedView != null)
+                if (DocumentsView.SelectedView != null)
                 {
                     args.CanExecute = true;
                 }
@@ -452,12 +439,14 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog();
-                sfd.Filter = "Image files (*.png)|*.png|All files (*.*)|*.*";
+                SaveFileDialog sfd = new SaveFileDialog
+                {
+                    Filter = "Image files (*.png)|*.png|All files (*.*)|*.*"
+                };
 
                 if (sfd.ShowDialog(KaxamlInfo.MainWindow) == true)
                 {
-                    using (System.IO.FileStream fs = new System.IO.FileStream(sfd.FileName, System.IO.FileMode.Create))
+                    using (FileStream fs = new FileStream(sfd.FileName, FileMode.Create))
                     {
                         BitmapSource rtb = RenderContent();
                         PngBitmapEncoder encoder = new PngBitmapEncoder();
@@ -486,7 +475,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.Open();
+                Open();
             }
         }
 
@@ -530,7 +519,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.StatusView.ZoomIn();
+                StatusView.ZoomIn();
             }
         }
 
@@ -552,7 +541,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.StatusView.ZoomOut();
+                StatusView.ZoomOut();
             }
         }
 
@@ -574,7 +563,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.StatusView.ActualSize();
+                StatusView.ActualSize();
             }
         }
 
@@ -596,7 +585,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(Clipboard.GetText());
+                DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(Clipboard.GetText());
             }
         }
 
@@ -628,12 +617,14 @@ namespace Kaxaml
                         {
                             // find and/or create the folder
 
-                            string folder = Kaxaml.Properties.Settings.Default.PasteImageFolder;
+                            string folder = Properties.Settings.Default.PasteImageFolder;
                             string absfolder = "";
 
                             if (!folder.Contains(":"))
                             {
-                                absfolder = System.IO.Path.Combine(DocumentsView.SelectedDocument.Folder, folder);
+                                var selectedDocFolder = DocumentsView.SelectedDocument?.Folder 
+                                    ?? throw new Exception("Expecting Selected Document");
+                                absfolder = Path.Combine(selectedDocFolder, folder);
                             }
                             else
                             {
@@ -642,19 +633,19 @@ namespace Kaxaml
 
                             // create the folder if it doesn't exist
 
-                            if (!System.IO.Directory.Exists(absfolder))
+                            if (!Directory.Exists(absfolder))
                             {
-                                System.IO.Directory.CreateDirectory(absfolder);
+                                Directory.CreateDirectory(absfolder);
                             }
 
                             // create a unique filename
 
-                            string filename = Kaxaml.Properties.Settings.Default.PasteImageFile;
-                            string tempfile = System.IO.Path.Combine(absfolder, filename);
+                            string filename = Properties.Settings.Default.PasteImageFile;
+                            string tempfile = Path.Combine(absfolder, filename);
                             int number = 1;
 
                             string absfilename = tempfile.Replace("$number$", number.ToString());
-                            while (System.IO.File.Exists(absfilename))
+                            while (File.Exists(absfilename))
                             {
                                 number++;
                                 absfilename = tempfile.Replace("$number$", number.ToString());
@@ -662,10 +653,12 @@ namespace Kaxaml
 
                             // save the image from the clipboard
 
-                            using (System.IO.FileStream fs = new System.IO.FileStream(absfilename, System.IO.FileMode.Create))
+                            using (FileStream fs = new FileStream(absfilename, FileMode.Create))
                             {
-                                JpegBitmapEncoder encoder = new JpegBitmapEncoder();
-                                encoder.QualityLevel = 100;
+                                JpegBitmapEncoder encoder = new JpegBitmapEncoder
+                                {
+                                    QualityLevel = 100
+                                };
 
                                 //PngBitmapEncoder encoder = new PngBitmapEncoder();
                                 //encoder.Interlace = PngInterlaceOption.Off;
@@ -674,14 +667,15 @@ namespace Kaxaml
                             }
 
                             // get a relative version of the file name
-
-                            string rfilename = absfilename.Replace(DocumentsView.SelectedDocument.Folder + "\\", "");
+                            var docFolder = DocumentsView.SelectedDocument?.Folder 
+                                ?? throw new Exception("Expecting Selected Document");
+                            string rfilename = absfilename.Replace(docFolder + "\\", "");
 
                             // create and insert the xaml
 
-                            string xaml = Kaxaml.Properties.Settings.Default.PasteImageXaml;
+                            string xaml = Properties.Settings.Default.PasteImageXaml;
                             xaml = xaml.Replace("$source$", rfilename);
-                            this.DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(xaml);
+                            DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(xaml);
                         }
                         catch (Exception ex)
                         {
@@ -714,7 +708,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                Clipboard.SetText(this.DocumentsView.SelectedView.TextEditor.SelectedText);
+                Clipboard.SetText(DocumentsView.SelectedView.TextEditor.SelectedText);
             }
         }
 
@@ -722,7 +716,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                args.CanExecute = !string.IsNullOrEmpty(this.DocumentsView.SelectedView.TextEditor.SelectedText);
+                args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView.TextEditor.SelectedText);
             }
         }
 
@@ -736,8 +730,8 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                Clipboard.SetText(this.DocumentsView.SelectedView.TextEditor.SelectedText);
-                this.DocumentsView.SelectedView.TextEditor.ReplaceSelectedText("");
+                Clipboard.SetText(DocumentsView.SelectedView.TextEditor.SelectedText);
+                DocumentsView.SelectedView.TextEditor.ReplaceSelectedText("");
             }
         }
 
@@ -745,7 +739,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                args.CanExecute = !string.IsNullOrEmpty(this.DocumentsView.SelectedView.TextEditor.SelectedText);
+                args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView.TextEditor.SelectedText);
             }
         }
 
@@ -759,7 +753,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.DocumentsView.SelectedView.TextEditor.ReplaceSelectedText("");
+                DocumentsView.SelectedView.TextEditor.ReplaceSelectedText("");
             }
         }
 
@@ -767,7 +761,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                args.CanExecute = !string.IsNullOrEmpty(this.DocumentsView.SelectedView.TextEditor.SelectedText);
+                args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView.TextEditor.SelectedText);
             }
         }
 
@@ -781,7 +775,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.DocumentsView.SelectedView.TextEditor.Redo();
+                DocumentsView.SelectedView.TextEditor.Redo();
             }
         }
 
@@ -803,7 +797,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.DocumentsView.SelectedView.TextEditor.Undo();
+                DocumentsView.SelectedView.TextEditor.Undo();
             }
         }
 
@@ -825,7 +819,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.PluginView.SelectedPlugin = this.PluginView.GetFindPlugin();
+                PluginView.SelectedPlugin = PluginView.GetFindPlugin();
             }
         }
 
@@ -847,11 +841,11 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                Plugin findPlugin = this.PluginView.GetFindPlugin();
-                if (findPlugin.Root is Find)
+                var findPlugin = PluginView.GetFindPlugin();
+                if (findPlugin?.Root is Find)
                 {
-                    string findText = (findPlugin.Root as Find).FindText.Text;
-                    KaxamlInfo.Editor.Find(findText);
+                    string findText = ((Find)findPlugin.Root).FindText.Text;
+                    KaxamlInfo.Editor?.Find(findText);
                 }
             }
         }
@@ -874,7 +868,7 @@ namespace Kaxaml
         {
             if (sender == this)
             {
-                this.PluginView.SelectedPlugin = this.PluginView.GetFindPlugin();
+                PluginView.SelectedPlugin = PluginView.GetFindPlugin();
             }
         }
 
@@ -896,25 +890,27 @@ namespace Kaxaml
         #region Public Methods
 
 
-        OpenFileDialog _OpenDialog;
+        private OpenFileDialog? _OpenDialog;
 
         public bool Open()
         {
             if (_OpenDialog == null)
             {
-                _OpenDialog = new OpenFileDialog();
-                _OpenDialog.AddExtension = true;
-                _OpenDialog.DefaultExt = ".xaml";
-                _OpenDialog.Filter = "XAML files|*.xaml|Backup files|*.backup|All files|*.*";
-                _OpenDialog.Multiselect = true;
-                _OpenDialog.CheckFileExists = true;
-                _OpenDialog.CheckPathExists = true;
-                _OpenDialog.RestoreDirectory = true;
+                _OpenDialog = new OpenFileDialog
+                {
+                    AddExtension = true,
+                    DefaultExt = ".xaml",
+                    Filter = "XAML files|*.xaml|Backup files|*.backup|All files|*.*",
+                    Multiselect = true,
+                    CheckFileExists = true,
+                    CheckPathExists = true,
+                    RestoreDirectory = true
+                };
             }
 
-            if ((bool)_OpenDialog.ShowDialog())
+            if (_OpenDialog.ShowDialog() is true)
             {
-                XamlDocument first = null;
+                XamlDocument? first = null;
 
                 foreach (string s in _OpenDialog.FileNames)
                 {
@@ -935,7 +931,7 @@ namespace Kaxaml
             return false;
         }
 
-        SaveFileDialog _SaveDialog;
+        private SaveFileDialog? _SaveDialog;
 
         public bool Save(XamlDocument document)
         {
@@ -953,15 +949,17 @@ namespace Kaxaml
         {
             if (_SaveDialog == null)
             {
-                _SaveDialog = new SaveFileDialog();
-                _SaveDialog.AddExtension = true;
-                _SaveDialog.DefaultExt = ".xaml";
-                _SaveDialog.Filter = "XAML file|*.xaml|All files|*.*";
+                _SaveDialog = new SaveFileDialog
+                {
+                    AddExtension = true,
+                    DefaultExt = ".xaml",
+                    Filter = "XAML file|*.xaml|All files|*.*"
+                };
             }
 
             _SaveDialog.FileName = document.Filename;
 
-            if ((bool)_SaveDialog.ShowDialog())
+            if (_SaveDialog.ShowDialog() is true)
             {
                 if (document.SaveAs(_SaveDialog.FileName))
                 {
@@ -986,18 +984,15 @@ namespace Kaxaml
 
         private BitmapSource RenderContent()
         {
-            FrameworkElement element = null;
-
-            if (KaxamlInfo.Frame.Content is FrameworkElement)
+            if (KaxamlInfo.Frame?.Content is not FrameworkElement element)
             {
-                element = KaxamlInfo.Frame.Content as FrameworkElement;
-            }
-            else
-            {
-                element = KaxamlInfo.Frame;
+                element = KaxamlInfo.Frame 
+                    ?? throw new Exception("Expecting a FrameworkElement");
             }
 
-            RenderTargetBitmap rtb = new RenderTargetBitmap((int)element.ActualWidth, (int)element.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            var width = (int)(element.ActualWidth);
+            var height = (int)(element.ActualHeight);
+            var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
             rtb.Render(element);
 
             return rtb;
@@ -1014,19 +1009,20 @@ namespace Kaxaml
             if ((null != filenames) &&
                 (filenames.Length > 0))
             {
-                XamlDocument first = null;
+                var first = (XamlDocument?)null;
                 foreach (string f in filenames)
                 {
-                    string ext = System.IO.Path.GetExtension(f).ToLower();
+                    string ext = Path.GetExtension(f).ToLower();
                     if (ext.Equals(".png") || ext.Equals(".jpg") || ext.Equals(".jpeg") || ext.Equals(".bmp") || ext.Equals(".gif"))
                     {
                         // get a relative version of the file name
-                        string rfilename = f.Replace(DocumentsView.SelectedDocument.Folder + "\\", "");
+                        var docFolder = DocumentsView.SelectedDocument?.Folder ?? throw new Exception("Expecting Selected Document");
+                        string rfilename = f.Replace(docFolder + "\\", "");
 
                         // create and insert the xaml
-                        string xaml = Kaxaml.Properties.Settings.Default.PasteImageXaml;
+                        string xaml = Properties.Settings.Default.PasteImageXaml;
                         xaml = xaml.Replace("$source$", rfilename);
-                        this.DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(xaml);
+                        DocumentsView.SelectedView.TextEditor.InsertStringAtCaret(xaml);
                     }
                     else
                     {
@@ -1056,16 +1052,15 @@ namespace Kaxaml
 
         #region IValueConverter Members
 
-        public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+        public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values.Length == 2)
             {
-                if (values[0] is string && values[1] is bool)
+                if (values[0] is string str && values[1] is bool b)
                 {
-
-                    string title = (string)values[0];
-                    if ((bool)values[1]) title = title + "*";
-                    title = title + " - Kaxaml";
+                    string title = str;
+                    if (b) title += "*";
+                    title += " - Kaxaml";
 
                     return title;
                 }
@@ -1074,7 +1069,7 @@ namespace Kaxaml
             return null;
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        public object[]? ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
 
             return null;

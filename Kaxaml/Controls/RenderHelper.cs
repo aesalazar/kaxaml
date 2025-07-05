@@ -40,7 +40,7 @@ namespace Kaxaml.Controls
             int l = 0;
             int t = 0;
 
-            Kaxaml.Controls.NativeMethods.RECT rct;
+            NativeMethods.RECT rct;
             NativeMethods.GetWindowRect(hwnd, out rct);
 
             int w = rct.Right - rct.Left;
@@ -68,9 +68,9 @@ namespace Kaxaml.Controls
                 {
                     // compute grayscale
                     double pixelvalue =
-                        (((double)pixels[p + 0] * parameters.RedDistribution) +
-                        ((double)pixels[p + 1] * parameters.GreenDistribution) +
-                        ((double)pixels[p + 2] * parameters.BlueDistribution));
+                        ((pixels[p + 0] * parameters.RedDistribution) +
+                        (pixels[p + 1] * parameters.GreenDistribution) +
+                        (pixels[p + 2] * parameters.BlueDistribution));
 
                     // compute compression
                     pixelvalue = (pixelvalue * parameters.Compression) + (256 * ((1 - parameters.Compression) / 2));
@@ -120,9 +120,9 @@ namespace Kaxaml.Controls
 
                     // compute grayscale
                     double pixelvalue =
-                        (((double)pixels[p + 0] * parameters.RedDistribution) +
-                        ((double)pixels[p + 1] * parameters.GreenDistribution) +
-                        ((double)pixels[p + 2] * parameters.BlueDistribution));
+                        ((pixels[p + 0] * parameters.RedDistribution) +
+                        (pixels[p + 1] * parameters.GreenDistribution) +
+                        (pixels[p + 2] * parameters.BlueDistribution));
 
                     // compute compression
                     pixelvalue = (pixelvalue * parameters.Compression) + (256 * ((1 - parameters.Compression) / 2));

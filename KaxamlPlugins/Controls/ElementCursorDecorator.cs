@@ -15,7 +15,7 @@ namespace Kaxaml.Plugins.Controls
 {
     public class ElementCursorDecorator : Decorator
     {
-        CursorAdorner _CursorAdorner;
+        CursorAdorner? _CursorAdorner;
 
         protected override void OnMouseEnter(MouseEventArgs e)
         {
@@ -29,7 +29,7 @@ namespace Kaxaml.Plugins.Controls
 
             if (_CursorAdorner == null)
             {
-                _CursorAdorner = new CursorAdorner(this, this.CursorElement);
+                _CursorAdorner = new CursorAdorner(this, CursorElement);
             }
 
             _AdornerLayer.Add(_CursorAdorner);
@@ -61,9 +61,7 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public UIElement CursorElement
-        {
-            get { return (UIElement)GetValue(CursorElementProperty); }
-            set { SetValue(CursorElementProperty, value); }
+        { get => (UIElement)GetValue(CursorElementProperty); set => SetValue(CursorElementProperty, value);
         }
         public static readonly DependencyProperty CursorElementProperty =
             DependencyProperty.Register("CursorElement", typeof(UIElement), typeof(ElementCursorDecorator), new UIPropertyMetadata(null));
@@ -81,7 +79,7 @@ namespace Kaxaml.Plugins.Controls
         private Point _Offset;
         public Point Offset
         {
-            get { return _Offset; }
+            get => _Offset;
             set
             {
                 _Offset = value;
@@ -93,7 +91,7 @@ namespace Kaxaml.Plugins.Controls
             : base(Owner)
         {
             _Cursor = Cursor;
-            this.AddVisualChild(_Cursor);
+            AddVisualChild(_Cursor);
         }
 
         protected override Visual GetVisualChild(int index)

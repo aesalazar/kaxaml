@@ -40,16 +40,16 @@ namespace Kaxaml.Plugins.Default
 
         private void Copy(object sender, RoutedEventArgs e)
         {
-            var bitmap = this.RenderContent();
+            var bitmap = RenderContent();
             if (null != bitmap)
             {
                 Clipboard.SetImage(bitmap);
             }
         }
 
-        private BitmapSource RenderContent()
+        private BitmapSource? RenderContent()
         {
-            FrameworkElement element = null;
+            var element = (FrameworkElement?)null;
 
             if (KaxamlInfo.Frame != null && KaxamlInfo.Frame.Content is FrameworkElement)
             {
@@ -78,8 +78,10 @@ namespace Kaxaml.Plugins.Default
             BitmapSource rtb = RenderContent();
             if (null != rtb)
             {
-                Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog();
-                sfd.Filter = "Image files (*.png)|*.png|All files (*.*)|*.*";
+                Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Image files (*.png)|*.png|All files (*.*)|*.*"
+                };
 
                 if (sfd.ShowDialog(KaxamlInfo.MainWindow) == true)
                 {

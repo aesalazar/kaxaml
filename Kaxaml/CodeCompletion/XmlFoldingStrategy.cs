@@ -14,16 +14,13 @@ namespace Kaxaml.CodeCompletion
     /// </summary>
     public class XmlFoldStart
     {
-        int line = 0;
-        int col = 0;
-        string prefix = String.Empty;
-        string name = String.Empty;
-        string foldText = String.Empty;
+        string prefix = string.Empty;
+        string name = string.Empty;
 
         public XmlFoldStart(string prefix, string name, int line, int col)
         {
-            this.line = line;
-            this.col = col;
+            Line = line;
+            Column = col;
             this.prefix = prefix;
             this.name = name;
         }
@@ -31,24 +28,12 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// The line where the fold should start.  Lines start from 0.
         /// </summary>
-        public int Line
-        {
-            get
-            {
-                return line;
-            }
-        }
+        public int Line { get; } = 0;
 
         /// <summary>
         /// The column where the fold should start.  Columns start from 0.
         /// </summary>
-        public int Column
-        {
-            get
-            {
-                return col;
-            }
-        }
+        public int Column { get; } = 0;
 
         /// <summary>
         /// The name of the xml item with its prefix if it has one.
@@ -59,7 +44,7 @@ namespace Kaxaml.CodeCompletion
             {
                 if (prefix.Length > 0)
                 {
-                    return String.Concat(prefix, ":", name);
+                    return string.Concat(prefix, ":", name);
                 }
                 else
                 {
@@ -71,18 +56,7 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// The text to be displayed when the item is folded.
         /// </summary>
-        public string FoldText
-        {
-            get
-            {
-                return foldText;
-            }
-
-            set
-            {
-                foldText = value;
-            }
-        }
+        public string FoldText { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -191,7 +165,7 @@ namespace Kaxaml.CodeCompletion
                     // Add 3 to the end col value to take into account the '-->'
                     int endCol = lines[lines.Length - 1].Length + startCol + 3;
                     int endLine = startLine + lines.Length - 1;
-                    string foldText = String.Concat("<!--", lines[0], "-->");
+                    string foldText = string.Concat("<!--", lines[0], "-->");
                     FoldMarker foldMarker = new FoldMarker(document, startLine, startCol, endLine, endCol, FoldType.TypeBody, foldText);
                     foldMarkers.Add(foldMarker);
                 }
@@ -211,11 +185,11 @@ namespace Kaxaml.CodeCompletion
 
             if (showAttributesWhenFolded && reader.HasAttributes)
             {
-                newFoldStart.FoldText = String.Concat("<", newFoldStart.Name, " ", GetAttributeFoldText(reader), ">");
+                newFoldStart.FoldText = string.Concat("<", newFoldStart.Name, " ", GetAttributeFoldText(reader), ">");
             }
             else
             {
-                newFoldStart.FoldText = String.Concat("<", newFoldStart.Name, ">");
+                newFoldStart.FoldText = string.Concat("<", newFoldStart.Name, ">");
             }
 
             return newFoldStart;

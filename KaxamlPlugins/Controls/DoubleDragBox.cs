@@ -33,9 +33,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("Precision", typeof(int), typeof(DoubleDragBox), new UIPropertyMetadata(2));
 
         public int Precision
-        {
-            get { return (int)GetValue(PrecisionProperty); }
-            set { SetValue(PrecisionProperty, value); }
+        { get => (int)GetValue(PrecisionProperty); set => SetValue(PrecisionProperty, value);
         }
 
 
@@ -46,9 +44,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("CurrentText", typeof(string), typeof(DoubleDragBox), new UIPropertyMetadata(""));
 
         public string CurrentText
-        {
-            get { return (string)GetValue(CurrentTextProperty); }
-            set { SetValue(CurrentTextProperty, value); }
+        { get => (string)GetValue(CurrentTextProperty); set => SetValue(CurrentTextProperty, value);
         }
 
 
@@ -60,9 +56,7 @@ namespace Kaxaml.Plugins.Controls
             new FrameworkPropertyMetadata(double.MinValue, new PropertyChangedCallback(CurrentChanged), new CoerceValueCallback(CurrentCoerce)));
 
         public double Current
-        {
-            get { return (double)GetValue(CurrentProperty); }
-            set { SetValue(CurrentProperty, value); }
+        { get => (double)GetValue(CurrentProperty); set => SetValue(CurrentProperty, value);
         }
 
         public static void CurrentChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
@@ -92,9 +86,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("Interval", typeof(double), typeof(DoubleDragBox), new UIPropertyMetadata(0.05));
 
         public double Interval
-        {
-            get { return (double)GetValue(IntervalProperty); }
-            set { SetValue(IntervalProperty, value); }
+        { get => (double)GetValue(IntervalProperty); set => SetValue(IntervalProperty, value);
         }
 
 
@@ -103,9 +95,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("Sensitivity", typeof(double), typeof(DoubleDragBox), new UIPropertyMetadata(20.0));
 
         public double Sensitivity
-        {
-            get { return (double)GetValue(SensitivityProperty); }
-            set { SetValue(SensitivityProperty, value); }
+        { get => (double)GetValue(SensitivityProperty); set => SetValue(SensitivityProperty, value);
         }
 
 
@@ -115,9 +105,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("Minimum", typeof(double), typeof(DoubleDragBox), new UIPropertyMetadata(0.0));
 
         public double Minimum
-        {
-            get { return (double)GetValue(MinimumProperty); }
-            set { SetValue(MinimumProperty, value); }
+        { get => (double)GetValue(MinimumProperty); set => SetValue(MinimumProperty, value);
         }
 
 
@@ -125,9 +113,7 @@ namespace Kaxaml.Plugins.Controls
             DependencyProperty.Register("Maximum", typeof(double), typeof(DoubleDragBox), new UIPropertyMetadata(1.0));
 
         public double Maximum
-        {
-            get { return (double)GetValue(MaximumProperty); }
-            set { SetValue(MaximumProperty, value); }
+        { get => (double)GetValue(MaximumProperty); set => SetValue(MaximumProperty, value);
         }
 
 
@@ -142,7 +128,7 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
         {
-            this.CaptureMouse();
+            CaptureMouse();
             _BeginPoint = e.GetPosition(this);
             _IsPointValid = true;
             base.OnPreviewMouseDown(e);
@@ -151,7 +137,7 @@ namespace Kaxaml.Plugins.Controls
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
         {
             _IsPointValid = false;
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
             base.OnPreviewMouseUp(e);
         }
 

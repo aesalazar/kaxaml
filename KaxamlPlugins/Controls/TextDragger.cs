@@ -15,17 +15,13 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public string Text
-        {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+        { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value);
         }
         public static readonly DependencyProperty TextProperty =
             DependencyProperty.Register("Text", typeof(string), typeof(TextDragger), new UIPropertyMetadata(string.Empty));
 
         public object Data
-        {
-            get { return (object)GetValue(DataProperty); }
-            set { SetValue(DataProperty, value); }
+        { get => GetValue(DataProperty); set => SetValue(DataProperty, value);
         }
         public static readonly DependencyProperty DataProperty =
             DependencyProperty.Register("Data", typeof(object), typeof(TextDragger), new UIPropertyMetadata(null));
@@ -36,7 +32,7 @@ namespace Kaxaml.Plugins.Controls
         {
             if (e.ClickCount == 1)
             {
-                if (!String.IsNullOrEmpty(Text))
+                if (!string.IsNullOrEmpty(Text))
                 {
                     Clipboard.SetText(Text);
                     IsClipboardSet = true;
@@ -61,7 +57,7 @@ namespace Kaxaml.Plugins.Controls
         protected override void OnRender(DrawingContext drawingContext)
         {
             // need this to ensure hittesting
-            drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
+            drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, ActualWidth, ActualHeight));
             base.OnRender(drawingContext);
         }
 

@@ -21,7 +21,7 @@ namespace Kaxaml.Views
     /// Interaction logic for DocumentsView.xaml
     /// </summary>
 
-    public partial class DocumentsView : System.Windows.Controls.UserControl
+    public partial class DocumentsView : UserControl
     {
 
 		#region Constructors 
@@ -41,9 +41,7 @@ namespace Kaxaml.Views
         /// description of XamlDocuments
         /// </summary>
         public ObservableCollection<XamlDocument> XamlDocuments
-        {
-            get { return (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty); }
-            set { SetValue(XamlDocumentsProperty, value); }
+        { get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty); set => SetValue(XamlDocumentsProperty, value);
         }
 
         /// <summary>
@@ -59,10 +57,10 @@ namespace Kaxaml.Views
         /// <summary>
         /// The currently selected XamlDocument.
         /// </summary>
-        public XamlDocument SelectedDocument
-        {
-            get { return (XamlDocument)GetValue(SelectedDocumentProperty); }
-            set { SetValue(SelectedDocumentProperty, value); }
+        public XamlDocument? SelectedDocument
+        { 
+            get => (XamlDocument?)GetValue(SelectedDocumentProperty); 
+            set => SetValue(SelectedDocumentProperty, value);
         }
 
         /// <summary>
@@ -108,9 +106,7 @@ namespace Kaxaml.Views
         /// The view associated with the currently selected document.
         /// </summary>
         public IXamlDocumentView SelectedView
-        {
-            get { return (IXamlDocumentView)GetValue(SelectedViewProperty); }
-            set { SetValue(SelectedViewProperty, value); }
+        { get => (IXamlDocumentView)GetValue(SelectedViewProperty); set => SetValue(SelectedViewProperty, value);
         }
 
         /// <summary>
@@ -123,7 +119,7 @@ namespace Kaxaml.Views
 
         #region Event Handlers
 
-        IXamlDocumentView _view;
+        private IXamlDocumentView? _view;
 
         private void DocumentViewLoaded(object sender, RoutedEventArgs e)
         {

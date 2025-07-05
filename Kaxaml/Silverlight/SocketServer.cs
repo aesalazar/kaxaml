@@ -33,9 +33,9 @@ namespace Kaxaml.Silverlight
 
         bool isConnected;
 
-        IPEndPoint endPoint;
-        Socket listener;
-        Socket worker;
+        IPEndPoint? endPoint;
+        Socket? listener;
+        Socket? worker;
 
         #endregion Fields
 
@@ -84,7 +84,7 @@ namespace Kaxaml.Silverlight
         {
             if (isConnected)
             {
-                Byte[] bytes = Encoding.UTF8.GetBytes(message);
+                byte[] bytes = Encoding.UTF8.GetBytes(message);
 
                 SocketAsyncEventArgs args = new SocketAsyncEventArgs();
                 args.SetBuffer(bytes, 0, bytes.Length);

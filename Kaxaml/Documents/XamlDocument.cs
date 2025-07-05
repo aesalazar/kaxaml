@@ -11,24 +11,15 @@ namespace Kaxaml.Documents
 
         #region Static Methods
 
-        public static XamlDocument FromFile(string fullPath)
+        public static XamlDocument? FromFile(string fullPath)
         {
             if (File.Exists(fullPath))
             {
-                string sourceText = File.ReadAllText(fullPath);
+                var sourceText = File.ReadAllText(fullPath);
+                var directory = Path.GetDirectoryName(fullPath) 
+                    ?? throw new Exception($"No directory found: {fullPath}");
 
-                XamlDocument document = null;
-
-                if (sourceText.Contains("http://schemas.microsoft.com/winfx/2006/xaml/presentation"))
-                {
-                    document = new WpfDocument(Path.GetDirectoryName(fullPath), sourceText);
-                }
-                else
-                {
-                    document = new AgDocument(Path.GetDirectoryName(fullPath), sourceText);
-                }
-
-
+                var document = new WpfDocument(directory, sourceText);
                 document.FullPath = fullPath;
                 return document;
             }
@@ -60,10 +51,7 @@ namespace Kaxaml.Documents
         private string _Folder = "";
         public string Folder
         {
-            get
-            {
-                return _Folder;
-            }
+            get => _Folder;
             set
             {
                 if (_Folder != value)
@@ -80,7 +68,7 @@ namespace Kaxaml.Documents
         {
             get
             {
-                if (String.IsNullOrEmpty(_Filename))
+                if (string.IsNullOrEmpty(_Filename))
                 {
                     return TemporaryFilename;
                 }
@@ -127,7 +115,7 @@ namespace Kaxaml.Documents
         private string _SourceText;
         public string SourceText
         {
-            get { return _SourceText; }
+            get => _SourceText;
             set
             {
                 if (_SourceText != value)
@@ -142,7 +130,7 @@ namespace Kaxaml.Documents
         private bool _NeedsSave = false;
         public bool NeedsSave
         {
-            get { return _NeedsSave; }
+            get => _NeedsSave;
             private set
             {
                 if (_NeedsSave != value)
@@ -157,7 +145,7 @@ namespace Kaxaml.Documents
         {
             get
             {
-                return (String.IsNullOrEmpty(_Filename));
+                return (string.IsNullOrEmpty(_Filename));
             }
         }
 
@@ -165,7 +153,7 @@ namespace Kaxaml.Documents
         {
             get
             {
-                if (String.IsNullOrEmpty(Filename))
+                if (string.IsNullOrEmpty(Filename))
                 {
                     return Path.Combine(Folder, TemporaryFilename);
                 }
@@ -215,14 +203,7 @@ namespace Kaxaml.Documents
         private XamlDocumentType _xamlDocumentType;
         public XamlDocumentType XamlDocumentType
         {
-            get
-            {
-                return (_xamlDocumentType);
-            }
-            protected set
-            {
-                _xamlDocumentType = value;
-            }
+            get => (_xamlDocumentType); protected set => _xamlDocumentType = value;
         }
 
         #endregion
@@ -249,7 +230,7 @@ namespace Kaxaml.Documents
             if (SaveFile(fullPath))
             {
                 NeedsSave = false;
-                this.FullPath = fullPath;
+                FullPath = fullPath;
                 return true;
             }
             return false;
@@ -276,7 +257,7 @@ namespace Kaxaml.Documents
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged(string info)
         {
             if (PropertyChanged != null)
             {

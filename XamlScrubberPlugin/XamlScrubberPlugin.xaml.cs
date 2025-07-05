@@ -25,27 +25,27 @@ namespace Kaxaml.Plugins.XamlScrubber
      )]
 
 
-    public partial class XamlScrubberPlugin : System.Windows.Controls.UserControl
+    public partial class XamlScrubberPlugin : UserControl
     {
         public XamlScrubberPlugin()
         {
             InitializeComponent();
 
             CommandBinding binding = new CommandBinding(GoCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.Go_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.Go_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.D, ModifierKeys.Control, "Ctrl+D")));
-            this.CommandBindings.Add(binding);
+            binding.Executed += new ExecutedRoutedEventHandler(Go_Executed);
+            binding.CanExecute += new CanExecuteRoutedEventHandler(Go_CanExecute);
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.D, ModifierKeys.Control, "Ctrl+D")));
+            CommandBindings.Add(binding);
         }
 
         private void Go_Click(object sender, RoutedEventArgs e)
         {
-            this.Go();
+            Go();
         }
 
         private void Go()
         {
-            this.InitializeValues();
+            InitializeValues();
 
             string s = KaxamlInfo.Editor.Text;
 
@@ -63,7 +63,7 @@ namespace Kaxaml.Plugins.XamlScrubber
         {
             if (sender == this)
             {
-                this.Go();
+                Go();
             }
         }
 
@@ -91,14 +91,14 @@ namespace Kaxaml.Plugins.XamlScrubber
 
         private void InitializeValues()
         {
-            _AttributeCounteTolerance = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.AttributeCounteTolerance;
-            _ReorderAttributes = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.ReorderAttributes;
-            _ReducePrecision = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.ReducePrecision;
-            _Precision = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.Precision;
-            _RemoveCommonDefaultValues = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.RemoveCommonDefaultValues;
-            _ForceLineMin = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.ForceLineMin;
-            _SpaceCount = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.SpaceCount;
-            _ConvertTabsToSpaces = Kaxaml.Plugins.XamlScrubber.Properties.Settings.Default.ConvertTabsToSpaces;
+            _AttributeCounteTolerance = Properties.Settings.Default.AttributeCounteTolerance;
+            _ReorderAttributes = Properties.Settings.Default.ReorderAttributes;
+            _ReducePrecision = Properties.Settings.Default.ReducePrecision;
+            _Precision = Properties.Settings.Default.Precision;
+            _RemoveCommonDefaultValues = Properties.Settings.Default.RemoveCommonDefaultValues;
+            _ForceLineMin = Properties.Settings.Default.ForceLineMin;
+            _SpaceCount = Properties.Settings.Default.SpaceCount;
+            _ConvertTabsToSpaces = Properties.Settings.Default.ConvertTabsToSpaces;
         }
 
         private string IndentString
@@ -432,27 +432,27 @@ namespace Kaxaml.Plugins.XamlScrubber
 
                 if (other != null)
                 {
-                    if (this.AttributeType == other.AttributeType)
+                    if (AttributeType == other.AttributeType)
                     {
                         // some common special cases where we want things to be out of the normal order
 
-                        if (this.Name.Equals("StartPoint") && other.Name.Equals("EndPoint")) return -1;
-                        if (this.Name.Equals("EndPoint") && other.Name.Equals("StartPoint")) return 1;
+                        if (Name.Equals("StartPoint") && other.Name.Equals("EndPoint")) return -1;
+                        if (Name.Equals("EndPoint") && other.Name.Equals("StartPoint")) return 1;
 
-                        if (this.Name.Equals("Width") && other.Name.Equals("Height")) return -1;
-                        if (this.Name.Equals("Height") && other.Name.Equals("Width")) return 1;
+                        if (Name.Equals("Width") && other.Name.Equals("Height")) return -1;
+                        if (Name.Equals("Height") && other.Name.Equals("Width")) return 1;
 
-                        if (this.Name.Equals("Offset") && other.Name.Equals("Color")) return -1;
-                        if (this.Name.Equals("Color") && other.Name.Equals("Offset")) return 1;
+                        if (Name.Equals("Offset") && other.Name.Equals("Color")) return -1;
+                        if (Name.Equals("Color") && other.Name.Equals("Offset")) return 1;
 
-                        if (this.Name.Equals("TargetName") && other.Name.Equals("Property")) return -1;
-                        if (this.Name.Equals("Property") && other.Name.Equals("TargetName")) return 1;
+                        if (Name.Equals("TargetName") && other.Name.Equals("Property")) return -1;
+                        if (Name.Equals("Property") && other.Name.Equals("TargetName")) return 1;
 
                         return Name.CompareTo(other.Name);
                     }
                     else
                     {
-                        return this.AttributeType.CompareTo(other.AttributeType);
+                        return AttributeType.CompareTo(other.AttributeType);
                     }
                 }
 

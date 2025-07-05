@@ -17,7 +17,7 @@ namespace Kaxaml.Plugins.Default
     /// Interaction logic for FontChooser.xaml
     /// </summary>
 
-    public partial class FontChooser : System.Windows.Controls.UserControl
+    public partial class FontChooser : UserControl
     {
         public FontChooser()
         {

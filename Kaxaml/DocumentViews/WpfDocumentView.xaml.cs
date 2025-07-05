@@ -19,7 +19,7 @@ namespace Kaxaml.DocumentViews
     /// Interaction logic for WPFDocumentView.xaml
     /// </summary>
 
-    public partial class WPFDocumentView : System.Windows.Controls.UserControl, IXamlDocumentView
+    public partial class WPFDocumentView : UserControl, IXamlDocumentView
     {
 
         #region Static Fields
@@ -29,7 +29,7 @@ namespace Kaxaml.DocumentViews
         //  Private Fields
         //
         //-------------------------------------------------------------------
-        private static DispatcherTimer dispatcherTimer;
+        private static DispatcherTimer? dispatcherTimer;
 
         #endregion Static Fields
 
@@ -53,7 +53,7 @@ namespace Kaxaml.DocumentViews
 
             Dispatcher.UnhandledException += new DispatcherUnhandledExceptionEventHandler(Dispatcher_UnhandledException);
 
-            string schemafile = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(App.StartupPath + "\\"), Kaxaml.Properties.Settings.Default.WPFSchema);
+            string schemafile = Path.Combine(Path.GetDirectoryName(App.StartupPath + "\\"), Settings.Default.WPFSchema);
             Dispatcher.InvokeAsync(() => XmlCompletionDataProvider.LoadSchema(schemafile));
         }
 
@@ -100,9 +100,7 @@ namespace Kaxaml.DocumentViews
         /// description of IsValidXaml
         /// </summary>
         public bool IsValidXaml
-        {
-            get { return (bool)GetValue(IsValidXamlProperty); }
-            set { SetValue(IsValidXamlProperty, value); }
+        { get => (bool)GetValue(IsValidXamlProperty); set => SetValue(IsValidXamlProperty, value);
         }
 
         /// <summary>
@@ -139,9 +137,7 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorText
         /// </summary>
         public string ErrorText
-        {
-            get { return (string)GetValue(ErrorTextProperty); }
-            set { SetValue(ErrorTextProperty, value); }
+        { get => (string)GetValue(ErrorTextProperty); set => SetValue(ErrorTextProperty, value);
         }
 
         /// <summary>
@@ -170,9 +166,7 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorLineNumber
         /// </summary>
         public int ErrorLineNumber
-        {
-            get { return (int)GetValue(ErrorLineNumberProperty); }
-            set { SetValue(ErrorLineNumberProperty, value); }
+        { get => (int)GetValue(ErrorLineNumberProperty); set => SetValue(ErrorLineNumberProperty, value);
         }
 
         /// <summary>
@@ -201,9 +195,7 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorLinePosition
         /// </summary>
         public int ErrorLinePosition
-        {
-            get { return (int)GetValue(ErrorLinePositionProperty); }
-            set { SetValue(ErrorLinePositionProperty, value); }
+        { get => (int)GetValue(ErrorLinePositionProperty); set => SetValue(ErrorLinePositionProperty, value);
         }
 
         /// <summary>
@@ -229,9 +221,7 @@ namespace Kaxaml.DocumentViews
         #region PreviewImage (DependencyProperty)
 
         public ImageSource PreviewImage
-        {
-            get { return (ImageSource)GetValue(PreviewImageProperty); }
-            private set { SetValue(PreviewImagePropertyKey, value); }
+        { get => (ImageSource)GetValue(PreviewImageProperty); private set => SetValue(PreviewImagePropertyKey, value);
         }
 
         private static readonly DependencyPropertyKey PreviewImagePropertyKey =
@@ -243,9 +233,7 @@ namespace Kaxaml.DocumentViews
         #region Scale (DependencyProperty)
 
         public double Scale
-        {
-            get { return (double)GetValue(ScaleProperty); }
-            set { SetValue(ScaleProperty, value); }
+        { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value);
         }
         public static readonly DependencyProperty ScaleProperty =
             DependencyProperty.Register("Scale", typeof(double), typeof(WPFDocumentView), new FrameworkPropertyMetadata(1.0));
@@ -271,7 +259,7 @@ namespace Kaxaml.DocumentViews
 
         }
 
-        private void EditorTextChanged(object sender, Kaxaml.Controls.TextChangedEventArgs e)
+        private void EditorTextChanged(object sender, Controls.TextChangedEventArgs e)
         {
             if (XamlDocument != null)
             {
@@ -301,7 +289,7 @@ namespace Kaxaml.DocumentViews
             {
                 if (IsValidXaml)
                 {
-                    this.XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(ContentArea, (int)ContentArea.ActualWidth, (int)ContentArea.ActualHeight, null);
+                    XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(ContentArea, (int)ContentArea.ActualWidth, (int)ContentArea.ActualHeight, null);
                 }
             }
             catch (Exception ex)
@@ -392,10 +380,12 @@ namespace Kaxaml.DocumentViews
 
                                 ms.Seek(0, SeekOrigin.Begin);
 
-                                ParserContext pc = new ParserContext();
-                                pc.BaseUri = new Uri(XamlDocument.Folder != null
-                                    ? XamlDocument.Folder + "/"
-                                    : System.Environment.CurrentDirectory + "/");
+                                ParserContext pc = new ParserContext
+                                {
+                                    BaseUri = new Uri(XamlDocument.Folder != null
+                                        ? XamlDocument.Folder + "/"
+                                        : Environment.CurrentDirectory + "/")
+                                };
                                 //pc.BaseUri = new Uri(XamlDocument.Folder + "/");
                                 //pc.BaseUri = new Uri(System.Environment.CurrentDirectory + "/");
 
@@ -449,7 +439,7 @@ namespace Kaxaml.DocumentViews
                         ErrorLinePosition = 0;
                         UnhandledExceptionRaised = false;
 
-                        if (Kaxaml.Properties.Settings.Default.EnableAutoBackup)
+                        if (Settings.Default.EnableAutoBackup)
                         {
                             XamlDocument.SaveBackup();
                             //if (!Editor.Text.Equals(DefaultXaml))
@@ -476,7 +466,7 @@ namespace Kaxaml.DocumentViews
 
         private string DeSilverlight(string str)
         {
-            if (Kaxaml.Properties.Settings.Default.EnablePseudoSilverlight)
+            if (Settings.Default.EnablePseudoSilverlight)
             {
                 str = str.Replace("http://schemas.microsoft.com/client/2007", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
             }
@@ -585,7 +575,7 @@ namespace Kaxaml.DocumentViews
             ErrorOverlayImage.Source = src;
             ErrorOverlay.Background = new SolidColorBrush(c);
 
-            DoubleAnimation d = (DoubleAnimation)this.FindResource("ShowErrorOverlay");
+            DoubleAnimation d = (DoubleAnimation)FindResource("ShowErrorOverlay");
             d.Completed += new EventHandler(ErrorOverlayAnimationCompleted);
             if (d != null)
             {
@@ -595,7 +585,7 @@ namespace Kaxaml.DocumentViews
 
         private void HideErrorUI()
         {
-            DoubleAnimation d = (DoubleAnimation)this.FindResource("HideErrorOverlay");
+            DoubleAnimation d = (DoubleAnimation)FindResource("HideErrorOverlay");
             if (d != null)
             {
                 ErrorOverlay.BeginAnimation(OpacityProperty, d);
@@ -625,16 +615,16 @@ namespace Kaxaml.DocumentViews
 
         public void OnActivate()
         {
-            KaxamlInfo.Frame = this.ContentArea;
+            KaxamlInfo.Frame = ContentArea;
         }
 
         public XamlDocument XamlDocument
         {
             get
             {
-                if (this.DataContext is WpfDocument)
+                if (DataContext is WpfDocument)
                 {
-                    return (WpfDocument)this.DataContext;
+                    return (WpfDocument)DataContext;
                 }
                 else
                 {
@@ -647,9 +637,9 @@ namespace Kaxaml.DocumentViews
         {
             get
             {
-                if (this.Editor != null && this.Editor is IKaxamlInfoTextEditor)
+                if (Editor != null && Editor is IKaxamlInfoTextEditor)
                 {
-                    return this.Editor;
+                    return Editor;
                 }
                 return null;
             }

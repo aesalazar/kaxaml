@@ -39,9 +39,7 @@ namespace Kaxaml.CodeCompletion
         /// description of the property
         /// </summary>
         public ArrayList CompletionItems
-        {
-            get { return (ArrayList)GetValue(CompletionItemsProperty); }
-            set { SetValue(CompletionItemsProperty, value); }
+        { get => (ArrayList)GetValue(CompletionItemsProperty); set => SetValue(CompletionItemsProperty, value);
         }
 
         /// <summary>
@@ -99,13 +97,13 @@ namespace Kaxaml.CodeCompletion
             }
         }
 
-        public ICompletionData SelectedItem
+        public ICompletionData? SelectedItem
         {
             get
             {
-                if (this.CompletionListBox.SelectedIndex > -1 && this.CompletionListBox.SelectedItem is ICompletionData)
+                if (CompletionListBox.SelectedIndex > -1 && CompletionListBox.SelectedItem is ICompletionData)
                 {
-                    return this.CompletionListBox.SelectedItem as ICompletionData;
+                    return CompletionListBox.SelectedItem as ICompletionData;
                 }
                 else
                 {
@@ -118,11 +116,9 @@ namespace Kaxaml.CodeCompletion
         {
             if (CompletionListBox.SelectedItem != null)
             {
-                ICompletionData item = CompletionListBox.SelectedItem as ICompletionData;
-
-                if (item != null)
+                if (CompletionListBox.SelectedItem is ICompletionData item)
                 {
-                    RaiseResultProvidedEvent(item, item.Text, (force || _OverrideForceAccept), false);
+                    RaiseResultProvidedEvent(item, item.Text, force || _OverrideForceAccept, false);
                     Hide();
                 }
             }
@@ -148,12 +144,12 @@ namespace Kaxaml.CodeCompletion
         public void CueSearch(string Prefix)
         {
             _CuePrefix = Prefix;
-            this.Opened += new EventHandler(CodeCompletionPopup_Opened);
+            Opened += new EventHandler(CodeCompletionPopup_Opened);
         }
 
-        void CodeCompletionPopup_Opened(object sender, EventArgs e)
+        void CodeCompletionPopup_Opened(object? sender, EventArgs e)
         {
-            this.Opened -= new EventHandler(CodeCompletionPopup_Opened);
+            Opened -= new EventHandler(CodeCompletionPopup_Opened);
             if (_CuePrefix.Length > 0)
             {
                 DoSearch(_CuePrefix);
@@ -163,12 +159,12 @@ namespace Kaxaml.CodeCompletion
 
         int SearchForItem(string prefix)
         {
-            int indexOfItem = -1;
-            for (int i = 0; i < CompletionItems.Count; i++)
+            var indexOfItem = -1;
+            for (var i = 0; i < CompletionItems.Count; i++)
             {
-                if ((CompletionItems[i] as ICompletionData).Text.Length >= prefix.Length)
+                if (CompletionItems[i] is ICompletionData data && data.Text.Length >= prefix.Length)
                 {
-                    if ((CompletionItems[i] as ICompletionData).Text.Substring(0, prefix.Length).ToLower().Equals(prefix.ToLower()))
+                    if (data.Text.Substring(0, prefix.Length).ToLower().Equals(prefix.ToLower()))
                     {
                         indexOfItem = i;
                         break;
@@ -214,14 +210,14 @@ namespace Kaxaml.CodeCompletion
         public static readonly RoutedEvent ResultProvidedEvent = EventManager.RegisterRoutedEvent("ResultProvided", RoutingStrategy.Bubble, typeof(EventHandler<ResultProvidedEventArgs>), typeof(CodeCompletionPopup));
 
         public event EventHandler<ResultProvidedEventArgs> ResultProvided
-        {
-            add { AddHandler(ResultProvidedEvent, value); }
-            remove { RemoveHandler(ResultProvidedEvent, value); }
+        { 
+            add => AddHandler(ResultProvidedEvent, value); 
+            remove => RemoveHandler(ResultProvidedEvent, value);
         }
 
-        void RaiseResultProvidedEvent(ICompletionData item, string text, bool forcedAccept, bool cancelled)
+        void RaiseResultProvidedEvent(ICompletionData? item, string text, bool forcedAccept, bool cancelled)
         {
-            ResultProvidedEventArgs newEventArgs = new ResultProvidedEventArgs(CodeCompletionPopup.ResultProvidedEvent, item, text, forcedAccept, cancelled);
+            var newEventArgs = new ResultProvidedEventArgs(ResultProvidedEvent, item, text, forcedAccept, cancelled);
             RaiseEvent(newEventArgs);
         }
 
@@ -231,7 +227,7 @@ namespace Kaxaml.CodeCompletion
 
         #region Static Show Methods (and Support Types)
 
-        private static CodeCompletionPopup popup = null;
+        private static CodeCompletionPopup? popup = null;
 
         public static CodeCompletionPopup Show(ArrayList items, Point p)
         {
@@ -243,7 +239,7 @@ namespace Kaxaml.CodeCompletion
             //popup.VerticalOffset = p.Y;
             //popup.HorizontalOffset = p.X;
 
-            double font = Kaxaml.Properties.Settings.Default.EditorFontSize;
+            double font = Properties.Settings.Default.EditorFontSize;
 
             popup.PlacementRectangle = new Rect(p.X, p.Y - font, 1, font);
 
@@ -266,7 +262,7 @@ namespace Kaxaml.CodeCompletion
 
         private void DoubleClick(object sender, MouseButtonEventArgs e)
         {
-            this.Accept(true);
+            Accept(true);
         }
 
     }
@@ -274,42 +270,20 @@ namespace Kaxaml.CodeCompletion
 
     public class ResultProvidedEventArgs : RoutedEventArgs
     {
-        public ResultProvidedEventArgs(RoutedEvent routedEvent, ICompletionData item, string text, bool forcedAccept, bool canceled)
+        public ResultProvidedEventArgs(RoutedEvent routedEvent, ICompletionData? item, string text, bool forcedAccept, bool canceled)
         {
-            this.Item = item;
-            this.RoutedEvent = routedEvent;
-            this.ForcedAccept = forcedAccept;
-            this.Text = text;
-            this.Canceled = canceled;
+            Item = item;
+            RoutedEvent = routedEvent;
+            ForcedAccept = forcedAccept;
+            Text = text;
+            Canceled = canceled;
         }
 
-        private bool _ForcedAccept;
-        public bool ForcedAccept
-        {
-            get { return _ForcedAccept; }
-            set { _ForcedAccept = value; }
-        }
+        public bool ForcedAccept { get; set; }
+        public ICompletionData? Item { get; set; }
+        public string Text { get; set; }
 
-        private ICompletionData _Item;
-        public ICompletionData Item
-        {
-            get { return _Item; }
-            set { _Item = value; }
-        }
-
-        private string _Text;
-        public string Text
-        {
-            get { return _Text; }
-            set { _Text = value; }
-        }
-
-        private bool _Canceled;
-        public bool Canceled
-        {
-            get { return _Canceled; }
-            set { _Canceled = value; }
-        }
+        public bool Canceled { get; set; }
     }
 
 

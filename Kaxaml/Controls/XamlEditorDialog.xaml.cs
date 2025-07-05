@@ -32,9 +32,7 @@ namespace Kaxaml.Controls
         #region Text (DependencyProperty)
 
         public string Text
-        {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+        { get => (string)GetValue(TextProperty); set => SetValue(TextProperty, value);
         }
         public static readonly DependencyProperty TextProperty =
             DependencyProperty.Register("Text", typeof(string), typeof(XamlEditorDialog), new FrameworkPropertyMetadata(default(string)));
@@ -73,7 +71,7 @@ namespace Kaxaml.Controls
             _closedFromButton = true;
 
             DialogResult = true;
-            this.Close();
+            Close();
             instance = null;
         }
 
@@ -82,7 +80,7 @@ namespace Kaxaml.Controls
             _closedFromButton = true;
 
             DialogResult = false;
-            this.Close();
+            Close();
             instance = null;
         }
 

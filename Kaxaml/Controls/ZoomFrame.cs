@@ -25,16 +25,14 @@ namespace Kaxaml.Controls
 
         #region Private Fields
 
-        private Thumb PART_Thumb;
+        private Thumb? PART_Thumb;
 
         #endregion
 
         #region IsDraggable (DependencyProperty)
 
         public bool IsDraggable
-        {
-            get { return (bool)GetValue(IsDraggableProperty); }
-            set { SetValue(IsDraggableProperty, value); }
+        { get => (bool)GetValue(IsDraggableProperty); set => SetValue(IsDraggableProperty, value);
         }
         public static readonly DependencyProperty IsDraggableProperty =
             DependencyProperty.Register("IsDraggable", typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(default(bool)));
@@ -44,9 +42,7 @@ namespace Kaxaml.Controls
         #region IsDragUIVisible (DependencyProperty)
 
         public bool IsDragUIVisible
-        {
-            get { return (bool)GetValue(IsDragUIVisibleProperty); }
-            set { SetValue(IsDragUIVisibleProperty, value); }
+        { get => (bool)GetValue(IsDragUIVisibleProperty); set => SetValue(IsDragUIVisibleProperty, value);
         }
         public static readonly DependencyProperty IsDragUIVisibleProperty  =
             DependencyProperty.Register("IsDragUIVisible", typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(false));
@@ -57,9 +53,7 @@ namespace Kaxaml.Controls
         #region Scale (DependencyProperty)
 
         public double Scale
-        {
-            get { return (double)GetValue(ScaleProperty); }
-            set { SetValue(ScaleProperty, value); }
+        { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value);
         }
         public static readonly DependencyProperty ScaleProperty =
             DependencyProperty.Register("Scale", typeof(double), typeof(ZoomFrame), new FrameworkPropertyMetadata(1.0, new PropertyChangedCallback(ScaleChanged)));
@@ -88,9 +82,7 @@ namespace Kaxaml.Controls
         #region ScaleOrigin (DependencyProperty)
 
         public Point ScaleOrigin
-        {
-            get { return (Point)GetValue(ScaleOriginProperty); }
-            set { SetValue(ScaleOriginProperty, value); }
+        { get => (Point)GetValue(ScaleOriginProperty); set => SetValue(ScaleOriginProperty, value);
         }
         public static readonly DependencyProperty ScaleOriginProperty =
             DependencyProperty.Register("ScaleOrigin", typeof(Point), typeof(ZoomFrame), new FrameworkPropertyMetadata(new Point(0.5, 0.5)));
@@ -121,7 +113,7 @@ namespace Kaxaml.Controls
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            PART_Thumb = this.Template.FindName("PART_Thumb", this) as Thumb;
+            PART_Thumb = Template.FindName("PART_Thumb", this) as Thumb;
 
             if (PART_Thumb != null)
             {
@@ -144,11 +136,11 @@ namespace Kaxaml.Controls
             {
                 if (Scale > 1.0)
                 {
-                    double x = ScaleOrigin.X - (e.HorizontalChange / (this.ActualWidth * Scale));
+                    double x = ScaleOrigin.X - (e.HorizontalChange / (ActualWidth * Scale));
                     if (x > 1) x = 1;
                     if (x < 0) x = 0;
 
-                    double y = ScaleOrigin.Y - (e.VerticalChange / (this.ActualHeight * Scale));
+                    double y = ScaleOrigin.Y - (e.VerticalChange / (ActualHeight * Scale));
                     if (y > 1) y = 1;
                     if (y < 0) y = 0;
 

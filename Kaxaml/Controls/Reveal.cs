@@ -14,7 +14,7 @@ using System.Windows.Shapes;
 
 namespace Kaxaml.Controls
 {
-    public class Reveal : System.Windows.Controls.Decorator
+    public class Reveal : Decorator
     {
         #region Constructors
 
@@ -34,9 +34,7 @@ namespace Kaxaml.Controls
         ///     animation or values in that property.
         /// </summary>
         public bool IsExpanded
-        {
-            get { return (bool)GetValue(IsExpandedProperty); }
-            set { SetValue(IsExpandedProperty, value); }
+        { get => (bool)GetValue(IsExpandedProperty); set => SetValue(IsExpandedProperty, value);
         }
 
         // Using a DependencyProperty as the backing store for IsExpanded.  This enables animation, styling, binding, etc...
@@ -53,9 +51,7 @@ namespace Kaxaml.Controls
         ///     Will apply to the next animation that occurs (not to currently running animations).
         /// </summary>
         public double Duration
-        {
-            get { return (double)GetValue(DurationProperty); }
-            set { SetValue(DurationProperty, value); }
+        { get => (double)GetValue(DurationProperty); set => SetValue(DurationProperty, value);
         }
 
         // Using a DependencyProperty as the backing store for Duration.  This enables animation, styling, binding, etc...
@@ -63,9 +59,7 @@ namespace Kaxaml.Controls
             DependencyProperty.Register("Duration", typeof(double), typeof(Reveal), new UIPropertyMetadata(250.0));
 
         public HorizontalRevealMode HorizontalReveal
-        {
-            get { return (HorizontalRevealMode)GetValue(HorizontalRevealProperty); }
-            set { SetValue(HorizontalRevealProperty, value); }
+        { get => (HorizontalRevealMode)GetValue(HorizontalRevealProperty); set => SetValue(HorizontalRevealProperty, value);
         }
 
         // Using a DependencyProperty as the backing store for HorizontalReveal.  This enables animation, styling, binding, etc...
@@ -73,9 +67,7 @@ namespace Kaxaml.Controls
             DependencyProperty.Register("HorizontalReveal", typeof(HorizontalRevealMode), typeof(Reveal), new UIPropertyMetadata(HorizontalRevealMode.None));
 
         public VerticalRevealMode VerticalReveal
-        {
-            get { return (VerticalRevealMode)GetValue(VerticalRevealProperty); }
-            set { SetValue(VerticalRevealProperty, value); }
+        { get => (VerticalRevealMode)GetValue(VerticalRevealProperty); set => SetValue(VerticalRevealProperty, value);
         }
 
         // Using a DependencyProperty as the backing store for VerticalReveal.  This enables animation, styling, binding, etc...
@@ -87,9 +79,7 @@ namespace Kaxaml.Controls
         ///     This is not meant to be used with IsExpanded.
         /// </summary>
         public double AnimationProgress
-        {
-            get { return (double)GetValue(AnimationProgressProperty); }
-            set { SetValue(AnimationProgressProperty, value); }
+        { get => (double)GetValue(AnimationProgressProperty); set => SetValue(AnimationProgressProperty, value);
         }
 
         // Using a DependencyProperty as the backing store for AnimationProgress.  This enables animation, styling, binding, etc...
@@ -222,12 +212,14 @@ namespace Kaxaml.Controls
                 currentProgress = 1.0 - currentProgress;
             }
 
-            DoubleAnimation animation = new DoubleAnimation();
-            animation.To = isExpanded ? 1.0 : 0.0;
-            animation.Duration = TimeSpan.FromMilliseconds(Duration * currentProgress);
-            animation.FillBehavior = FillBehavior.HoldEnd;
+            DoubleAnimation animation = new DoubleAnimation
+            {
+                To = isExpanded ? 1.0 : 0.0,
+                Duration = TimeSpan.FromMilliseconds(Duration * currentProgress),
+                FillBehavior = FillBehavior.HoldEnd
+            };
 
-            this.BeginAnimation(AnimationProgressProperty, animation);
+            BeginAnimation(AnimationProgressProperty, animation);
         }
 
         #endregion

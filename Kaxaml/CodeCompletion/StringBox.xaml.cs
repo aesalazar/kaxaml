@@ -24,7 +24,7 @@ namespace Kaxaml.CodeCompletion
     /// Interaction logic for UserControl1.xaml
     /// </summary>
 
-    public partial class StringBox : System.Windows.Controls.UserControl
+    public partial class StringBox : UserControl
     {
 
 		#region Constructors 
@@ -65,11 +65,8 @@ namespace Kaxaml.CodeCompletion
 
         public int SelectedIndex
         {
-            get 
-            {
-                return _TopOffset + _SelectedIndexInView;
-            }
-            set 
+            get => _TopOffset + _SelectedIndexInView;
+            set
             {
                 if (value >= 0 && value < CompletionItems.Count)
                 {
@@ -120,9 +117,7 @@ namespace Kaxaml.CodeCompletion
         /// description of the property
         /// </summary>
         public ObservableCollection<StringHost> StringHostItems
-        {
-            get { return (ObservableCollection<StringHost>)GetValue(StringHostItemsProperty); }
-            set { SetValue(StringHostItemsProperty, value); }
+        { get => (ObservableCollection<StringHost>)GetValue(StringHostItemsProperty); set => SetValue(StringHostItemsProperty, value);
         }
 
         /// <summary>
@@ -140,9 +135,7 @@ namespace Kaxaml.CodeCompletion
         /// description of the property
         /// </summary>
         public ArrayList CompletionItems
-        {
-            get { return (ArrayList)GetValue(CompletionItemsProperty); }
-            set { SetValue(CompletionItemsProperty, value); }
+        { get => (ArrayList)GetValue(CompletionItemsProperty); set => SetValue(CompletionItemsProperty, value);
         }
 
         /// <summary>
@@ -176,8 +169,8 @@ namespace Kaxaml.CodeCompletion
                     // clear the remaining items
                     for (int i = items.Count; i < 10; i++)
                     {
-                        owner.StringHostItems[i].Value = String.Empty;
-                        owner.StringHostItems[i].Tooltip = String.Empty;
+                        owner.StringHostItems[i].Value = string.Empty;
+                        owner.StringHostItems[i].Tooltip = string.Empty;
                         owner.StringHostItems[i]._IsSelectable = false;
                     }
 
@@ -211,7 +204,7 @@ namespace Kaxaml.CodeCompletion
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
 
             if (_SelectNextTimer != null)
             {
@@ -226,7 +219,7 @@ namespace Kaxaml.CodeCompletion
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
                 SelectNext();
             }
@@ -264,20 +257,20 @@ namespace Kaxaml.CodeCompletion
         {
             ScrollText.Text = s;
             
-            Storyboard sb = this.FindResource("ShowScrollText") as Storyboard;
+            Storyboard sb = FindResource("ShowScrollText") as Storyboard;
             if (sb != null)
             {
-                this.BeginStoryboard(sb);
+                BeginStoryboard(sb);
             }
 
         }
 
         private void HideScrollText()
         {
-            Storyboard sb = this.FindResource("HideScrollText") as Storyboard;
+            Storyboard sb = FindResource("HideScrollText") as Storyboard;
             if (sb != null)
             {
-                this.BeginStoryboard(sb);
+                BeginStoryboard(sb);
             }
         }
 
@@ -440,7 +433,7 @@ namespace Kaxaml.CodeCompletion
                 _SelectPreviousTimer.Stop();
             }
 
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
                 FrameworkElement element = (sender as FrameworkElement);
                 if (element != null)
@@ -456,7 +449,7 @@ namespace Kaxaml.CodeCompletion
 
         private void ItemMouseLeave(object sender, MouseEventArgs e)
         {
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
                 FrameworkElement element = (sender as FrameworkElement);
                 if (element != null)
@@ -543,7 +536,7 @@ namespace Kaxaml.CodeCompletion
 
         public string Value
         {
-            get { return _Value; }
+            get => _Value;
             set
             {
                 if (value != _Value)
@@ -556,7 +549,7 @@ namespace Kaxaml.CodeCompletion
 
         public string Tooltip
         {
-            get { return _Tooltip; }
+            get => _Tooltip;
             set
             {
                 if (value != _Tooltip)
@@ -570,7 +563,7 @@ namespace Kaxaml.CodeCompletion
 
         public bool IsSelected
         {
-            get { return _IsSelected; }
+            get => _IsSelected;
             set
             {
                 if (value != _IsSelected)
@@ -582,9 +575,9 @@ namespace Kaxaml.CodeCompletion
         }
 
 
-		#endregion Properties 
+        #endregion Properties 
 
-		#region Overridden Methods 
+        #region Overridden Methods 
 
         public override string ToString()
         {
@@ -598,7 +591,7 @@ namespace Kaxaml.CodeCompletion
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged(string info)
         {
             if (PropertyChanged != null)
             {

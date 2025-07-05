@@ -19,10 +19,6 @@ namespace Kaxaml.CodeCompletion
     /// </remarks>
     public class XmlSchemaCompletionData
     {
-        string namespaceUri = String.Empty;
-        XmlSchema schema;
-        string fileName = String.Empty;
-        bool readOnly = false;
 
         /// <summary>
         /// Stores attributes that have been prohibited whilst the code
@@ -40,7 +36,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public XmlSchemaCompletionData(TextReader reader)
         {
-            ReadSchema(String.Empty, reader);
+            ReadSchema(string.Empty, reader);
         }
 
         /// <summary>
@@ -57,7 +53,7 @@ namespace Kaxaml.CodeCompletion
         /// Creates the completion data from the specified schema file.
         /// </summary>
         public XmlSchemaCompletionData(string fileName)
-            : this(String.Empty, fileName)
+            : this(string.Empty, fileName)
         {
         }
 
@@ -70,76 +66,43 @@ namespace Kaxaml.CodeCompletion
             using (var reader = new StreamReader(fileName, true))
             {
                 ReadSchema(baseUri, reader);
-                this.fileName = fileName;
+                FileName = fileName;
             }
         }
 
         /// <summary>
         /// Gets the schema.
         /// </summary>
-        public XmlSchema Schema
-        {
-            get
-            {
-                return schema;
-            }
-        }
+        public XmlSchema Schema { get; private set; }
 
         /// <summary>
         /// Read only schemas are those that are installed with 
         /// SharpDevelop.
         /// </summary>
-        public bool ReadOnly
-        {
-            get
-            {
-                return readOnly;
-            }
-
-            set
-            {
-                readOnly = value;
-            }
-        }
+        public bool ReadOnly { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the schema's file name.
         /// </summary>
-        public string FileName
-        {
-            get
-            {
-                return fileName;
-            }
-            set
-            {
-                fileName = value;
-            }
-        }
+        public string FileName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets the namespace URI for the schema.
         /// </summary>
-        public string NamespaceUri
-        {
-            get
-            {
-                return namespaceUri;
-            }
-        }
+        public string NamespaceUri { get; private set; } = string.Empty;
 
         /// <summary>
         /// Converts the filename into a valid Uri.
         /// </summary>
         public static string GetUri(string fileName)
         {
-            string uri = String.Empty;
+            string uri = string.Empty;
 
             if (fileName != null)
             {
                 if (fileName.Length > 0)
                 {
-                    uri = String.Concat("file:///", fileName.Replace('\\', '/'));
+                    uri = string.Concat("file:///", fileName.Replace('\\', '/'));
                 }
             }
 
@@ -151,7 +114,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public ICompletionData[] GetElementCompletionData()
         {
-            return GetElementCompletionData(String.Empty);
+            return GetElementCompletionData(string.Empty);
         }
 
         /// <summary>
@@ -161,7 +124,7 @@ namespace Kaxaml.CodeCompletion
         {
             XmlCompletionDataCollection data = new XmlCompletionDataCollection();
 
-            foreach (XmlSchemaElement element in schema.Elements.Values)
+            foreach (XmlSchemaElement element in Schema.Elements.Values)
             {
                 if (element.Name != null)
                 {
@@ -280,7 +243,7 @@ namespace Kaxaml.CodeCompletion
         /// </remarks>
         public XmlSchemaElement FindElement(QualifiedName name)
         {
-            foreach (XmlSchemaElement element in schema.Elements.Values)
+            foreach (XmlSchemaElement element in Schema.Elements.Values)
             {
                 if (name.Equals(element.QualifiedName))
                 {
@@ -296,7 +259,7 @@ namespace Kaxaml.CodeCompletion
         public XmlSchemaComplexType FindComplexType(QualifiedName name)
         {
             XmlQualifiedName qualifiedName = new XmlQualifiedName(name.Name, name.Namespace);
-            return FindNamedType(schema, qualifiedName);
+            return FindNamedType(Schema, qualifiedName);
         }
 
         /// <summary>
@@ -322,7 +285,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public XmlSchemaAttributeGroup FindAttributeGroup(string name)
         {
-            return FindAttributeGroup(schema, name);
+            return FindAttributeGroup(Schema, name);
         }
 
         /// <summary>
@@ -330,7 +293,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public XmlSchemaSimpleType FindSimpleType(string name)
         {
-            XmlQualifiedName qualifiedName = new XmlQualifiedName(name, namespaceUri);
+            XmlQualifiedName qualifiedName = new XmlQualifiedName(name, NamespaceUri);
             return FindSimpleType(qualifiedName);
         }
 
@@ -340,7 +303,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public XmlSchemaAttribute FindAttribute(string name)
         {
-            foreach (XmlSchemaAttribute attribute in schema.Attributes.Values)
+            foreach (XmlSchemaAttribute attribute in Schema.Attributes.Values)
             {
                 if (attribute.Name == name)
                 {
@@ -357,7 +320,7 @@ namespace Kaxaml.CodeCompletion
         {
             if (name != null)
             {
-                foreach (XmlSchemaObject schemaObject in schema.Groups.Values)
+                foreach (XmlSchemaObject schemaObject in Schema.Groups.Values)
                 {
                     XmlSchemaGroup group = schemaObject as XmlSchemaGroup;
                     if (group != null)
@@ -386,7 +349,7 @@ namespace Kaxaml.CodeCompletion
             {
                 string prefix = name.Substring(0, index);
                 name = name.Substring(index + 1);
-                foreach (XmlQualifiedName xmlQualifiedName in schema.Namespaces.ToArray())
+                foreach (XmlQualifiedName xmlQualifiedName in Schema.Namespaces.ToArray())
                 {
                     if (xmlQualifiedName.Name == prefix)
                     {
@@ -396,7 +359,7 @@ namespace Kaxaml.CodeCompletion
             }
 
             // Default behaviour just return the name with the namespace uri.
-            return new QualifiedName(name, namespaceUri);
+            return new QualifiedName(name, NamespaceUri);
         }
 
         /// <summary>
@@ -407,7 +370,7 @@ namespace Kaxaml.CodeCompletion
             XmlSchemaComplexType complexType = element.SchemaType as XmlSchemaComplexType;
             if (complexType == null)
             {
-                complexType = FindNamedType(schema, element.SchemaTypeName);
+                complexType = FindNamedType(Schema, element.SchemaTypeName);
             }
             return complexType;
         }
@@ -427,10 +390,10 @@ namespace Kaxaml.CodeCompletion
         {
             try
             {
-                schema = XmlSchema.Read(reader, new ValidationEventHandler(SchemaValidation));
-                schema.Compile(new ValidationEventHandler(SchemaValidation));
+                Schema = XmlSchema.Read(reader, new ValidationEventHandler(SchemaValidation));
+                Schema.Compile(new ValidationEventHandler(SchemaValidation));
 
-                namespaceUri = schema.TargetNamespace;
+                NamespaceUri = Schema.TargetNamespace;
             }
             finally
             {
@@ -463,7 +426,7 @@ namespace Kaxaml.CodeCompletion
         XmlSchemaElement FindElement(XmlQualifiedName name)
         {
             XmlSchemaElement matchedElement = null;
-            foreach (XmlSchemaElement element in schema.Elements.Values)
+            foreach (XmlSchemaElement element in Schema.Elements.Values)
             {
                 if (name.Equals(element.QualifiedName))
                 {
@@ -605,7 +568,7 @@ namespace Kaxaml.CodeCompletion
         {
             XmlCompletionDataCollection data = new XmlCompletionDataCollection();
 
-            XmlSchemaComplexType complexType = FindNamedType(schema, extension.BaseTypeName);
+            XmlSchemaComplexType complexType = FindNamedType(Schema, extension.BaseTypeName);
             if (complexType != null)
             {
                 data = GetChildElementCompletionData(complexType, prefix);
@@ -696,7 +659,7 @@ namespace Kaxaml.CodeCompletion
             {
                 if (prefix.Length > 0)
                 {
-                    name = String.Concat(prefix, ":", name);
+                    name = string.Concat(prefix, ":", name);
                 }
                 XmlCompletionData completionData = new XmlCompletionData(name, documentation);
                 data.Add(completionData);
@@ -738,7 +701,7 @@ namespace Kaxaml.CodeCompletion
         /// </remarks>
         string GetDocumentation(XmlSchemaAnnotation annotation)
         {
-            string documentation = String.Empty;
+            string documentation = string.Empty;
 
             if (annotation != null)
             {
@@ -791,7 +754,7 @@ namespace Kaxaml.CodeCompletion
 
             data.AddRange(GetAttributeCompletionData(restriction.Attributes));
 
-            XmlSchemaComplexType baseComplexType = FindNamedType(schema, restriction.BaseTypeName);
+            XmlSchemaComplexType baseComplexType = FindNamedType(Schema, restriction.BaseTypeName);
             if (baseComplexType != null)
             {
                 data.AddRange(GetAttributeCompletionData(baseComplexType));
@@ -838,7 +801,7 @@ namespace Kaxaml.CodeCompletion
             XmlCompletionDataCollection data = new XmlCompletionDataCollection();
 
             data.AddRange(GetAttributeCompletionData(extension.Attributes));
-            XmlSchemaComplexType baseComplexType = FindNamedType(schema, extension.BaseTypeName);
+            XmlSchemaComplexType baseComplexType = FindNamedType(Schema, extension.BaseTypeName);
             if (baseComplexType != null)
             {
                 data.AddRange(GetAttributeCompletionData(baseComplexType));
@@ -935,7 +898,7 @@ namespace Kaxaml.CodeCompletion
             {
                 if (attribute.RefName.Namespace == "http://www.w3.org/XML/1998/namespace")
                 {
-                    name = String.Concat("xml:", attribute.RefName.Name);
+                    name = string.Concat("xml:", attribute.RefName.Name);
                 }
             }
 
@@ -953,7 +916,7 @@ namespace Kaxaml.CodeCompletion
         XmlCompletionDataCollection GetAttributeCompletionData(XmlSchemaAttributeGroupRef groupRef)
         {
             XmlCompletionDataCollection data = new XmlCompletionDataCollection();
-            XmlSchemaAttributeGroup group = FindAttributeGroup(schema, groupRef.RefName.Name);
+            XmlSchemaAttributeGroup group = FindAttributeGroup(Schema, groupRef.RefName.Name);
             if (group != null)
             {
                 data = GetAttributeCompletionData(group.Attributes);
@@ -1068,7 +1031,7 @@ namespace Kaxaml.CodeCompletion
         {
             XmlSchemaElement matchedElement = null;
 
-            XmlSchemaComplexType complexType = FindNamedType(schema, extension.BaseTypeName);
+            XmlSchemaComplexType complexType = FindNamedType(Schema, extension.BaseTypeName);
             if (complexType != null)
             {
                 matchedElement = FindChildElement(complexType, name);
@@ -1276,7 +1239,7 @@ namespace Kaxaml.CodeCompletion
             }
             else if (attribute.AttributeSchemaType != null)
             {
-                XmlSchemaSimpleType simpleType = attribute.AttributeSchemaType as XmlSchemaSimpleType;
+                XmlSchemaSimpleType simpleType = attribute.AttributeSchemaType;
 
                 if (simpleType != null)
                 {
@@ -1439,7 +1402,7 @@ namespace Kaxaml.CodeCompletion
 
             if (groupRef.RefName != null)
             {
-                XmlSchemaAttributeGroup group = FindAttributeGroup(schema, groupRef.RefName.Name);
+                XmlSchemaAttributeGroup group = FindAttributeGroup(Schema, groupRef.RefName.Name);
                 if (group != null)
                 {
                     matchedAttribute = FindAttribute(group.Attributes, name);
@@ -1479,7 +1442,7 @@ namespace Kaxaml.CodeCompletion
 
             if (matchedAttribute == null)
             {
-                XmlSchemaComplexType complexType = FindNamedType(schema, restriction.BaseTypeName);
+                XmlSchemaComplexType complexType = FindNamedType(Schema, restriction.BaseTypeName);
                 if (complexType != null)
                 {
                     matchedAttribute = FindAttribute(complexType, name);
@@ -1512,7 +1475,7 @@ namespace Kaxaml.CodeCompletion
         {
             XmlSchemaSimpleType matchedSimpleType = null;
 
-            foreach (XmlSchemaObject schemaObject in schema.SchemaTypes.Values)
+            foreach (XmlSchemaObject schemaObject in Schema.SchemaTypes.Values)
             {
                 XmlSchemaSimpleType simpleType = schemaObject as XmlSchemaSimpleType;
                 if (simpleType != null)
@@ -1533,7 +1496,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         void AddSubstitionGroupElements(XmlCompletionDataCollection data, XmlQualifiedName group, string prefix)
         {
-            foreach (XmlSchemaElement element in schema.Elements.Values)
+            foreach (XmlSchemaElement element in Schema.Elements.Values)
             {
                 if (element.SubstitutionGroup == group)
                 {
@@ -1549,7 +1512,7 @@ namespace Kaxaml.CodeCompletion
         {
             XmlSchemaElement matchedElement = null;
 
-            foreach (XmlSchemaElement element in schema.Elements.Values)
+            foreach (XmlSchemaElement element in Schema.Elements.Values)
             {
                 if (element.SubstitutionGroup == group)
                 {

@@ -17,7 +17,7 @@ namespace Kaxaml.Plugins
     /// Interaction logic for SnippetEditor.xaml
     /// </summary>
 
-    public partial class SnippetEditor : System.Windows.Window
+    public partial class SnippetEditor : Window
     {
         #region fields
 
@@ -38,9 +38,7 @@ namespace Kaxaml.Plugins
         /// The snippet being edited
         /// </summary>
         public Snippet Snippet
-        {
-            get { return (Snippet)GetValue(SnippetProperty); }
-            set { SetValue(SnippetProperty, value); }
+        { get => (Snippet)GetValue(SnippetProperty); set => SetValue(SnippetProperty, value);
         }
 
         /// <summary>
@@ -91,7 +89,7 @@ namespace Kaxaml.Plugins
         private void DoDone(object sender, RoutedEventArgs e)
         {
             FocusManager.SetFocusedElement(this, null);
-            this.Hide();
+            Hide();
 
             RaiseCommitValuesEvent(this);
 
@@ -104,7 +102,7 @@ namespace Kaxaml.Plugins
             Snippet.Shortcut = _shortcut;
             Snippet.Text = _text;
 
-            this.Hide();
+            Hide();
             instance = null;
         }
 
@@ -194,9 +192,7 @@ namespace Kaxaml.Plugins
         /// Occurs when ...
         /// </summary>
         public event RoutedEventHandler CommitValues
-        {
-            add { AddHandler(CommitValuesEvent, value); }
-            remove { RemoveHandler(CommitValuesEvent, value); }
+        { add => AddHandler(CommitValuesEvent, value); remove => RemoveHandler(CommitValuesEvent, value);
         }
 
         /// <summary>
@@ -215,8 +211,10 @@ namespace Kaxaml.Plugins
         {
             if (target == null) return null;
 
-            RoutedEventArgs args = new RoutedEventArgs();
-            args.RoutedEvent = CommitValuesEvent;
+            RoutedEventArgs args = new RoutedEventArgs
+            {
+                RoutedEvent = CommitValuesEvent
+            };
             RaiseEvent(target, args);
             return args;
         }

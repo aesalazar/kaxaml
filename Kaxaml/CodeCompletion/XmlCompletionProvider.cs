@@ -22,7 +22,7 @@ namespace Kaxaml.CodeCompletion
 
 
         protected string preSelection = null;
-        string defaultNamespacePrefix = String.Empty;
+        string defaultNamespacePrefix = string.Empty;
 
         #endregion Fields
 
@@ -81,7 +81,7 @@ namespace Kaxaml.CodeCompletion
 
         public ICompletionData[] GenerateCompletionData(string fileName, TextArea textArea, char charTyped)
         {
-            string text = String.Concat(textArea.Document.GetText(0, textArea.Caret.Offset), charTyped);
+            string text = string.Concat(textArea.Document.GetText(0, textArea.Caret.Offset), charTyped);
 
             switch (charTyped)
             {
@@ -176,7 +176,7 @@ namespace Kaxaml.CodeCompletion
             return completionData;
         }
 
-        ImageList _ImageList;
+        ImageList? _ImageList;
         public ImageList ImageList
         {
             get

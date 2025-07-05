@@ -7,20 +7,20 @@ namespace KaxamlPlugins
 {
     public static class KaxamlInfo 
     {
-        public delegate void EditSelectionChangedDelegate(string SelectedText);
-        public static event EditSelectionChangedDelegate EditSelectionChanged;
+        public delegate void EditSelectionChangedDelegate(string? SelectedText);
+        public static event EditSelectionChangedDelegate? EditSelectionChanged;
 
         public delegate void ParseRequestedDelegate();
-        public static event ParseRequestedDelegate ParseRequested;
+        public static event ParseRequestedDelegate? ParseRequested;
 
         public delegate void ContentLoadedDelegate();
-        public static event ContentLoadedDelegate ContentLoaded;
+        public static event ContentLoadedDelegate? ContentLoaded;
 
-        private static IKaxamlInfoTextEditor _Editor;
-        public static IKaxamlInfoTextEditor Editor
+        private static IKaxamlInfoTextEditor? _Editor;
+        public static IKaxamlInfoTextEditor? Editor
         {
-            get { return _Editor; }
-            set 
+            get => _Editor;
+            set
             {
                 // remove current event handler
                 if (_Editor != null)
@@ -40,25 +40,25 @@ namespace KaxamlPlugins
 
         static void _Editor_TextSelectionChanged(object sender, RoutedEventArgs e)
         {
-            EditSelectionChanged?.Invoke(_Editor.SelectedText);
+            EditSelectionChanged?.Invoke(_Editor?.SelectedText);
         }
 
-        private static Window _MainWindow;
-        public static Window MainWindow
+        private static Window? _MainWindow;
+        public static Window? MainWindow
         {
-            get { return _MainWindow; }
-            set 
+            get => _MainWindow;
+            set
             {
                 _MainWindow = value;
                 NotifyPropertyChanged("MainWindow");
             }
         }
 
-        private static Frame _Frame;
-        public static Frame Frame
+        private static Frame? _Frame;
+        public static Frame? Frame
         {
-            get { return _Frame; }
-            set 
+            get => _Frame;
+            set
             {
                 if (_Frame != value)
                 {
@@ -89,14 +89,11 @@ namespace KaxamlPlugins
 
         #region INotifyPropertyChanged
 
-        public static event PropertyChangedEventHandler PropertyChanged;
+        public static event PropertyChangedEventHandler? PropertyChanged;
 
-        private static void NotifyPropertyChanged(String info)
+        private static void NotifyPropertyChanged(string? info)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(null, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(null, new PropertyChangedEventArgs(info));
         }
 
         #endregion
