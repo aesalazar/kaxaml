@@ -26,7 +26,7 @@ namespace Kaxaml.CodeCompletion
         /// </param>
         public XmlCompletionDataCollection(XmlCompletionDataCollection val)
         {
-            this.AddRange(val);
+            AddRange(val);
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace Kaxaml.CodeCompletion
         /// </param>
         public XmlCompletionDataCollection(XmlCompletionData[] val)
         {
-            this.AddRange(val);
+            AddRange(val);
         }
 
         /// <summary>
@@ -48,14 +48,8 @@ namespace Kaxaml.CodeCompletion
         /// <exception cref='ArgumentOutOfRangeException'><paramref name='index'/> is outside the valid range of indexes for the collection.</exception>
         public XmlCompletionData this[int index]
         {
-            get
-            {
-                return ((XmlCompletionData)(List[index]));
-            }
-            set
-            {
-                List[index] = value;
-            }
+            get => (XmlCompletionData?)List[index] ?? throw new InvalidOperationException($"Item at index {index} is null but should not be.");
+            set => List[index] = value;
         }
 
         /// <summary>
@@ -70,7 +64,7 @@ namespace Kaxaml.CodeCompletion
         /// <seealso cref='XmlCompletionDataCollection.AddRange'/>
         public int Add(XmlCompletionData val)
         {
-            int index = -1;
+            var index = -1;
             if (!Contains(val))
             {
                 index = List.Add(val);
@@ -84,12 +78,12 @@ namespace Kaxaml.CodeCompletion
         /// <param name='val'>
         ///    An array of type <see cref='XmlCompletionData'/> containing the objects to add to the collection.
         /// </param>
-        /// <seealso cref='XmlCompletionDataCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void AddRange(XmlCompletionData[] val)
         {
-            for (int i = 0; i < val.Length; i++)
+            for (var i = 0; i < val.Length; i++)
             {
-                this.Add(val[i]);
+                Add(val[i]);
             }
         }
 
@@ -99,12 +93,12 @@ namespace Kaxaml.CodeCompletion
         /// <param name='val'>
         ///    A <see cref='XmlCompletionDataCollection'/> containing the objects to add to the collection.
         /// </param>
-        /// <seealso cref='XmlCompletionDataCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void AddRange(XmlCompletionDataCollection val)
         {
-            for (int i = 0; i < val.Count; i++)
+            for (var i = 0; i < val.Count; i++)
             {
-                this.Add(val[i]);
+                Add(val[i]);
             }
         }
 
@@ -117,34 +111,28 @@ namespace Kaxaml.CodeCompletion
         /// <see langword='true'/> if the <see cref='XmlCompletionData'/> is contained in the collection; 
         ///   otherwise, <see langword='false'/>.
         /// </returns>
-        /// <seealso cref='XmlCompletionDataCollection.IndexOf'/>
+        /// <seealso cref='IndexOf'/>
         public bool Contains(XmlCompletionData val)
         {
-            if (val.Text != null)
+            if (val.Text is { Length: > 0 })
             {
-                if (val.Text.Length > 0)
-                {
-                    return Contains(val.Text);
-                }
+                return Contains(val.Text);
             }
             return false;
         }
 
         public bool Contains(string name)
         {
-            bool contains = false;
+            var contains = false;
 
-            foreach (XmlCompletionData data in this)
+            foreach (var data in this)
             {
-                if (data.Text != null)
+                if (data.Text is { Length: > 0 })
                 {
-                    if (data.Text.Length > 0)
+                    if (data.Text == name)
                     {
-                        if (data.Text == name)
-                        {
-                            contains = true;
-                            break;
-                        }
+                        contains = true;
+                        break;
                     }
                 }
             }
@@ -202,7 +190,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         /// <param name='index'>The zero-based index where <paramref name='val'/> should be inserted.</param>
         /// <param name='val'>The <see cref='XmlCompletionData'/> to insert.</param>
-        /// <seealso cref='XmlCompletionDataCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void Insert(int index, XmlCompletionData val)
         {
             List.Insert(index, val);
@@ -214,7 +202,7 @@ namespace Kaxaml.CodeCompletion
         /// <returns></returns>
         public ICompletionData[] ToArray()
         {
-            ICompletionData[] data = new ICompletionData[Count];
+            var data = new ICompletionData[Count];
             CopyTo(data, 0);
             return data;
         }
@@ -246,43 +234,31 @@ namespace Kaxaml.CodeCompletion
         /// <seealso cref='XmlCompletionData'/>
         public class XmlCompletionDataEnumerator : IEnumerator
         {
-            IEnumerator baseEnumerator;
-            IEnumerable temp;
+            private readonly IEnumerator _baseEnumerator;
+            private readonly IEnumerable _temp;
 
             /// <summary>
             ///   Initializes a new instance of <see cref='XmlCompletionDataEnumerator'/>.
             /// </summary>
             public XmlCompletionDataEnumerator(XmlCompletionDataCollection mappings)
             {
-                this.temp = ((IEnumerable)(mappings));
-                this.baseEnumerator = temp.GetEnumerator();
+                _temp = mappings;
+                _baseEnumerator = _temp.GetEnumerator();
             }
 
             /// <summary>
             ///   Gets the current <see cref='XmlCompletionData'/> in the <seealso cref='XmlCompletionDataCollection'/>.
             /// </summary>
-            public XmlCompletionData Current
-            {
-                get
-                {
-                    return ((XmlCompletionData)(baseEnumerator.Current));
-                }
-            }
+            public XmlCompletionData Current => (XmlCompletionData)_baseEnumerator.Current;
 
-            object IEnumerator.Current
-            {
-                get
-                {
-                    return baseEnumerator.Current;
-                }
-            }
+            object IEnumerator.Current => _baseEnumerator.Current;
 
             /// <summary>
             ///   Advances the enumerator to the next <see cref='XmlCompletionData'/> of the <see cref='XmlCompletionDataCollection'/>.
             /// </summary>
             public bool MoveNext()
             {
-                return baseEnumerator.MoveNext();
+                return _baseEnumerator.MoveNext();
             }
 
             /// <summary>
@@ -290,7 +266,7 @@ namespace Kaxaml.CodeCompletion
             /// </summary>
             public void Reset()
             {
-                baseEnumerator.Reset();
+                _baseEnumerator.Reset();
             }
         }
     }

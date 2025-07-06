@@ -1,12 +1,11 @@
-using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using Kaxaml.Plugins.Controls;
 using KaxamlPlugins;
+using KaxamlPlugins.Controls;
 
 namespace Kaxaml.Plugins.ColorPicker
 {
@@ -28,20 +27,20 @@ namespace Kaxaml.Plugins.ColorPicker
         {
             InitializeComponent();
             Colors = new ObservableCollection<Color>();
-            ColorString = Kaxaml.Plugins.ColorPicker.Properties.Settings.Default.Colors;
+            ColorString = Properties.Settings.Default.Colors;
 
-            KaxamlInfo.EditSelectionChanged += new KaxamlInfo.EditSelectionChangedDelegate(KaxamlInfo_EditSelectionChanged);
+            KaxamlInfo.EditSelectionChanged += KaxamlInfo_EditSelectionChanged;
         }
 
         #region Sync Interaction Logic
 
-        ColorConverter converter = new ColorConverter();
-        void KaxamlInfo_EditSelectionChanged(string SelectedText)
+        private ColorConverter _converter = new();
+
+        private void KaxamlInfo_EditSelectionChanged(string? selectedText)
         {
             // wish we could do this without a try catch!
             try
             {
-                Color c = (Color)ColorConverter.ConvertFromString(KaxamlInfo.Editor.SelectedText);
                 SyncButton.IsEnabled = true;
             }
             catch (Exception ex)
@@ -60,9 +59,8 @@ namespace Kaxaml.Plugins.ColorPicker
         {
             try
             {
-                Color c = (Color)ColorConverter.ConvertFromString(KaxamlInfo.Editor.SelectedText);
+                var c = (Color)ColorConverter.ConvertFromString(KaxamlInfo.Editor?.SelectedText);
                 C.Color = c;
-
                 C.ColorChanged += C_ColorChanged;
             }
             catch (Exception ex)
@@ -93,24 +91,25 @@ namespace Kaxaml.Plugins.ColorPicker
             }
         }
 
-        DispatcherTimer _ColorChangedTimer;
-        Color _ColorChangedColor;
+        private DispatcherTimer? _colorChangedTimer;
+        private Color _colorChangedColor;
 
-        void C_ColorChanged(object sender, ColorChangedEventArgs e)
+        private void C_ColorChanged(object? sender, ColorChangedEventArgs e)
         {
-            if ((bool)SyncButton.IsChecked)
+            if (SyncButton.IsChecked is true)
             {
                 try
                 {
-                    if (_ColorChangedTimer == null)
-                    {
-                        _ColorChangedTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background, _ColorChangedTimer_Tick, this.Dispatcher);
-                    }
+                    _colorChangedTimer ??= new DispatcherTimer(
+                        TimeSpan.FromMilliseconds(200), 
+                        DispatcherPriority.Background,
+                        _ColorChangedTimer_Tick,
+                        Dispatcher);
 
-                    _ColorChangedTimer.Stop();
-                    _ColorChangedTimer.Start();
+                    _colorChangedTimer.Stop();
+                    _colorChangedTimer.Start();
 
-                    _ColorChangedColor = e.Color;
+                    _colorChangedColor = e.Color;
                 }
                 catch (Exception ex)
                 {
@@ -122,17 +121,17 @@ namespace Kaxaml.Plugins.ColorPicker
             }
         }
 
-        void _ColorChangedTimer_Tick(object sender, EventArgs e)
+        private void _ColorChangedTimer_Tick(object? sender, EventArgs e)
         {
-            _ColorChangedTimer.Stop();
+            _colorChangedTimer?.Stop();
 
-            KaxamlInfo.Editor.ReplaceSelectedText(_ColorChangedColor.ToString());
+            KaxamlInfo.Editor?.ReplaceSelectedText(_colorChangedColor.ToString());
             KaxamlInfo.Parse();
         }
 
         #endregion
 
-        #region Event Handlers
+        #region Event Handlers  
 
         private void CopyColor(object o, EventArgs e)
         {
@@ -146,8 +145,8 @@ namespace Kaxaml.Plugins.ColorPicker
 
         private void RemoveColor(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
             Colors.Remove((Color)lbi.Content);
         }
 
@@ -158,7 +157,7 @@ namespace Kaxaml.Plugins.ColorPicker
 
         private void SwatchMouseDown(object o, MouseEventArgs e)
         {
-            Color c = (Color)(o as FrameworkElement).DataContext;
+            var c = (Color)((FrameworkElement)o).DataContext;
             C.Color = c;
         }
 
@@ -170,49 +169,44 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public ObservableCollection<Color> Colors
-        {
-            get { return (ObservableCollection<Color>)GetValue(ColorsProperty); }
-            set { SetValue(ColorsProperty, value); }
+        { get => (ObservableCollection<Color>)GetValue(ColorsProperty); set => SetValue(ColorsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for Colors
         /// </summary>
         public static readonly DependencyProperty ColorsProperty =
-            DependencyProperty.Register("Colors", typeof(ObservableCollection<Color>), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(default(ObservableCollection<Color>), new PropertyChangedCallback(ColorsChanged)));
+            DependencyProperty.Register(nameof(Colors), typeof(ObservableCollection<Color>), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(default(ObservableCollection<Color>), ColorsChanged));
 
         /// <summary>
         /// PropertyChangedCallback for Colors
         /// </summary>
         private static void ColorsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is ColorPickerPlugin)
+            if (obj is ColorPickerPlugin owner)
             {
-                ColorPickerPlugin owner = (ColorPickerPlugin)obj;
-
-                ObservableCollection<Color> c = args.NewValue as ObservableCollection<Color>;
-                if (c != null)
+                if (args.NewValue is ObservableCollection<Color> c)
                 {
-                    c.CollectionChanged += new System.Collections.Specialized.NotifyCollectionChangedEventHandler(owner.c_CollectionChanged);
+                    c.CollectionChanged += owner.c_CollectionChanged;
                 }
 
             }
         }
 
-        private void c_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        private void c_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            if (!updateinternal)
+            if (!_updateInternal)
             {
-                updateinternal = true;
+                _updateInternal = true;
 
-                string s = "";
-                foreach (Color c in Colors)
+                var s = "";
+                foreach (var c in Colors)
                 {
-                    s = s + c.ToString() + DELIMITER;
+                    s = s + c + _delimiter;
                 }
                 ColorString = s;
 
-                updateinternal = false;
+                _updateInternal = false;
             }
         }
 
@@ -224,43 +218,40 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public string ColorString
-        {
-            get { return (string)GetValue(ColorStringProperty); }
-            set { SetValue(ColorStringProperty, value); }
+        { get => (string)GetValue(ColorStringProperty); set => SetValue(ColorStringProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ColorString
         /// </summary>
         public static readonly DependencyProperty ColorStringProperty =
-            DependencyProperty.Register("ColorString", typeof(string), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(
+            DependencyProperty.Register(nameof(ColorString), typeof(string), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(
                 default(string),
-                new PropertyChangedCallback(ColorStringChanged)));
+                ColorStringChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ColorString
         /// </summary>
         private static void ColorStringChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is ColorPickerPlugin)
+            if (obj is ColorPickerPlugin owner)
             {
-                ColorPickerPlugin owner = (ColorPickerPlugin)obj;
-                Kaxaml.Plugins.ColorPicker.Properties.Settings.Default.Colors = args.NewValue as string;
+                Properties.Settings.Default.Colors = args.NewValue as string;
 
-                if (!owner.updateinternal)
+                if (!owner._updateInternal)
                 {
-                    owner.updateinternal = true;
+                    owner._updateInternal = true;
 
                     owner.Colors.Clear();
-                    string[] colors = (args.NewValue as string).Split(owner.DELIMITER);
+                    var colors = ((string)args.NewValue).Split(owner._delimiter);
 
-                    foreach (string s in colors)
+                    foreach (var s in colors)
                     {
                         try
                         {
                             if (s.Length > 3)
                             {
-                                Color c = ColorPickerUtil.ColorFromString(s);
+                                var c = ColorPickerUtil.ColorFromString(s);
                                 owner.Colors.Add(c);
                             }
                         }
@@ -273,14 +264,14 @@ namespace Kaxaml.Plugins.ColorPicker
                         }
                     }
 
-                    owner.updateinternal = false;
+                    owner._updateInternal = false;
                 }
             }
         }
 
         #endregion
 
-        private char DELIMITER = '|';
-        bool updateinternal = false;
+        private readonly char _delimiter = '|';
+        private bool _updateInternal;
     }
 }

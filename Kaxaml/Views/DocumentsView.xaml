@@ -84,15 +84,9 @@
       ItemsSource="{Binding ElementName=This, Path=XamlDocuments}"
       SelectedItem="{Binding ElementName=This, Path=SelectedDocument}">
       <ListBox.Resources>
-        
         <ControlTemplate x:Key="WPFDocumentViewTemplate" TargetType="{x:Type ListBoxItem}">
-          <d:WPFDocumentView x:Name="PART_DocumentView" Loaded="DocumentViewLoaded" Margin="0" />
+          <d:WpfDocumentView x:Name="PART_DocumentView" Loaded="DocumentViewLoaded" Margin="0" />
         </ControlTemplate>
-
-        <ControlTemplate x:Key="AgDocumentViewTemplate" TargetType="{x:Type ListBoxItem}">
-          <d:AgDocumentView x:Name="PART_DocumentView" Loaded="DocumentViewLoaded" Margin="0" />
-        </ControlTemplate>
-
       </ListBox.Resources>
       
       <ListBox.Template>
@@ -106,9 +100,6 @@
           <Setter Property="OverridesDefaultStyle" Value="True" />
           <Setter Property="Template" Value="{StaticResource WPFDocumentViewTemplate}" />
           <Style.Triggers>
-            <DataTrigger Binding="{Binding XamlDocumentType}" Value="AgDocument">
-              <Setter Property="Template" Value="{StaticResource AgDocumentViewTemplate}" />
-            </DataTrigger>
             <Trigger Property="IsSelected" Value="False">
               <Setter Property="Visibility" Value="Collapsed" />
             </Trigger>

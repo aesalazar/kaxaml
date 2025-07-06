@@ -15,8 +15,9 @@ namespace Kaxaml.DocumentViews
         //
         //-------------------------------------------------------------------
 
-        IKaxamlInfoTextEditor TextEditor { get; }
-        XamlDocument XamlDocument { get; }
+        IKaxamlInfoTextEditor? TextEditor { get; }
+
+        XamlDocument? XamlDocument { get; }
 
         //-------------------------------------------------------------------
         //
@@ -33,6 +34,7 @@ namespace Kaxaml.DocumentViews
         /// parse, etc.).
         /// </summary>
         void Initialize();
+
         void OnActivate();
 
         // GotoLine

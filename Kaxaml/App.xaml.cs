@@ -25,21 +25,11 @@ namespace Kaxaml
             InitializeComponent();
         }
 
-        private Snippets _Snippets;
-        public Snippets Snippets
-        {
-            get { return _Snippets; }
-            set { _Snippets = value; }
-        }
+        public Snippets? Snippets { get; set; }
 
-        void app_Startup(object sender, StartupEventArgs e)
+        private void app_Startup(object sender, StartupEventArgs e)
         {
-            //if (e.Args.Length > 0)
-            //{
-            //    StartupArgs = e.Args[0];
-            //}
-
-            _startupArgs = e.Args;
+            StartupArgs = e.Args;
         }
 
 
@@ -57,17 +47,10 @@ namespace Kaxaml
             [MarshalAs(UnmanagedType.U4)]int capacity
         );
 
-        private static String[] _startupArgs;
-        public static String[] StartupArgs
-        {
-            get
-            {
-                return _startupArgs;
-            }
-        }
+        public static string[] StartupArgs { get; private set; } = Array.Empty<string>();
 
-        private static String _startupPath;
-        public static String StartupPath
+        private static string? _startupPath;
+        public static string? StartupPath
         {
             get
             {
@@ -75,13 +58,13 @@ namespace Kaxaml
                 // it wans’t known.
                 if (_startupPath == null)
                 {
-                    HandleRef nullHandle =
+                    var nullHandle =
                         new HandleRef(null, IntPtr.Zero);
 
-                    StringBuilder buffer =
+                    var buffer =
                         new StringBuilder(260);
 
-                    int lenght = GetModuleFileName(
+                    var lenght = GetModuleFileName(
                         nullHandle,
                         buffer,
                         buffer.Capacity);
@@ -94,7 +77,7 @@ namespace Kaxaml
                         throw new Win32Exception();
                     }
 
-                    String moduleFilename =
+                    var moduleFilename =
                         buffer.ToString(0, lenght);
                     _startupPath =
                         Path.GetDirectoryName(moduleFilename);

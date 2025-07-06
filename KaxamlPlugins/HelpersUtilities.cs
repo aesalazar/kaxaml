@@ -34,10 +34,7 @@ public static class HelpersUtilities
         // NullReferenceException, SecurityException --> not going to consider these critical
         while (exception != null)
         {
-            if (exception is OutOfMemoryException ||
-                exception is StackOverflowException ||
-                exception is ThreadAbortException
-                || exception is SEHException)
+            if (exception is OutOfMemoryException or StackOverflowException or ThreadAbortException or SEHException)
                 return true;
 
             exception = exception.InnerException;

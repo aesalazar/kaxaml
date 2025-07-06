@@ -7,11 +7,11 @@ namespace Kaxaml.Controls
         #region Fields
 
 
-        private double _RedDistribution = 0.30;
-        private double _GreenDistribution = 0.59;
-        private double _BlueDistribution = 0.11;
-        private double _Compression = 0.8;
-        private double _Washout = -0.05;
+        private double _redDistribution = 0.30;
+        private double _greenDistribution = 0.59;
+        private double _blueDistribution = 0.11;
+        private double _compression = 0.8;
+        private double _washout = -0.05;
 
         #endregion Fields
 
@@ -19,33 +19,23 @@ namespace Kaxaml.Controls
 
 
         public double RedDistribution
-        {
-            get { return _RedDistribution; }
-            set { _RedDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _redDistribution; set => _redDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double GreenDistribution
-        {
-            get { return _GreenDistribution; }
-            set { _GreenDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _greenDistribution; set => _greenDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double BlueDistribution
-        {
-            get { return _BlueDistribution; }
-            set { _BlueDistribution = Math.Max(0, Math.Min(1, value)); }
+        { get => _blueDistribution; set => _blueDistribution = Math.Max(0, Math.Min(1, value));
         }
 
         public double Compression
-        {
-            get { return _Compression; }
-            set { _Compression = Math.Max(0, Math.Min(1, value)); }
+        { get => _compression; set => _compression = Math.Max(0, Math.Min(1, value));
         }
 
         public double Washout
-        {
-            get { return _Washout; }
-            set { _Washout = Math.Max(0, Math.Min(1, value)); }
+        { get => _washout; set => _washout = Math.Max(0, Math.Min(1, value));
         }
 
 

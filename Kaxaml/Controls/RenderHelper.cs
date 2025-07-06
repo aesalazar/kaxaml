@@ -10,19 +10,19 @@ namespace Kaxaml.Controls
     {
         #region Static Methods
 
-        public static BitmapSource ElementToBitmap(FrameworkElement e)
+        public static BitmapSource? ElementToBitmap(FrameworkElement e)
         {
             if (e.ActualWidth == 0 || e.ActualHeight == 0) return null;
             return VisualToBitmap(e, (int)e.ActualWidth, (int)e.ActualHeight, null);
         }
 
-        public static BitmapSource ElementToBitmap(FrameworkElement e, GrayscaleParameters parameters)
+        public static BitmapSource? ElementToBitmap(FrameworkElement e, GrayscaleParameters parameters)
         {
             if (e.ActualWidth == 0 || e.ActualHeight == 0) return null;
             return VisualToBitmap(e, (int)e.ActualWidth, (int)e.ActualHeight, parameters);
         }
 
-        public static BitmapSource ElementToGrayscaleBitmap(FrameworkElement e)
+        public static BitmapSource? ElementToGrayscaleBitmap(FrameworkElement e)
         {
             if (e.ActualWidth == 0 || e.ActualHeight == 0) return null;
             return VisualToBitmap(e, (int)e.ActualWidth, (int)e.ActualHeight, new GrayscaleParameters());
@@ -33,63 +33,61 @@ namespace Kaxaml.Controls
             return HwndToBitmap(hwnd, null);
         }
 
-        public static BitmapSource HwndToBitmap(IntPtr hwnd, GrayscaleParameters parameters)
+        public static BitmapSource HwndToBitmap(IntPtr hwnd, GrayscaleParameters? parameters)
         {
-            IntPtr dc = NativeMethods.GetWindowDC(hwnd);
-            IntPtr memDC = NativeMethods.CreateCompatibleDC(dc);
-            int l = 0;
-            int t = 0;
+            var dc = NativeMethods.GetWindowDC(hwnd);
+            var memDc = NativeMethods.CreateCompatibleDC(dc);
+            var l = 0;
+            var t = 0;
 
-            Kaxaml.Controls.NativeMethods.RECT rct;
+            NativeMethods.Rect rct;
             NativeMethods.GetWindowRect(hwnd, out rct);
 
-            int w = rct.Right - rct.Left;
-            int h = rct.Bottom - rct.Top;
+            var w = rct.Right - rct.Left;
+            var h = rct.Bottom - rct.Top;
 
-            IntPtr hbm = NativeMethods.CreateCompatibleBitmap(dc, w, h);
-            IntPtr oldbm = NativeMethods.SelectObject(memDC, hbm);
+            var hbm = NativeMethods.CreateCompatibleBitmap(dc, w, h);
+            var oldbm = NativeMethods.SelectObject(memDc, hbm);
 
-            bool b = NativeMethods.BitBlt(memDC, l, t, w, h, dc, l, t, 0x00CC0020);
-            BitmapSource src = Imaging.CreateBitmapSourceFromHBitmap(hbm, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            NativeMethods.SelectObject(memDC, oldbm);
+            var b = NativeMethods.BitBlt(memDc, l, t, w, h, dc, l, t, 0x00CC0020);
+            var src = Imaging.CreateBitmapSourceFromHBitmap(hbm, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            NativeMethods.SelectObject(memDc, oldbm);
             NativeMethods.DeleteObject(hbm);
-            NativeMethods.DeleteDC(memDC);
+            NativeMethods.DeleteDC(memDc);
             NativeMethods.ReleaseDC(hwnd, dc);
 
             if (parameters != null)
             {
-                int Width = (int)src.Width;
-                int Height = (int)src.Height;
+                var width = (int)src.Width;
+                var height = (int)src.Height;
 
-                byte[] pixels = new byte[Width * Height * 4];
-                src.CopyPixels(pixels, (Width * 4), 0);
+                var pixels = new byte[width * height * 4];
+                src.CopyPixels(pixels, width * 4, 0);
 
-                for (int p = 0; p < pixels.Length; p += 4)
+                for (var p = 0; p < pixels.Length; p += 4)
                 {
                     // compute grayscale
-                    double pixelvalue =
-                        (((double)pixels[p + 0] * parameters.RedDistribution) +
-                        ((double)pixels[p + 1] * parameters.GreenDistribution) +
-                        ((double)pixels[p + 2] * parameters.BlueDistribution));
+                    var pixelvalue =
+                        pixels[p + 0] * parameters.RedDistribution +
+                        pixels[p + 1] * parameters.GreenDistribution +
+                        pixels[p + 2] * parameters.BlueDistribution;
 
                     // compute compression
-                    pixelvalue = (pixelvalue * parameters.Compression) + (256 * ((1 - parameters.Compression) / 2));
+                    pixelvalue = pixelvalue * parameters.Compression + 256 * ((1 - parameters.Compression) / 2);
 
                     // compute washout
-                    pixelvalue = Math.Min(256, pixelvalue + (256 * parameters.Washout));
+                    pixelvalue = Math.Min(256, pixelvalue + 256 * parameters.Washout);
 
-                    byte v = (byte)pixelvalue;
+                    var v = (byte)pixelvalue;
                     pixels[p + 0] = v;
                     pixels[p + 1] = v;
                     pixels[p + 2] = v;
                 }
 
-                return BitmapSource.Create(Width, Height, 96, 96, PixelFormats.Bgr32, null, pixels, Width * 4);
+                return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, pixels, width * 4);
             }
-            else
-            {
-                return src;
-            }
+
+            return src;
         }
 
         public static BitmapSource HwndToGrayscaleBitmap(IntPtr hwnd)
@@ -97,65 +95,63 @@ namespace Kaxaml.Controls
             return HwndToBitmap(hwnd, new GrayscaleParameters());
         }
 
-        public static BitmapSource VisualToBitmap(Visual e, int Width, int Height)
+        public static BitmapSource VisualToBitmap(Visual e, int width, int height)
         {
-            return VisualToBitmap(e, Width, Height, null);
+            return VisualToBitmap(e, width, height, null);
         }
 
-        public static BitmapSource VisualToBitmap(Visual e, int Width, int Height, GrayscaleParameters parameters)
+        public static BitmapSource VisualToBitmap(Visual e, int width, int height, GrayscaleParameters? parameters)
         {
             ArgumentNullException.ThrowIfNull(e);
             e.VerifyAccess();
 
-            RenderTargetBitmap src = new RenderTargetBitmap(Width, Height, 96, 96, PixelFormats.Pbgra32);
+            var src = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
             src.Render(e);
 
             if (parameters != null)
             {
-                byte[] pixels = new byte[Width * Height * 4];
-                src.CopyPixels(pixels, (Width * 4), 0);
+                var pixels = new byte[width * height * 4];
+                src.CopyPixels(pixels, width * 4, 0);
 
-                for (int p = 0; p < pixels.Length; p += 4)
+                for (var p = 0; p < pixels.Length; p += 4)
                 {
 
                     // compute grayscale
-                    double pixelvalue =
-                        (((double)pixels[p + 0] * parameters.RedDistribution) +
-                        ((double)pixels[p + 1] * parameters.GreenDistribution) +
-                        ((double)pixels[p + 2] * parameters.BlueDistribution));
+                    var pixelvalue =
+                        pixels[p + 0] * parameters.RedDistribution +
+                        pixels[p + 1] * parameters.GreenDistribution +
+                        pixels[p + 2] * parameters.BlueDistribution;
 
                     // compute compression
-                    pixelvalue = (pixelvalue * parameters.Compression) + (256 * ((1 - parameters.Compression) / 2));
+                    pixelvalue = pixelvalue * parameters.Compression + 256 * ((1 - parameters.Compression) / 2);
 
                     // compute washout
-                    pixelvalue = Math.Min(256, pixelvalue + (256 * parameters.Washout));
+                    pixelvalue = Math.Min(256, pixelvalue + 256 * parameters.Washout);
 
-                    byte v = (byte)pixelvalue;
+                    var v = (byte)pixelvalue;
                     pixels[p + 0] = v;
                     pixels[p + 1] = v;
                     pixels[p + 2] = v;
                 }
 
-                return BitmapSource.Create(Width, Height, 96, 96, PixelFormats.Bgr32, null, pixels, Width * 4);
+                return BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgr32, null, pixels, width * 4);
             }
-            else
-            {
-                return src;
-            }
+
+            return src;
         }
 
-        public static string VisualToFile(Visual e, int Width, int Height, GrayscaleParameters parameters, string Filename)
+        public static string VisualToFile(Visual e, int width, int height, GrayscaleParameters parameters, string filename)
         {
-            BitmapSource src = VisualToBitmap(e, Width, Height, parameters);
+            var src = VisualToBitmap(e, width, height, parameters);
 
-            using (System.IO.FileStream fs = new System.IO.FileStream(Filename, System.IO.FileMode.Create))
+            using (var fs = new System.IO.FileStream(filename, System.IO.FileMode.Create))
             {
-                PngBitmapEncoder encoder = new PngBitmapEncoder();
+                var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(src));
                 encoder.Save(fs);
             }
 
-            return Filename;
+            return filename;
         }
 
         #endregion Static Methods

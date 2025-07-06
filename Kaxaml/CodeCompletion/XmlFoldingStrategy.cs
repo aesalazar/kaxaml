@@ -14,41 +14,26 @@ namespace Kaxaml.CodeCompletion
     /// </summary>
     public class XmlFoldStart
     {
-        int line = 0;
-        int col = 0;
-        string prefix = String.Empty;
-        string name = String.Empty;
-        string foldText = String.Empty;
+        private readonly string _prefix = string.Empty;
+        private readonly string _name = string.Empty;
 
         public XmlFoldStart(string prefix, string name, int line, int col)
         {
-            this.line = line;
-            this.col = col;
-            this.prefix = prefix;
-            this.name = name;
+            Line = line;
+            Column = col;
+            this._prefix = prefix;
+            this._name = name;
         }
 
         /// <summary>
         /// The line where the fold should start.  Lines start from 0.
         /// </summary>
-        public int Line
-        {
-            get
-            {
-                return line;
-            }
-        }
+        public int Line { get; }
 
         /// <summary>
         /// The column where the fold should start.  Columns start from 0.
         /// </summary>
-        public int Column
-        {
-            get
-            {
-                return col;
-            }
-        }
+        public int Column { get; }
 
         /// <summary>
         /// The name of the xml item with its prefix if it has one.
@@ -57,32 +42,19 @@ namespace Kaxaml.CodeCompletion
         {
             get
             {
-                if (prefix.Length > 0)
+                if (_prefix.Length > 0)
                 {
-                    return String.Concat(prefix, ":", name);
+                    return string.Concat(_prefix, ":", _name);
                 }
-                else
-                {
-                    return name;
-                }
+
+                return _name;
             }
         }
 
         /// <summary>
         /// The text to be displayed when the item is folded.
         /// </summary>
-        public string FoldText
-        {
-            get
-            {
-                return foldText;
-            }
-
-            set
-            {
-                foldText = value;
-            }
-        }
+        public string FoldText { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -94,7 +66,7 @@ namespace Kaxaml.CodeCompletion
         /// Flag indicating whether attributes should be displayed on folded
         /// elements.
         /// </summary>
-        bool showAttributesWhenFolded = false;
+        private bool _showAttributesWhenFolded;
 
         #region IFoldingStrategy
 
@@ -109,40 +81,37 @@ namespace Kaxaml.CodeCompletion
         /// </remarks>
         public List<FoldMarker> GenerateFoldMarkers(IDocument document, string fileName, object parseInformation)
         {
-            showAttributesWhenFolded = true;
+            _showAttributesWhenFolded = true;
 
-            List<FoldMarker> foldMarkers = new List<FoldMarker>();
+            var foldMarkers = new List<FoldMarker>();
 
             try
             {
-                string xml = document.TextContent;
-                using (var stringReader = new StringReader(xml))
+                var xml = document.TextContent;
+                using var stringReader = new StringReader(xml);
+                using var reader = new XmlTextReader(stringReader);
+
+                var stack = new Stack<XmlFoldStart>();
+                while (reader.Read())
                 {
-                    using (var reader = new XmlTextReader(stringReader))
+                    switch (reader.NodeType)
                     {
-                        var stack = new Stack();
-                        while (reader.Read())
-                        {
-                            switch (reader.NodeType)
+                        case XmlNodeType.Element:
+                            if (!reader.IsEmptyElement)
                             {
-                                case XmlNodeType.Element:
-                                    if (!reader.IsEmptyElement)
-                                    {
-                                        XmlFoldStart newFoldStart = CreateElementFoldStart(reader);
-                                        stack.Push(newFoldStart);
-                                    }
-                                    break;
-
-                                case XmlNodeType.EndElement:
-                                    XmlFoldStart foldStart = (XmlFoldStart)stack.Pop();
-                                    CreateElementFold(document, foldMarkers, reader, foldStart);
-                                    break;
-
-                                case XmlNodeType.Comment:
-                                    CreateCommentFold(document, foldMarkers, reader);
-                                    break;
+                                var newFoldStart = CreateElementFoldStart(reader);
+                                stack.Push(newFoldStart);
                             }
-                        }
+                            break;
+
+                        case XmlNodeType.EndElement:
+                            var foldStart = stack.Pop();
+                            CreateElementFold(document, foldMarkers, reader, foldStart);
+                            break;
+
+                        case XmlNodeType.Comment:
+                            CreateCommentFold(document, foldMarkers, reader);
+                            break;
                     }
                 }
             }
@@ -156,9 +125,9 @@ namespace Kaxaml.CodeCompletion
                 // If the xml is not well formed keep the foldings 
                 // that already exist in the document.
 
-                List<FoldMarker> markers = new List<FoldMarker>();
+                var markers = new List<FoldMarker>();
 
-                foreach (FoldMarker foldmarker in document.FoldingManager.FoldMarker) markers.Add(foldmarker);
+                foreach (var foldmarker in document.FoldingManager.FoldMarker) markers.Add(foldmarker);
 
                 return markers;
             }
@@ -173,26 +142,26 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         /// <remarks>The text displayed when the comment is folded is the first 
         /// line of the comment.</remarks>
-        void CreateCommentFold(IDocument document, List<FoldMarker> foldMarkers, XmlTextReader reader)
+        private void CreateCommentFold(IDocument document, List<FoldMarker> foldMarkers, XmlTextReader reader)
         {
             if (reader.Value != null)
             {
-                string comment = reader.Value.Replace("\r\n", "\n");
-                string[] lines = comment.Split('\n');
+                var comment = reader.Value.Replace("\r\n", "\n");
+                var lines = comment.Split('\n');
                 if (lines.Length > 1)
                 {
 
                     // Take off 5 chars to get the actual comment start (takes
                     // into account the <!-- chars.
 
-                    int startCol = reader.LinePosition - 5;
-                    int startLine = reader.LineNumber - 1;
+                    var startCol = reader.LinePosition - 5;
+                    var startLine = reader.LineNumber - 1;
 
                     // Add 3 to the end col value to take into account the '-->'
-                    int endCol = lines[lines.Length - 1].Length + startCol + 3;
-                    int endLine = startLine + lines.Length - 1;
-                    string foldText = String.Concat("<!--", lines[0], "-->");
-                    FoldMarker foldMarker = new FoldMarker(document, startLine, startCol, endLine, endCol, FoldType.TypeBody, foldText);
+                    var endCol = lines[lines.Length - 1].Length + startCol + 3;
+                    var endLine = startLine + lines.Length - 1;
+                    var foldText = string.Concat("<!--", lines[0], "-->");
+                    var foldMarker = new FoldMarker(document, startLine, startCol, endLine, endCol, FoldType.TypeBody, foldText);
                     foldMarkers.Add(foldMarker);
                 }
             }
@@ -201,21 +170,21 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// Creates an XmlFoldStart for the start tag of an element.
         /// </summary>
-        XmlFoldStart CreateElementFoldStart(XmlTextReader reader)
+        private XmlFoldStart CreateElementFoldStart(XmlTextReader reader)
         {
             // Take off 2 from the line position returned 
             // from the xml since it points to the start
             // of the element name and not the beginning 
             // tag.
-            XmlFoldStart newFoldStart = new XmlFoldStart(reader.Prefix, reader.LocalName, reader.LineNumber - 1, reader.LinePosition - 2);
+            var newFoldStart = new XmlFoldStart(reader.Prefix, reader.LocalName, reader.LineNumber - 1, reader.LinePosition - 2);
 
-            if (showAttributesWhenFolded && reader.HasAttributes)
+            if (_showAttributesWhenFolded && reader.HasAttributes)
             {
-                newFoldStart.FoldText = String.Concat("<", newFoldStart.Name, " ", GetAttributeFoldText(reader), ">");
+                newFoldStart.FoldText = string.Concat("<", newFoldStart.Name, " ", GetAttributeFoldText(reader), ">");
             }
             else
             {
-                newFoldStart.FoldText = String.Concat("<", newFoldStart.Name, ">");
+                newFoldStart.FoldText = string.Concat("<", newFoldStart.Name, ">");
             }
 
             return newFoldStart;
@@ -225,13 +194,13 @@ namespace Kaxaml.CodeCompletion
         /// Create an element fold if the start and end tag are on 
         /// different lines.
         /// </summary>
-        void CreateElementFold(IDocument document, List<FoldMarker> foldMarkers, XmlTextReader reader, XmlFoldStart foldStart)
+        private void CreateElementFold(IDocument document, List<FoldMarker> foldMarkers, XmlTextReader reader, XmlFoldStart foldStart)
         {
-            int endLine = reader.LineNumber - 1;
+            var endLine = reader.LineNumber - 1;
             if (endLine > foldStart.Line)
             {
-                int endCol = reader.LinePosition + foldStart.Name.Length;
-                FoldMarker foldMarker = new FoldMarker(document, foldStart.Line, foldStart.Column, endLine, endCol, FoldType.TypeBody, foldStart.FoldText);
+                var endCol = reader.LinePosition + foldStart.Name.Length;
+                var foldMarker = new FoldMarker(document, foldStart.Line, foldStart.Column, endLine, endCol, FoldType.TypeBody, foldStart.FoldText);
                 foldMarkers.Add(foldMarker);
             }
         }
@@ -245,11 +214,11 @@ namespace Kaxaml.CodeCompletion
         /// line of the start tag.  It does not cater for elements where attributes
         /// are not on the same line as the start tag.
         /// </remarks>
-        string GetAttributeFoldText(XmlTextReader reader)
+        private string GetAttributeFoldText(XmlTextReader reader)
         {
-            StringBuilder text = new StringBuilder();
+            var text = new StringBuilder();
 
-            for (int i = 0; i < reader.AttributeCount; ++i)
+            for (var i = 0; i < reader.AttributeCount; ++i)
             {
                 reader.MoveToAttribute(i);
 
@@ -275,9 +244,9 @@ namespace Kaxaml.CodeCompletion
         /// the XmlTextReader is the plain unencoded string and .NET
         /// does not provide us with an xml encode method.
         /// </summary>
-        static string XmlEncodeAttributeValue(string attributeValue, char quoteChar)
+        private static string XmlEncodeAttributeValue(string attributeValue, char quoteChar)
         {
-            StringBuilder encodedValue = new StringBuilder(attributeValue);
+            var encodedValue = new StringBuilder(attributeValue);
 
             encodedValue.Replace("&", "&amp;");
             encodedValue.Replace("<", "&lt;");

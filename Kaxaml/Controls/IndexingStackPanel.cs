@@ -1,15 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace Kaxaml.Controls
 {
@@ -88,22 +79,18 @@ namespace Kaxaml.Controls
 
         protected override Size MeasureOverride(Size constraint)
         {
-            int index = 0;
-            bool isEven = true;
-            bool foundSelected = false;
+            var index = 0;
+            var isEven = true;
+            var foundSelected = false;
 
-            foreach (UIElement element in this.Children)
+            foreach (UIElement element in Children)
             {
 
-                if (this.IsItemsHost)
+                if (IsItemsHost)
                 {
-                    Selector SelectorParent = this.TemplatedParent as Selector;
-
-                    if (SelectorParent != null)
+                    if (TemplatedParent is Selector selectorParent)
                     {
-                        UIElement selectedElement = (SelectorParent.ItemContainerGenerator.ContainerFromItem(SelectorParent.SelectedItem) as UIElement);
-
-                        if (selectedElement != null)
+                        if (selectorParent.ItemContainerGenerator.ContainerFromItem(selectorParent.SelectedItem) is UIElement selectedElement)
                         {
                             if (element == selectedElement)
                             {

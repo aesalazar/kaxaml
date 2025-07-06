@@ -1,9 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
 using System.Windows.Media;
 
 namespace Kaxaml
@@ -12,47 +8,17 @@ namespace Kaxaml
     {
         #region Properties
 
-        private UserControl _Root;
-        public UserControl Root
-        {
-            get { return _Root; }
-            set { _Root = value; }
-        }
+        public required UserControl Root { get; set; }
 
-        private string _Name;
-        public string Name
-        {
-            get { return _Name; }
-            set { _Name = value; }
-        }
+        public required string Name { get; set; }
 
-        private string _Description;
-        public string Description
-        {
-            get { return _Description; }
-            set { _Description = value; }
-        }
+        public required string Description { get; set; }
 
-        private Key _Key;
-        public Key Key
-        {
-            get { return _Key; }
-            set { _Key = value; }
-        }
+        public Key Key { get; set; }
 
-        public ModifierKeys _ModifierKeys;
-        public ModifierKeys ModifierKeys
-        {
-            get { return _ModifierKeys; }
-            set { _ModifierKeys = value; }
-        }
+        public ModifierKeys ModifierKeys { get; set; }
 
-        private ImageSource _Icon;
-        public ImageSource Icon
-        {
-            get { return _Icon; }
-            set { _Icon = value; }
-        }
+        public required ImageSource? Icon { get; set; }
 
         #endregion
     }

@@ -24,7 +24,7 @@ namespace Kaxaml.CodeCompletion
     /// Interaction logic for UserControl1.xaml
     /// </summary>
 
-    public partial class StringBox : System.Windows.Controls.UserControl
+    public partial class StringBox : UserControl
     {
 
 		#region Constructors 
@@ -52,12 +52,9 @@ namespace Kaxaml.CodeCompletion
 
         #region Private Fields
 
-        StringHost _SelectedItem = null;
-        int _SelectedIndexInView = -1;
-        int _TopOffset = 0;
-
-        const int _ItemsInView = 10;
-        //int _SelectedIndexInCollection = -1;
+        private StringHost? _selectedItem;
+        private int _selectedIndexInView = -1;
+        private int _topOffset;
 
         #endregion
 
@@ -65,11 +62,8 @@ namespace Kaxaml.CodeCompletion
 
         public int SelectedIndex
         {
-            get 
-            {
-                return _TopOffset + _SelectedIndexInView;
-            }
-            set 
+            get => _topOffset + _selectedIndexInView;
+            set
             {
                 if (value >= 0 && value < CompletionItems.Count)
                 {
@@ -92,7 +86,7 @@ namespace Kaxaml.CodeCompletion
                         else if (value > CompletionItems.Count - 10)
                         {
                             SetTopOffset(CompletionItems.Count - 10);
-                            SelectItemByIndex(value - _TopOffset);
+                            SelectItemByIndex(value - _topOffset);
                         }
                     }
                 }
@@ -103,14 +97,7 @@ namespace Kaxaml.CodeCompletion
 
         #region SelectedItem
 
-        public object SelectedItem
-        {
-            get 
-            {
-                return CompletionItems[SelectedIndex];
-            }
-        }
-
+        public object? SelectedItem => CompletionItems[SelectedIndex];
 
         #endregion
 
@@ -120,16 +107,14 @@ namespace Kaxaml.CodeCompletion
         /// description of the property
         /// </summary>
         public ObservableCollection<StringHost> StringHostItems
-        {
-            get { return (ObservableCollection<StringHost>)GetValue(StringHostItemsProperty); }
-            set { SetValue(StringHostItemsProperty, value); }
+        { get => (ObservableCollection<StringHost>)GetValue(StringHostItemsProperty); set => SetValue(StringHostItemsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for StringHostItems
         /// </summary>
         public static readonly DependencyProperty StringHostItemsProperty =
-            DependencyProperty.Register("StringHostItems", typeof(ObservableCollection<StringHost>), typeof(StringBox),
+            DependencyProperty.Register(nameof(StringHostItems), typeof(ObservableCollection<StringHost>), typeof(StringBox),
             new FrameworkPropertyMetadata(default(ObservableCollection<StringHost>)));
 
         #endregion
@@ -141,48 +126,46 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public ArrayList CompletionItems
         {
-            get { return (ArrayList)GetValue(CompletionItemsProperty); }
-            set { SetValue(CompletionItemsProperty, value); }
+            get => (ArrayList)GetValue(CompletionItemsProperty);
+            set => SetValue(CompletionItemsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for CompletionItems
         /// </summary>
         public static readonly DependencyProperty CompletionItemsProperty =
-            DependencyProperty.Register("CompletionItems", typeof(ArrayList), typeof(StringBox), new FrameworkPropertyMetadata(default(ArrayList), new PropertyChangedCallback(CompletionItemsChanged)));
+            DependencyProperty.Register(nameof(CompletionItems), typeof(ArrayList), typeof(StringBox), new FrameworkPropertyMetadata(default(ArrayList), CompletionItemsChanged));
 
         /// <summary>
         /// PropertyChangedCallback for CompletionItems
         /// </summary>
         private static void CompletionItemsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is StringBox)
+            if (obj is StringBox owner)
             {
-                StringBox owner = (StringBox)obj;
-                ArrayList items = (args.NewValue as ArrayList);
-
-                if (items != null)
+                if (args.NewValue is ArrayList items)
                 {
-                    int max = Math.Min(items.Count, 10);
+                    var max = Math.Min(items.Count, 10);
 
                     // add the new items
-                    for (int i = 0; i < max; i++)
+                    for (var i = 0; i < max; i++)
                     {
-                        owner.StringHostItems[i].Value = ((ICompletionData)items[i]).Text;
-                        owner.StringHostItems[i].Tooltip = ((ICompletionData)items[i]).Description;
-                        owner.StringHostItems[i]._IsSelectable = true;
+                        var item = (ICompletionData?)items[i] ?? throw new Exception("Could not extract completion data");
+                        owner.StringHostItems[i].Value = item.Text;
+                        owner.StringHostItems[i].Tooltip = item.Description;
+                        owner.StringHostItems[i].IsSelectable = true;
                     }
 
                     // clear the remaining items
-                    for (int i = items.Count; i < 10; i++)
+                    for (var i = items.Count; i < 10; i++)
                     {
-                        owner.StringHostItems[i].Value = String.Empty;
-                        owner.StringHostItems[i].Tooltip = String.Empty;
-                        owner.StringHostItems[i]._IsSelectable = false;
+                        owner.StringHostItems[i].Value = string.Empty;
+                        owner.StringHostItems[i].Tooltip = string.Empty;
+                        owner.StringHostItems[i].IsSelectable = false;
                     }
 
                     // show or hide the ScrollerSlider based on need and update its max and min values
-                    if (items.Count > (10 - 1))
+                    if (items.Count > 10 - 1)
                     {
                         owner.ScrollerSlider.Visibility = Visibility.Visible;
                         owner.ScrollerSlider.Minimum = 0;
@@ -211,22 +194,22 @@ namespace Kaxaml.CodeCompletion
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             base.OnMouseUp(e);
-            this.ReleaseMouseCapture();
+            ReleaseMouseCapture();
 
-            if (_SelectNextTimer != null)
+            if (_selectNextTimer != null)
             {
-                _SelectNextTimer.Stop();
+                _selectNextTimer.Stop();
             }
 
-            if (_SelectPreviousTimer != null)
+            if (_selectPreviousTimer != null)
             {
-                _SelectPreviousTimer.Stop();
+                _selectPreviousTimer.Stop();
             }
         }
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
                 SelectNext();
             }
@@ -255,7 +238,7 @@ namespace Kaxaml.CodeCompletion
 
         }
 
-        void ScrollTextTimer_Tick(object sender, EventArgs e)
+        private void ScrollTextTimer_Tick(object sender, EventArgs e)
         {
             HideScrollText();   
         }
@@ -263,21 +246,19 @@ namespace Kaxaml.CodeCompletion
         private void ShowScrollText(string s)
         {
             ScrollText.Text = s;
-            
-            Storyboard sb = this.FindResource("ShowScrollText") as Storyboard;
-            if (sb != null)
+
+            if (FindResource("ShowScrollText") is Storyboard sb)
             {
-                this.BeginStoryboard(sb);
+                BeginStoryboard(sb);
             }
 
         }
 
         private void HideScrollText()
         {
-            Storyboard sb = this.FindResource("HideScrollText") as Storyboard;
-            if (sb != null)
+            if (FindResource("HideScrollText") is Storyboard sb)
             {
-                this.BeginStoryboard(sb);
+                BeginStoryboard(sb);
             }
         }
 
@@ -290,28 +271,30 @@ namespace Kaxaml.CodeCompletion
             SetTopOffset(offset, true);
         }
 
-        private void SetTopOffset(int offset, bool UpdateScrollBar)
+        private void SetTopOffset(int offset, bool updateScrollBar)
         {
             // coerce the value of offset
 
             if (offset > CompletionItems.Count - 10) offset = CompletionItems.Count - 10;
             if (offset < 0) offset = 0;
 
-            int max = Math.Min(CompletionItems.Count, 10);
+            var max = Math.Min(CompletionItems.Count, 10);
 
 
-            for (int i = 0; i < max; i++)
+            for (var i = 0; i < max; i++)
             {
-                StringHostItems[i].Value = ((ICompletionData) CompletionItems[i + offset]).Text;
-                StringHostItems[i].Tooltip = ((ICompletionData)CompletionItems[i + offset]).Description;
+                var item = (ICompletionData?)CompletionItems[i + offset] 
+                           ?? throw new Exception("Could not extract completion data");
+                StringHostItems[i].Value = item.Text;
+                StringHostItems[i].Tooltip = item.Description;
             }
             
-            if (UpdateScrollBar)
+            if (updateScrollBar)
             {
                 ScrollerSlider.Value = offset;
             }
 
-            _TopOffset = offset;
+            _topOffset = offset;
         }
 
         private void SelectItem(StringHost item)
@@ -319,19 +302,19 @@ namespace Kaxaml.CodeCompletion
             if (item == null)
             {
                 // clearn current selection
-                if (_SelectedItem != null) _SelectedItem.IsSelected = false;
+                if (_selectedItem != null) _selectedItem.IsSelected = false;
             }
-            else if (item != null && item._IsSelectable)
+            else if (item is { IsSelectable: true })
             {
                 // clearn current selection
-                if (_SelectedItem != null) _SelectedItem.IsSelected = false;
+                if (_selectedItem != null) _selectedItem.IsSelected = false;
 
                 // select the new item
-                _SelectedItem = item;
+                _selectedItem = item;
                 item.IsSelected = true;
 
                 // udpate the index
-                _SelectedIndexInView = StringHostItems.IndexOf(item);
+                _selectedIndexInView = StringHostItems.IndexOf(item);
             }
         }
 
@@ -341,10 +324,10 @@ namespace Kaxaml.CodeCompletion
             if (index >= CompletionItems.Count) index = CompletionItems.Count - 1;
             if (index < 0) index = 0;
 
-            StringHost item = StringHostItems[index];
+            var item = StringHostItems[index];
             SelectItem(item);
 
-            return _SelectedIndexInView;
+            return _selectedIndexInView;
         }
 
         #endregion
@@ -353,35 +336,35 @@ namespace Kaxaml.CodeCompletion
 
         public void SelectNext()
         {
-            if (_SelectedIndexInView == (10 - 1))
+            if (_selectedIndexInView == 10 - 1)
             {
                 // update the top offset
-                SetTopOffset(_TopOffset + 1);
+                SetTopOffset(_topOffset + 1);
             }
             else
             {
-                SelectItemByIndex(_SelectedIndexInView + 1);
+                SelectItemByIndex(_selectedIndexInView + 1);
             }
         }
 
         public void SelectPrevious()
         {
-            if (_SelectedIndexInView == 0)
+            if (_selectedIndexInView == 0)
             {
                 // update the top offset
-                SetTopOffset(_TopOffset - 1);
+                SetTopOffset(_topOffset - 1);
             }
             else
             {
-                SelectItemByIndex(_SelectedIndexInView - 1);
+                SelectItemByIndex(_selectedIndexInView - 1);
             }
         }
 
         public void PageDown()
         {
-            if (_SelectedIndexInView == (10 - 1))
+            if (_selectedIndexInView == 10 - 1)
             {
-                SetTopOffset(_TopOffset + 10);
+                SetTopOffset(_topOffset + 10);
             }
             else
             {
@@ -391,9 +374,9 @@ namespace Kaxaml.CodeCompletion
 
         public void PageUp()
         {
-            if (_SelectedIndexInView == 0)
+            if (_selectedIndexInView == 0)
             {
-                SetTopOffset(_TopOffset - 10);
+                SetTopOffset(_topOffset - 10);
             }
             else
             {
@@ -407,94 +390,91 @@ namespace Kaxaml.CodeCompletion
 
         private void ItemMouseDown(object sender, MouseEventArgs e)
         {
-            FrameworkElement element = (sender as FrameworkElement);
-            if (element != null)
+            if (sender is FrameworkElement element)
             {
-                StringHost item = (element.DataContext as StringHost);
+                var item = (StringHost)element.DataContext;
                 SelectItem(item);
             }
         }
 
         private void ItemMouseUp(object sender, MouseEventArgs e)
         {
-            if (_SelectNextTimer != null)
+            if (_selectNextTimer != null)
             {
-                _SelectNextTimer.Stop();
+                _selectNextTimer.Stop();
             }
 
-            if (_SelectPreviousTimer != null)
+            if (_selectPreviousTimer != null)
             {
-                _SelectPreviousTimer.Stop();
+                _selectPreviousTimer.Stop();
             }
         }
 
         private void ItemMouseEnter(object sender, MouseEventArgs e)
         {
-            if (_SelectNextTimer != null)
+            if (_selectNextTimer != null)
             {
-                _SelectNextTimer.Stop();
+                _selectNextTimer.Stop();
             }
 
-            if (_SelectPreviousTimer != null)
+            if (_selectPreviousTimer != null)
             {
-                _SelectPreviousTimer.Stop();
+                _selectPreviousTimer.Stop();
             }
 
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
-                FrameworkElement element = (sender as FrameworkElement);
-                if (element != null)
+                if (sender is FrameworkElement element)
                 {
-                    StringHost item = (element.DataContext as StringHost);
+                    var item = (StringHost)element.DataContext;
                     SelectItem(item);
                 }
             }
         }
 
-        private DispatcherTimer _SelectNextTimer = null;
-        private DispatcherTimer _SelectPreviousTimer = null;
+        private DispatcherTimer? _selectNextTimer;
+        private DispatcherTimer? _selectPreviousTimer;
 
         private void ItemMouseLeave(object sender, MouseEventArgs e)
         {
-            if (this.IsMouseCaptured)
+            if (IsMouseCaptured)
             {
-                FrameworkElement element = (sender as FrameworkElement);
-                if (element != null)
+                if (sender is FrameworkElement element)
                 {
-                    StringHost item = (element.DataContext as StringHost);
-                    int index = StringHostItems.IndexOf(item);
+                    var item = (StringHost)element.DataContext;
+                    var index = StringHostItems.IndexOf(item);
 
                     if (index == 9)
                     {
-                        Point p = e.GetPosition(element);
+                        var p = e.GetPosition(element);
 
                         if (p.Y > 0)
                         {
-                            if (_SelectNextTimer == null)
+                            if (_selectNextTimer == null)
                             {
-                                _SelectNextTimer = new DispatcherTimer();
-                                _SelectNextTimer.Tick += new EventHandler(_SelectNextTimer_Tick);
-                                _SelectNextTimer.Interval = TimeSpan.FromMilliseconds(100);
+                                _selectNextTimer = new DispatcherTimer();
+                                _selectNextTimer.Tick += _SelectNextTimer_Tick;
+                                _selectNextTimer.Interval = TimeSpan.FromMilliseconds(100);
                             }
 
-                            _SelectNextTimer.Start();
+                            _selectNextTimer.Start();
                         }
                     }
 
                     if (index == 0)
                     {
-                        Point p = e.GetPosition(element);
+                        var p = e.GetPosition(element);
 
                         if (p.Y < 0)
                         {
-                            if (_SelectPreviousTimer == null)
+                            if (_selectPreviousTimer == null)
                             {
-                                _SelectPreviousTimer = new DispatcherTimer();
-                                _SelectPreviousTimer.Tick += new EventHandler(_SelectPreviousTimer_Tick);
-                                _SelectPreviousTimer.Interval = TimeSpan.FromMilliseconds(100);
+                                _selectPreviousTimer = new DispatcherTimer();
+                                _selectPreviousTimer.Tick += _SelectPreviousTimer_Tick;
+                                _selectPreviousTimer.Interval = TimeSpan.FromMilliseconds(100);
                             }
 
-                            _SelectPreviousTimer.Start();
+                            _selectPreviousTimer.Start();
                         }
                     }
 
@@ -502,12 +482,12 @@ namespace Kaxaml.CodeCompletion
             }
         }
 
-        void _SelectNextTimer_Tick(object sender, EventArgs e)
+        private void _SelectNextTimer_Tick(object? _, EventArgs __)
         {
             SelectNext();
         }
 
-        void _SelectPreviousTimer_Tick(object sender, EventArgs e)
+        private void _SelectPreviousTimer_Tick(object? _, EventArgs __)
         {
             SelectPrevious();
         }
@@ -521,17 +501,17 @@ namespace Kaxaml.CodeCompletion
 		#region Fields 
 
 
-        private string _Value;
-        private string _Tooltip;
+        private string? _value;
+        private string? _tooltip;
 
-        internal bool _IsSelectable = true;
-        private bool _IsSelected = false;
+        internal bool IsSelectable = true;
+        private bool _isSelected;
 
 		#endregion Fields 
 
 		#region Constructors 
 
-        public StringHost(string value)
+        public StringHost(string? value)
         {
             Value = value;
         }
@@ -541,27 +521,27 @@ namespace Kaxaml.CodeCompletion
 		#region Properties 
 
 
-        public string Value
+        public string? Value
         {
-            get { return _Value; }
+            get => _value;
             set
             {
-                if (value != _Value)
+                if (value != _value)
                 {
-                    _Value = value;
+                    _value = value;
                     NotifyPropertyChanged("Value");
                 }
             }
         }
 
-        public string Tooltip
+        public string? Tooltip
         {
-            get { return _Tooltip; }
+            get => _tooltip;
             set
             {
-                if (value != _Tooltip)
+                if (value != _tooltip)
                 {
-                    _Tooltip = value;
+                    _tooltip = value;
                     NotifyPropertyChanged("Tooltip");
                 }
             }
@@ -570,23 +550,23 @@ namespace Kaxaml.CodeCompletion
 
         public bool IsSelected
         {
-            get { return _IsSelected; }
+            get => _isSelected;
             set
             {
-                if (value != _IsSelected)
+                if (value != _isSelected)
                 {
-                    _IsSelected = value;
+                    _isSelected = value;
                     NotifyPropertyChanged("IsSelected");
                 }
             }
         }
 
 
-		#endregion Properties 
+        #endregion Properties 
 
-		#region Overridden Methods 
+        #region Overridden Methods 
 
-        public override string ToString()
+        public override string? ToString()
         {
             return Value;
         }
@@ -596,14 +576,11 @@ namespace Kaxaml.CodeCompletion
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged(string info)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
         #endregion

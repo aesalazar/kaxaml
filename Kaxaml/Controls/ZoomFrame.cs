@@ -25,31 +25,27 @@ namespace Kaxaml.Controls
 
         #region Private Fields
 
-        private Thumb PART_Thumb;
+        private Thumb? _partThumb;
 
         #endregion
 
         #region IsDraggable (DependencyProperty)
 
         public bool IsDraggable
-        {
-            get { return (bool)GetValue(IsDraggableProperty); }
-            set { SetValue(IsDraggableProperty, value); }
+        { get => (bool)GetValue(IsDraggableProperty); set => SetValue(IsDraggableProperty, value);
         }
         public static readonly DependencyProperty IsDraggableProperty =
-            DependencyProperty.Register("IsDraggable", typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(default(bool)));
+            DependencyProperty.Register(nameof(IsDraggable), typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(default(bool)));
 
         #endregion
 
         #region IsDragUIVisible (DependencyProperty)
 
-        public bool IsDragUIVisible
-        {
-            get { return (bool)GetValue(IsDragUIVisibleProperty); }
-            set { SetValue(IsDragUIVisibleProperty, value); }
+        public bool IsDragUiVisible
+        { get => (bool)GetValue(IsDragUiVisibleProperty); set => SetValue(IsDragUiVisibleProperty, value);
         }
-        public static readonly DependencyProperty IsDragUIVisibleProperty  =
-            DependencyProperty.Register("IsDragUIVisible", typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(false));
+        public static readonly DependencyProperty IsDragUiVisibleProperty  =
+            DependencyProperty.Register(nameof(IsDragUiVisible), typeof(bool), typeof(ZoomFrame), new FrameworkPropertyMetadata(false));
 
         #endregion
 
@@ -57,25 +53,22 @@ namespace Kaxaml.Controls
         #region Scale (DependencyProperty)
 
         public double Scale
-        {
-            get { return (double)GetValue(ScaleProperty); }
-            set { SetValue(ScaleProperty, value); }
+        { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value);
         }
         public static readonly DependencyProperty ScaleProperty =
-            DependencyProperty.Register("Scale", typeof(double), typeof(ZoomFrame), new FrameworkPropertyMetadata(1.0, new PropertyChangedCallback(ScaleChanged)));
+            DependencyProperty.Register(nameof(Scale), typeof(double), typeof(ZoomFrame), new FrameworkPropertyMetadata(1.0, ScaleChanged));
 
         private static void ScaleChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is ZoomFrame)
+            if (obj is ZoomFrame owner)
             {
-                ZoomFrame owner = (ZoomFrame)obj;
                 if (owner.Scale > 1.001)
                 {
-                    owner.IsDragUIVisible = true;
+                    owner.IsDragUiVisible = true;
                 }
                 else
                 {
-                    owner.IsDragUIVisible = false;
+                    owner.IsDragUiVisible = false;
                     owner.IsDraggable = false;
                     //owner.ScaleOrigin = new Point(0.5, 0.5);
                 }
@@ -88,12 +81,10 @@ namespace Kaxaml.Controls
         #region ScaleOrigin (DependencyProperty)
 
         public Point ScaleOrigin
-        {
-            get { return (Point)GetValue(ScaleOriginProperty); }
-            set { SetValue(ScaleOriginProperty, value); }
+        { get => (Point)GetValue(ScaleOriginProperty); set => SetValue(ScaleOriginProperty, value);
         }
         public static readonly DependencyProperty ScaleOriginProperty =
-            DependencyProperty.Register("ScaleOrigin", typeof(Point), typeof(ZoomFrame), new FrameworkPropertyMetadata(new Point(0.5, 0.5)));
+            DependencyProperty.Register(nameof(ScaleOrigin), typeof(Point), typeof(ZoomFrame), new FrameworkPropertyMetadata(new Point(0.5, 0.5)));
 
         #endregion
 
@@ -121,34 +112,34 @@ namespace Kaxaml.Controls
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            PART_Thumb = this.Template.FindName("PART_Thumb", this) as Thumb;
+            _partThumb = Template.FindName("PART_Thumb", this) as Thumb;
 
-            if (PART_Thumb != null)
+            if (_partThumb != null)
             {
-                PART_Thumb.DragStarted += new DragStartedEventHandler(PART_Thumb_DragStarted);
-                PART_Thumb.DragDelta += new DragDeltaEventHandler(PART_Thumb_DragDelta);
-                PART_Thumb.DragCompleted += new DragCompletedEventHandler(PART_Thumb_DragCompleted);
+                _partThumb.DragStarted += PART_Thumb_DragStarted;
+                _partThumb.DragDelta += PART_Thumb_DragDelta;
+                _partThumb.DragCompleted += PART_Thumb_DragCompleted;
             }
         }
 
-        private bool _isDragging = false;
+        private bool _isDragging;
 
-        void PART_Thumb_DragStarted(object sender, DragStartedEventArgs e)
+        private void PART_Thumb_DragStarted(object sender, DragStartedEventArgs e)
         {
             _isDragging = true;
         }
 
-        void PART_Thumb_DragDelta(object sender, DragDeltaEventArgs e)
+        private void PART_Thumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             if (_isDragging)
             {
                 if (Scale > 1.0)
                 {
-                    double x = ScaleOrigin.X - (e.HorizontalChange / (this.ActualWidth * Scale));
+                    var x = ScaleOrigin.X - e.HorizontalChange / (ActualWidth * Scale);
                     if (x > 1) x = 1;
                     if (x < 0) x = 0;
 
-                    double y = ScaleOrigin.Y - (e.VerticalChange / (this.ActualHeight * Scale));
+                    var y = ScaleOrigin.Y - e.VerticalChange / (ActualHeight * Scale);
                     if (y > 1) y = 1;
                     if (y < 0) y = 0;
 
@@ -157,7 +148,7 @@ namespace Kaxaml.Controls
             }
         }
 
-        void PART_Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
+        private void PART_Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             _isDragging = false;
         }

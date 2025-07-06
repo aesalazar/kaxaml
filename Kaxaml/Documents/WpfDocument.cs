@@ -6,7 +6,7 @@ using System.IO;
 
 namespace Kaxaml.Documents
 {
-    class WpfDocument : XamlDocument
+    internal class WpfDocument : XamlDocument
     {
 
 		#region Constructors 

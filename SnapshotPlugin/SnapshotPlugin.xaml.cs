@@ -4,7 +4,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using KaxamlPlugins;
 
-namespace Kaxaml.Plugins.Default
+namespace Kaxaml.Plugins.Snapshot
 {
     [Plugin(
         Name = "Snapshot",
@@ -14,22 +14,21 @@ namespace Kaxaml.Plugins.Default
         Key = Key.I
      )]
 
-    public partial class SnapshotPlugin : System.Windows.Controls.UserControl
+    public partial class SnapshotPlugin
     {
-
 		#region Constructors 
 
         public SnapshotPlugin()
         {
             InitializeComponent();
-            KaxamlInfo.ContentLoaded += new KaxamlInfo.ContentLoadedDelegate(KaxamlInfo_ContentLoaded);
+            KaxamlInfo.ContentLoaded += KaxamlInfo_ContentLoaded;
         }
 
 		#endregion Constructors 
 
-		#region Event Handlers 
+		#region Event Handlers
 
-        void KaxamlInfo_ContentLoaded()
+        private void KaxamlInfo_ContentLoaded()
         {
             RenderImage.Source = RenderContent();
         }
@@ -40,16 +39,16 @@ namespace Kaxaml.Plugins.Default
 
         private void Copy(object sender, RoutedEventArgs e)
         {
-            var bitmap = this.RenderContent();
+            var bitmap = RenderContent();
             if (null != bitmap)
             {
                 Clipboard.SetImage(bitmap);
             }
         }
 
-        private BitmapSource RenderContent()
+        private BitmapSource? RenderContent()
         {
-            FrameworkElement element = null;
+            var element = (FrameworkElement?)null;
 
             if (KaxamlInfo.Frame != null && KaxamlInfo.Frame.Content is FrameworkElement)
             {
@@ -61,31 +60,31 @@ namespace Kaxaml.Plugins.Default
             }
 
 
-            if (element != null && element.ActualWidth > 0 && element.ActualHeight > 0)
+            if (element is { ActualWidth: > 0, ActualHeight: > 0 })
             {
-                RenderTargetBitmap rtb = new RenderTargetBitmap((int)element.ActualWidth, (int)element.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                var rtb = new RenderTargetBitmap((int)element.ActualWidth, (int)element.ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 rtb.Render(element);
                 return rtb;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         private void Save(object sender, RoutedEventArgs e)
         {
-            BitmapSource rtb = RenderContent();
+            var rtb = RenderContent();
             if (null != rtb)
             {
-                Microsoft.Win32.SaveFileDialog sfd = new Microsoft.Win32.SaveFileDialog();
-                sfd.Filter = "Image files (*.png)|*.png|All files (*.*)|*.*";
+                var sfd = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Image files (*.png)|*.png|All files (*.*)|*.*"
+                };
 
                 if (sfd.ShowDialog(KaxamlInfo.MainWindow) == true)
                 {
-                    using (System.IO.FileStream fs = new System.IO.FileStream(sfd.FileName, System.IO.FileMode.Create))
+                    using (var fs = new System.IO.FileStream(sfd.FileName, System.IO.FileMode.Create))
                     {
-                        PngBitmapEncoder encoder = new PngBitmapEncoder();
+                        var encoder = new PngBitmapEncoder();
                         encoder.Frames.Add(BitmapFrame.Create(rtb));
                         encoder.Save(fs);
                     }
