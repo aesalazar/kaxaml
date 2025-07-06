@@ -17,7 +17,7 @@ namespace Kaxaml.Controls
     /// Interaction logic for KaxamlTextEditor.xaml
     /// </summary>
 
-    public partial class KaxamlTextEditor : System.Windows.Controls.UserControl, IKaxamlInfoTextEditor
+    public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     {
         //-------------------------------------------------------------------
         //
@@ -27,12 +27,12 @@ namespace Kaxaml.Controls
 
         #region Constructors
 
-        public static int counter = 0;
+        public static int Counter;
 
         public KaxamlTextEditor()
         {
-            counter++;
-            Debug.WriteLine("counter: " + counter);
+            Counter++;
+            Debug.WriteLine("counter: " + Counter);
 
             // enable the system theme for WinForms controls
             System.Windows.Forms.Application.EnableVisualStyles();
@@ -40,42 +40,35 @@ namespace Kaxaml.Controls
             InitializeComponent();
 
             // capture text changed events from the editor
-            TextEditor.Document.DocumentChanged += new ICSharpCode.TextEditor.Document.DocumentEventHandler(TextEditorDocumentChanged);
+            TextEditor.Document.DocumentChanged += TextEditorDocumentChanged;
 
             // create a key handler that we will use to activate code completion
-            TextEditor.ActiveTextAreaControl.TextArea.KeyEventHandler += new ICSharpCode.TextEditor.KeyEventHandler(ProcessText);
+            TextEditor.ActiveTextAreaControl.TextArea.KeyEventHandler += ProcessText;
 
             // register to process keys for our code completion dialog
-            TextEditor.ActiveTextAreaControl.TextArea.DoProcessDialogKey += new DialogKeyProcessor(ProcessKeys);
+            TextEditor.ActiveTextAreaControl.TextArea.DoProcessDialogKey += ProcessKeys;
 
             // register to get an event when selection changed
-            TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged += new EventHandler(SelectionManager_SelectionChanged);
+            TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged += SelectionManager_SelectionChanged;
 
-            // register to get an event when the carent position changed
-            TextEditor.ActiveTextAreaControl.Caret.PositionChanged += new EventHandler(Caret_PositionChanged);
+            // register to get an event when the caret position changed
+            TextEditor.ActiveTextAreaControl.Caret.PositionChanged += Caret_PositionChanged;
 
             // register for an event when the WinFormsHost gets deactivated
             //FormsHost.MessageHook += new System.Windows.Interop.HwndSourceHook(FormsHost_MessageHook);
 
             // register the ShowSnippets command
-            CommandBinding binding = new CommandBinding(ShowSnippetsCommand);
-            binding.Executed += new ExecutedRoutedEventHandler(this.ShowSnippets_Executed);
-            binding.CanExecute += new CanExecuteRoutedEventHandler(this.ShowSnippets_CanExecute);
-            this.InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Down, ModifierKeys.Alt)));
-            this.CommandBindings.Add(binding);
-
+            var binding = new CommandBinding(ShowSnippetsCommand);
+            binding.Executed += ShowSnippets_Executed;
+            binding.CanExecute += ShowSnippets_CanExecute;
+            InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Down, ModifierKeys.Alt)));
+            CommandBindings.Add(binding);
         }
 
-
-        //IntPtr FormsHost_MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        //{
-
-        //}
-
-        void Caret_PositionChanged(object sender, EventArgs e)
+        private void Caret_PositionChanged(object? _, EventArgs __)
         {
-            this.LineNumber = TextEditor.ActiveTextAreaControl.Caret.Position.Y;
-            this.LinePosition = TextEditor.ActiveTextAreaControl.Caret.Position.X;
+            LineNumber = TextEditor.ActiveTextAreaControl.Caret.Position.Y;
+            LinePosition = TextEditor.ActiveTextAreaControl.Caret.Position.X;
         }
 
         #endregion
@@ -89,28 +82,30 @@ namespace Kaxaml.Controls
         #region LineNumber (DependencyProperty)
 
         /// <summary>
-        /// The current current line number of the caret.
+        /// The current line number of the caret.
         /// </summary>
         public int LineNumber
         {
-            get { return (int)GetValue(LineNumberProperty); }
-            set { SetValue(LineNumberProperty, value); }
+            get => (int)GetValue(LineNumberProperty); 
+            set => SetValue(LineNumberProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for LineNumber
         /// </summary>
-        public static readonly DependencyProperty LineNumberProperty =
-            DependencyProperty.Register("LineNumber", typeof(int), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(int), new PropertyChangedCallback(LineNumberChanged)));
+        public static readonly DependencyProperty LineNumberProperty = DependencyProperty.Register(
+            nameof(LineNumber), 
+            typeof(int), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(int), LineNumberChanged));
 
         /// <summary>
         /// PropertyChangedCallback for LineNumber
         /// </summary>
         private static void LineNumberChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 owner.TextEditor.ActiveTextAreaControl.Caret.Line = (int)args.NewValue;
             }
         }
@@ -119,28 +114,30 @@ namespace Kaxaml.Controls
         #region LinePosition (DependencyProperty)
 
         /// <summary>
-        /// The current current line position of the caret.
+        /// The current line position of the caret.
         /// </summary>
         public int LinePosition
         {
-            get { return (int)GetValue(LinePositionProperty); }
-            set { SetValue(LinePositionProperty, value); }
+            get => (int)GetValue(LinePositionProperty); 
+            set => SetValue(LinePositionProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for LinePosition
         /// </summary>
-        public static readonly DependencyProperty LinePositionProperty =
-            DependencyProperty.Register("LinePosition", typeof(int), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(int), new PropertyChangedCallback(LinePositionChanged)));
+        public static readonly DependencyProperty LinePositionProperty = DependencyProperty.Register(
+            nameof(LinePosition), 
+            typeof(int), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(int), LinePositionChanged));
 
         /// <summary>
         /// PropertyChangedCallback for LinePosition
         /// </summary>
         private static void LinePositionChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 owner.TextEditor.ActiveTextAreaControl.Caret.Position = new TextLocation((int)args.NewValue, owner.TextEditor.ActiveTextAreaControl.Caret.Position.Y);
             }
         }
@@ -154,24 +151,26 @@ namespace Kaxaml.Controls
         /// </summary>
         public bool ShowLineNumbers
         {
-            get { return (bool)GetValue(ShowLineNumbersProperty); }
-            set { SetValue(ShowLineNumbersProperty, value); }
+            get => (bool)GetValue(ShowLineNumbersProperty);
+            set => SetValue(ShowLineNumbersProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ShowLineNumbers
         /// </summary>
-        public static readonly DependencyProperty ShowLineNumbersProperty =
-            DependencyProperty.Register("ShowLineNumbers", typeof(bool), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(bool), new PropertyChangedCallback(ShowLineNumbersChanged)));
+        public static readonly DependencyProperty ShowLineNumbersProperty = DependencyProperty.Register(
+            nameof(ShowLineNumbers), 
+            typeof(bool), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(bool), ShowLineNumbersChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ShowLineNumbers
         /// </summary>
         private static void ShowLineNumbersChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 owner.TextEditor.ShowLineNumbers = (bool)args.NewValue;
             }
         }
@@ -183,27 +182,29 @@ namespace Kaxaml.Controls
         /// <summary>
         /// The FontFamily associated with text in the TextEditor.
         /// </summary>
-        public string FontFamily
+        public string FontFamilyName
         {
-            get { return (string)GetValue(FontFamilyProperty); }
-            set { SetValue(FontFamilyProperty, value); }
+            get => (string)GetValue(FontFamilyPropertyName);
+            set => SetValue(FontFamilyPropertyName, value);
         }
 
         /// <summary>
         /// DependencyProperty for FontFamily
         /// </summary>
-        public static readonly DependencyProperty FontFamilyProperty =
-            DependencyProperty.Register("FontFamily", typeof(string), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata("Courier New", new PropertyChangedCallback(FontFamilyChanged)));
+        public static readonly DependencyProperty FontFamilyPropertyName = DependencyProperty.Register(
+            nameof(FontFamilyName),
+            typeof(string),
+            typeof(KaxamlTextEditor),
+            new FrameworkPropertyMetadata("Courier New", FontFamilyChanged));
 
         /// <summary>
         /// PropertyChangedCallback for FontFamily
         /// </summary>
         private static void FontFamilyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
-                owner.TextEditor.Font = new System.Drawing.Font((string)args.NewValue, (float)owner.FontSize);
+                owner.TextEditor.Font = new System.Drawing.Font((string)args.NewValue, owner.FontSize);
             }
         }
 
@@ -214,27 +215,29 @@ namespace Kaxaml.Controls
         /// <summary>
         /// The size of the text in the TextEditor.
         /// </summary>
-        public float FontSize
+        public new float FontSize
         {
-            get { return (float)GetValue(FontSizeProperty); }
-            set { SetValue(FontSizeProperty, value); }
+            get => (float)GetValue(FontSizeProperty);
+            set => SetValue(FontSizeProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for FontSize
         /// </summary>
-        public static readonly DependencyProperty FontSizeProperty =
-            DependencyProperty.Register("FontSize", typeof(float), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata((float)1, new PropertyChangedCallback(FontSizeChanged)));
+        public new static readonly DependencyProperty FontSizeProperty = DependencyProperty.Register(
+            nameof(FontSize), 
+            typeof(float), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata((float)1, FontSizeChanged));
 
         /// <summary>
         /// PropertyChangedCallback for FontSize
         /// </summary>
         private static void FontSizeChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
-                owner.TextEditor.Font = new System.Drawing.Font(owner.FontFamily, (float)args.NewValue);
+                owner.TextEditor.Font = new System.Drawing.Font(owner.FontFamilyName, (float)args.NewValue);
             }
         }
 
@@ -247,38 +250,39 @@ namespace Kaxaml.Controls
         /// </summary>
         public string Text
         {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+            get => (string)GetValue(TextProperty); 
+            set => SetValue(TextProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for Text
         /// </summary>
-        public static readonly DependencyProperty TextProperty =
-            DependencyProperty.Register("Text", typeof(string), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(string), new PropertyChangedCallback(TextPropertyChanged)));
+        public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
+            nameof(Text), 
+            typeof(string), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(string), TextPropertyChanged));
 
         /// <summary>
         /// PropertyChangedCallback for Text
         /// </summary>
         private static void TextPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
+                var newValue = " ";
+                if (!string.IsNullOrEmpty((string)args.NewValue)) newValue = (string)args.NewValue;
 
-                string newValue = " ";
-                if (!String.IsNullOrEmpty((string)args.NewValue)) newValue = (string)args.NewValue;
-
-                if (!owner._SetTextInternal)
+                if (!owner._setTextInternal)
                 {
-                    owner._ResetTextInternal = true;
+                    owner._resetTextInternal = true;
                     owner.TextEditor.ResetText();
                     owner.TextEditor.Refresh();
                     owner.TextEditor.Text = newValue;
-                    owner._ResetTextInternal = false;
+                    owner._resetTextInternal = false;
                 }
 
-                if (!owner._ResetTextInternal)
+                if (!owner._resetTextInternal)
                 {
                     owner.RaiseTextChangedEvent(newValue);
                 }
@@ -294,15 +298,18 @@ namespace Kaxaml.Controls
         /// </summary>
         public bool IsCodeCompletionEnabled
         {
-            get { return (bool)GetValue(IsCodeCompletionEnabledProperty); }
-            set { SetValue(IsCodeCompletionEnabledProperty, value); }
+            get => (bool)GetValue(IsCodeCompletionEnabledProperty);
+            set => SetValue(IsCodeCompletionEnabledProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for IsCodeCompletionEnabled
         /// </summary>
-        public static readonly DependencyProperty IsCodeCompletionEnabledProperty =
-            DependencyProperty.Register("IsCodeCompletionEnabled", typeof(bool), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(true));
+        public static readonly DependencyProperty IsCodeCompletionEnabledProperty = DependencyProperty.Register(
+            nameof(IsCodeCompletionEnabled), 
+            typeof(bool),
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(true));
 
         #endregion
 
@@ -313,24 +320,26 @@ namespace Kaxaml.Controls
         /// </summary>
         public bool ConvertTabs
         {
-            get { return (bool)GetValue(ConvertTabsProperty); }
-            set { SetValue(ConvertTabsProperty, value); }
+            get => (bool)GetValue(ConvertTabsProperty); 
+            set => SetValue(ConvertTabsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ConvertTabs
         /// </summary>
-        public static readonly DependencyProperty ConvertTabsProperty =
-            DependencyProperty.Register("ConvertTabs", typeof(bool), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(bool), new PropertyChangedCallback(ConvertTabsChanged)));
+        public static readonly DependencyProperty ConvertTabsProperty = DependencyProperty.Register(
+            nameof(ConvertTabs), 
+            typeof(bool), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(bool), ConvertTabsChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ConvertTabs
         /// </summary>
         private static void ConvertTabsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 owner.TextEditor.ConvertTabsToSpaces = (bool)args.NewValue;
             }
         }
@@ -339,32 +348,33 @@ namespace Kaxaml.Controls
 
         #region EnableXmlFolding (DependencyProperty)
 
-        DispatcherTimer FoldingTimer = null;
+        private DispatcherTimer? _foldingTimer;
 
         /// <summary>
         /// Enabled XML nodes to be collapsed when true
         /// </summary>
         public bool EnableXmlFolding
         {
-            get { return (bool)GetValue(EnableXmlFoldingProperty); }
-            set { SetValue(EnableXmlFoldingProperty, value); }
+            get => (bool)GetValue(EnableXmlFoldingProperty); 
+            set => SetValue(EnableXmlFoldingProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for EnableXmlFolding
         /// </summary>
-        public static readonly DependencyProperty EnableXmlFoldingProperty =
-            DependencyProperty.Register("EnableXmlFolding", typeof(bool), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(bool), new PropertyChangedCallback(EnableXmlFoldingChanged)));
+        public static readonly DependencyProperty EnableXmlFoldingProperty = DependencyProperty.Register(
+            nameof(EnableXmlFolding), 
+            typeof(bool), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(bool), EnableXmlFoldingChanged));
 
         /// <summary>
         /// PropertyChangedCallback for EnableXmlFolding
         /// </summary>
         private static void EnableXmlFoldingChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
-
                 if ((bool)args.NewValue)
                 {
                     // set the folding strategy
@@ -374,22 +384,24 @@ namespace Kaxaml.Controls
                     }
 
                     // create a timer to update the folding every second
-                    if (owner.FoldingTimer == null)
+                    if (owner._foldingTimer == null)
                     {
-                        owner.FoldingTimer = new DispatcherTimer();
-                        owner.FoldingTimer.Interval = TimeSpan.FromMilliseconds(1000);
-                        owner.FoldingTimer.Tick += new EventHandler(owner.FoldingTimerTick);
+                        owner._foldingTimer = new DispatcherTimer
+                        {
+                            Interval = TimeSpan.FromMilliseconds(1000)
+                        };
+                        owner._foldingTimer.Tick += owner.FoldingTimerTick;
                     }
 
                     // enable folding and start the timer
                     owner.TextEditor.EnableFolding = true;
-                    owner.FoldingTimer.Start();
+                    owner._foldingTimer.Start();
                 }
                 else
                 {
                     // disable folding and start the timer
                     owner.TextEditor.EnableFolding = false;
-                    owner.FoldingTimer.Stop();
+                    owner._foldingTimer?.Stop();
                 }
             }
         }
@@ -403,24 +415,26 @@ namespace Kaxaml.Controls
         /// </summary>
         public bool EnableSyntaxHighlighting
         {
-            get { return (bool)GetValue(EnableSyntaxHighlightingProperty); }
-            set { SetValue(EnableSyntaxHighlightingProperty, value); }
+            get => (bool)GetValue(EnableSyntaxHighlightingProperty);
+            set => SetValue(EnableSyntaxHighlightingProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for EnableSyntaxHighlighting
         /// </summary>
-        public static readonly DependencyProperty EnableSyntaxHighlightingProperty =
-            DependencyProperty.Register("EnableSyntaxHighlighting", typeof(bool), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(bool), new PropertyChangedCallback(EnableSyntaxHighlightingChanged)));
+        public static readonly DependencyProperty EnableSyntaxHighlightingProperty = DependencyProperty.Register(
+            nameof(EnableSyntaxHighlighting), 
+            typeof(bool), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(bool), EnableSyntaxHighlightingChanged));
 
         /// <summary>
         /// PropertyChangedCallback for EnableSyntaxHighlighting
         /// </summary>
         private static void EnableSyntaxHighlightingChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 if ((bool)args.NewValue)
                 {
                     // set the highlighting strategy
@@ -442,26 +456,28 @@ namespace Kaxaml.Controls
         /// </summary>
         public int ConvertTabsCount
         {
-            get { return (int)GetValue(ConvertTabsCountProperty); }
-            set { SetValue(ConvertTabsCountProperty, value); }
+            get => (int)GetValue(ConvertTabsCountProperty);
+            set => SetValue(ConvertTabsCountProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ConvertTabsCount
         /// </summary>
-        public static readonly DependencyProperty ConvertTabsCountProperty =
-            DependencyProperty.Register("ConvertTabsCount", typeof(int), typeof(KaxamlTextEditor), new FrameworkPropertyMetadata(default(int), new PropertyChangedCallback(ConvertTabsCountChanged)));
+        public static readonly DependencyProperty ConvertTabsCountProperty = DependencyProperty.Register(
+            nameof(ConvertTabsCount), 
+            typeof(int), 
+            typeof(KaxamlTextEditor), 
+            new FrameworkPropertyMetadata(default(int), ConvertTabsCountChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ConvertTabsCount
         /// </summary>
         private static void ConvertTabsCountChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is KaxamlTextEditor)
+            if (obj is KaxamlTextEditor owner)
             {
-                KaxamlTextEditor owner = (KaxamlTextEditor)obj;
                 owner.TextEditor.TabIndent = (int)args.NewValue;
-                owner.TextEditor.TextEditorProperties.IndentationSize = (int)args.NewValue; ;
+                owner.TextEditor.TextEditorProperties.IndentationSize = (int)args.NewValue;
             }
         }
 
@@ -477,26 +493,19 @@ namespace Kaxaml.Controls
 
         #region ShowSnippetsCommand
 
-        public readonly static RoutedUICommand ShowSnippetsCommand = new RoutedUICommand("Show Snippets", "ShowSnippetsCommand", typeof(KaxamlTextEditor));
+        public static readonly RoutedUICommand ShowSnippetsCommand = new("Show Snippets", "ShowSnippetsCommand", typeof(KaxamlTextEditor));
 
-        void ShowSnippets_Executed(object sender, ExecutedRoutedEventArgs args)
+        private void ShowSnippets_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (sender == this)
+            if (Equals(sender, this))
             {
                 ShowCompletionWindow(char.MaxValue);
             }
         }
 
-        void ShowSnippets_CanExecute(object sender, CanExecuteRoutedEventArgs args)
+        private void ShowSnippets_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (sender == this)
-            {
-                args.CanExecute = true;
-            }
-            else
-            {
-                args.CanExecute = false;
-            }
+            args.CanExecute = Equals(sender, this);
         }
 
         #endregion
@@ -511,24 +520,10 @@ namespace Kaxaml.Controls
 
         #region Properties
 
-        public string[] Lines
-        {
-            get
-            {
-                return Text.Split(new string[4] { "\r", "\n", "\r\n", "\n\r" }, StringSplitOptions.RemoveEmptyEntries);
-            }
-        }
-
         public int CaretIndex
         {
-            get
-            {
-                return TextEditor.ActiveTextAreaControl.TextArea.Caret.Offset;
-            }
-            set
-            {
-                TextEditor.ActiveTextAreaControl.Caret.Position = TextEditor.Document.OffsetToPosition(value);
-            }
+            get => TextEditor.ActiveTextAreaControl.TextArea.Caret.Offset; 
+            set => TextEditor.ActiveTextAreaControl.Caret.Position = TextEditor.Document.OffsetToPosition(value);
         }
 
         #endregion
@@ -541,18 +536,21 @@ namespace Kaxaml.Controls
 
         #region TextChangedEvent
 
-        public static readonly RoutedEvent TextChangedEvent =
-            EventManager.RegisterRoutedEvent("TextChanged", RoutingStrategy.Bubble, typeof(EventHandler<TextChangedEventArgs>), typeof(KaxamlTextEditor));
+        public static readonly RoutedEvent TextChangedEvent = EventManager.RegisterRoutedEvent(
+            nameof(TextChanged), 
+            RoutingStrategy.Bubble, 
+            typeof(EventHandler<TextChangedEventArgs>),
+            typeof(KaxamlTextEditor));
 
         public event EventHandler<TextChangedEventArgs> TextChanged
         {
-            add { AddHandler(TextChangedEvent, value); }
-            remove { RemoveHandler(TextChangedEvent, value); }
+            add => AddHandler(TextChangedEvent, value); 
+            remove => RemoveHandler(TextChangedEvent, value);
         }
 
-        void RaiseTextChangedEvent(string Text)
+        private void RaiseTextChangedEvent(string text)
         {
-            TextChangedEventArgs newEventArgs = new TextChangedEventArgs(KaxamlTextEditor.TextChangedEvent, Text);
+            var newEventArgs = new TextChangedEventArgs(TextChangedEvent, text);
             RaiseEvent(newEventArgs);
         }
 
@@ -560,22 +558,26 @@ namespace Kaxaml.Controls
 
         #region TextSelectionChangedEvent
 
-        void SelectionManager_SelectionChanged(object sender, EventArgs e)
+        private void SelectionManager_SelectionChanged(object? _, EventArgs __)
         {
-            this.RaiseTextSelectionChangedEvent();
+            RaiseTextSelectionChangedEvent();
         }
 
-        public static readonly RoutedEvent TextSelectionChangedEvent = EventManager.RegisterRoutedEvent("TextSelectionChanged", RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(KaxamlTextEditor));
+        public static readonly RoutedEvent TextSelectionChangedEvent = EventManager.RegisterRoutedEvent(
+            nameof(TextSelectionChanged), 
+            RoutingStrategy.Bubble, 
+            typeof(RoutedEventHandler), 
+            typeof(KaxamlTextEditor));
 
         public event RoutedEventHandler TextSelectionChanged
         {
-            add { AddHandler(TextSelectionChangedEvent, value); }
-            remove { RemoveHandler(TextSelectionChangedEvent, value); }
+            add => AddHandler(TextSelectionChangedEvent, value); 
+            remove => RemoveHandler(TextSelectionChangedEvent, value);
         }
 
-        void RaiseTextSelectionChangedEvent()
+        private void RaiseTextSelectionChangedEvent()
         {
-            RoutedEventArgs newEventArgs = new RoutedEventArgs(KaxamlTextEditor.TextSelectionChangedEvent);
+            var newEventArgs = new RoutedEventArgs(TextSelectionChangedEvent);
             RaiseEvent(newEventArgs);
         }
 
@@ -589,19 +591,18 @@ namespace Kaxaml.Controls
 
         #region EventHandlers
 
-        bool _SetTextInternal = false;
-        bool _ResetTextInternal = false;
+        private bool _setTextInternal;
+        private bool _resetTextInternal;
 
-        void TextEditorDocumentChanged(object sender, ICSharpCode.TextEditor.Document.DocumentEventArgs e)
+        private void TextEditorDocumentChanged(object sender, DocumentEventArgs e)
         {
-            _SetTextInternal = true;
+            _setTextInternal = true;
             Text = e.Document.TextContent;
-            _SetTextInternal = false;
+            _setTextInternal = false;
         }
 
-        void FoldingTimerTick(object sender, EventArgs e)
+        private void FoldingTimerTick(object? _, EventArgs __)
         {
-            //Dispatcher.BeginInvoke(DispatcherPriority.Background, new delegate(UpdateFolding));
             UpdateFolding();
         }
 
@@ -624,30 +625,30 @@ namespace Kaxaml.Controls
 
         private void UpdateFolding()
         {
-            TextEditor.Document.FoldingManager.UpdateFoldings(String.Empty, null);
-            TextArea area = TextEditor.ActiveTextAreaControl.TextArea;
+            TextEditor.Document.FoldingManager.UpdateFoldings(string.Empty, new object());
+            var area = TextEditor.ActiveTextAreaControl.TextArea;
             area.Refresh(area.FoldMargin);
         }
 
         /// <summary>
         /// Checks whether the caret is inside a set of quotes (" or ').
         /// </summary>
-        bool IsInsideQuotes(TextArea textArea)
+        private bool IsInsideQuotes(TextArea textArea)
         {
-            bool inside = false;
+            var inside = false;
 
-            ICSharpCode.TextEditor.Document.LineSegment line = textArea.Document.GetLineSegment(textArea.Document.GetLineNumberForOffset(textArea.Caret.Offset));
+            var line = textArea.Document.GetLineSegment(textArea.Document.GetLineNumberForOffset(textArea.Caret.Offset));
             if (line != null)
             {
-                if ((line.Offset + line.Length > textArea.Caret.Offset) &&
-                    (line.Offset < textArea.Caret.Offset))
+                if (line.Offset + line.Length > textArea.Caret.Offset &&
+                    line.Offset < textArea.Caret.Offset)
                 {
 
-                    char charAfter = textArea.Document.GetCharAt(textArea.Caret.Offset);
-                    char charBefore = textArea.Document.GetCharAt(textArea.Caret.Offset - 1);
+                    var charAfter = textArea.Document.GetCharAt(textArea.Caret.Offset);
+                    var charBefore = textArea.Document.GetCharAt(textArea.Caret.Offset - 1);
 
-                    if (((charBefore == '\'') && (charAfter == '\'')) ||
-                        ((charBefore == '\"') && (charAfter == '\"')))
+                    if ((charBefore == '\'' && charAfter == '\'') ||
+                        (charBefore == '\"' && charAfter == '\"'))
                     {
                         inside = true;
                     }
@@ -671,7 +672,7 @@ namespace Kaxaml.Controls
                     TextEditor.ActiveTextAreaControl.TextArea.ReplaceChar(ch);
                     break;
             }
-            int currentLineNr = TextEditor.ActiveTextAreaControl.TextArea.Caret.Line;
+            var currentLineNr = TextEditor.ActiveTextAreaControl.TextArea.Caret.Line;
             TextEditor.Document.FormattingStrategy.FormatLine(TextEditor.ActiveTextAreaControl.TextArea, currentLineNr, TextEditor.Document.PositionToOffset(TextEditor.ActiveTextAreaControl.TextArea.Caret.Position), ch);
 
             TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
@@ -709,7 +710,7 @@ namespace Kaxaml.Controls
 
             TextEditor.ActiveTextAreaControl.TextArea.Document.Remove(beginIndex, count);
 
-            if (this.CaretIndex > beginIndex)
+            if (CaretIndex > beginIndex)
             {
                 TextEditor.ActiveTextAreaControl.TextArea.Caret.Column -= count;
             }
@@ -721,46 +722,42 @@ namespace Kaxaml.Controls
 
         #region Code Completion
 
-        ICSharpCode.TextEditor.Gui.CompletionWindow.CodeCompletionWindow codeCompletionWindow;
-        //static CompletionWindow window;
-        static CodeCompletionPopup popup;
+        private static CodeCompletionPopup? _popup;
 
-        void CompleteTag()
+        private void CompleteTag()
         {
-            int caret = TextEditor.ActiveTextAreaControl.Caret.Offset - 1;
-            int begin = XmlParser.GetActiveElementStartIndex(this.Text, caret);
-            int end = begin + 1;
+            var caret = TextEditor.ActiveTextAreaControl.Caret.Offset - 1;
+            var begin = XmlParser.GetActiveElementStartIndex(Text, caret);
+            var end = begin + 1;
 
             if (Text[caret - 1] == '/')
             {
                 return;
             }
-            else
-            {
-                int start = XmlParser.GetActiveElementStartIndex(this.Text, caret);
 
-                // bail if we are either in a comment or if we are completing a "closing" tag
-                if (Text[start + 1] == '/' || Text[start + 1] == '!') return;
+            var start = XmlParser.GetActiveElementStartIndex(Text, caret);
+
+            // bail if we are either in a comment or if we are completing a "closing" tag
+            if (Text[start + 1] == '/' || Text[start + 1] == '!') return;
 
 
-                begin++;
-                while (end < Text.Length && !char.IsWhiteSpace(Text[end]) && end < caret) end++;
+            begin++;
+            while (end < Text.Length && !char.IsWhiteSpace(Text[end]) && end < caret) end++;
 
-                int column = TextEditor.ActiveTextAreaControl.Caret.Column;
-                InsertStringAtCaret("</" + Text.Substring(begin, end - begin) + ">");
+            var column = TextEditor.ActiveTextAreaControl.Caret.Column;
+            InsertStringAtCaret("</" + Text.Substring(begin, end - begin) + ">");
 
-                TextEditor.ActiveTextAreaControl.Caret.Column = column;
-                TextEditor.ActiveTextAreaControl.Caret.UpdateCaretPosition();
-            }
+            TextEditor.ActiveTextAreaControl.Caret.Column = column;
+            TextEditor.ActiveTextAreaControl.Caret.UpdateCaretPosition();
         }
 
-        bool _SpaceIsValid = true;
+        private bool _spaceIsValid = true;
 
-        bool ProcessText(char ch)
+        private bool ProcessText(char ch)
         {
-            if (!this.IsCodeCompletionEnabled) return false;
+            if (!IsCodeCompletionEnabled) return false;
 
-            int _CurrCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
+            var currCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
 
             if (XmlCompletionDataProvider.IsSchemaLoaded)
             {
@@ -770,51 +767,48 @@ namespace Kaxaml.Controls
                     {
                         //popup.AppendChar(ch);
                         InsertCharacter(ch);
-                        _CurrCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
+                        currCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
 
-                        if (_CurrCaretIndex > _BeginCaretIndex)
+                        if (currCaretIndex > _beginCaretIndex)
                         {
-                            string prefix = Text.Substring(_BeginCaretIndex, (_CurrCaretIndex - _BeginCaretIndex));
-                            popup.DoSearch(prefix);
+                            var prefix = Text.Substring(_beginCaretIndex, currCaretIndex - _beginCaretIndex);
+                            _popup?.DoSearch(prefix);
                         }
 
                         return true;
                     }
 
-                    else
+                    switch (ch)
                     {
-                        switch (ch)
-                        {
-                            case '>':
-                                popup.Accept(false);
+                        case '>':
+                            _popup?.Accept(false);
+                            InsertCharacter(ch);
+                            CompleteTag();
+                            return true;
+
+                        case ' ':
+                            if (_spaceIsValid)
+                            {
+                                _popup?.Accept(false);
                                 InsertCharacter(ch);
-                                CompleteTag();
+                                ShowCompletionWindow(ch);
                                 return true;
+                            }
+                            return false;
 
-                            case ' ':
-                                if (_SpaceIsValid)
-                                {
-                                    popup.Accept(false);
-                                    InsertCharacter(ch);
-                                    ShowCompletionWindow(ch);
-                                    return true;
-                                }
-                                return false;
+                        case '=':
+                            _popup?.Accept(false);
+                            InsertCharacter(ch);
+                            var column = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column + 1;
+                            InsertStringAtCaret("\"\"");
+                            TextEditor.ActiveTextAreaControl.TextArea.Caret.Column = column;
+                            return true;
 
-                            case '=':
-                                popup.Accept(false);
-                                InsertCharacter(ch);
-                                int column = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column + 1;
-                                InsertStringAtCaret("\"\"");
-                                TextEditor.ActiveTextAreaControl.TextArea.Caret.Column = column;
-                                return true;
+                        case '/':
+                            _popup?.Cancel();
+                            InsertCharacter(ch);
+                            return true;
 
-                            case '/':
-                                popup.Cancel();
-                                InsertCharacter(ch);
-                                return true;
-
-                        }
                     }
                 }
                 else
@@ -838,13 +832,13 @@ namespace Kaxaml.Controls
                             return true;
 
                         case '.':
-                            if (XmlParser.IsInsideXmlTag(Text, _CurrCaretIndex))
+                            if (XmlParser.IsInsideXmlTag(Text, currCaretIndex))
                             {
-                                if (popup != null)
+                                if (_popup != null)
                                 {
-                                    int startColumn = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column;
-                                    int restoreColumn = startColumn + 1;
-                                    int lineOffset = TextEditor.ActiveTextAreaControl.TextArea.Caret.Offset - startColumn;
+                                    var startColumn = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column;
+                                    var restoreColumn = startColumn + 1;
+                                    var lineOffset = TextEditor.ActiveTextAreaControl.TextArea.Caret.Offset - startColumn;
 
                                     while (true)
                                     {
@@ -856,15 +850,15 @@ namespace Kaxaml.Controls
                                     }
 
                                     InsertCharacter(ch);
-                                    _CurrCaretIndex++;
+                                    currCaretIndex++;
 
                                     TextEditor.ActiveTextAreaControl.TextArea.Caret.Column = startColumn + 1;
-                                    ShowCompletionWindow('<', XmlParser.GetActiveElementStartIndex(Text, _CurrCaretIndex) + 1);
+                                    ShowCompletionWindow('<', XmlParser.GetActiveElementStartIndex(Text, currCaretIndex) + 1);
 
                                     TextEditor.ActiveTextAreaControl.TextArea.Caret.Column = restoreColumn;
 
-                                    string prefix = Text.Substring(_BeginCaretIndex, _CurrCaretIndex - _BeginCaretIndex);
-                                    popup.CueSearch(prefix);
+                                    var prefix = Text.Substring(_beginCaretIndex, currCaretIndex - _beginCaretIndex);
+                                    _popup.CueSearch(prefix);
 
                                     return true;
                                 }
@@ -873,10 +867,10 @@ namespace Kaxaml.Controls
                             break;
 
                         case '=':
-                            if (!XmlParser.IsInsideAttributeValue(Text, _CurrCaretIndex))
+                            if (!XmlParser.IsInsideAttributeValue(Text, currCaretIndex))
                             {
                                 InsertCharacter(ch);
-                                int column = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column + 1;
+                                var column = TextEditor.ActiveTextAreaControl.TextArea.Caret.Column + 1;
                                 InsertStringAtCaret("\"\"");
                                 TextEditor.ActiveTextAreaControl.TextArea.Caret.Column = column;
                                 ShowCompletionWindow('\"');
@@ -909,60 +903,60 @@ namespace Kaxaml.Controls
 
         private bool ProcessKeys(Keys keyData)
         {
-            if (!this.IsCodeCompletionEnabled) return false;
+            if (!IsCodeCompletionEnabled) return false;
             // return true to suppress the keystroke before the TextArea can handle it
 
             if (CodeCompletionPopup.IsOpenSomewhere)
             {
-                if (keyData != Keys.Space) _SpaceIsValid = true;
+                if (keyData != Keys.Space) _spaceIsValid = true;
 
                 if (keyData == Keys.Down)
                 {
-                    popup.SelectNext();
+                    _popup?.SelectNext();
                     return true;
                 }
                 if (keyData == Keys.PageDown)
                 {
-                    popup.PageDown();
+                    _popup?.PageDown();
                     return true;
                 }
                 if (keyData == Keys.Up)
                 {
-                    popup.SelectPrevious();
+                    _popup?.SelectPrevious();
                     return true;
                 }
                 if (keyData == Keys.PageUp)
                 {
-                    popup.PageUp();
+                    _popup?.PageUp();
                     return true;
                 }
-                if (keyData == Keys.Enter || keyData == Keys.Return || keyData == Keys.Tab)
+                if (keyData is Keys.Return or Keys.Tab)
                 {
                     // if the selected item is an attribute, then we want to automatically insert the equals sign and quotes
                     //if (popup.SelectedItem.
 
-                    popup.Accept(false);
+                    _popup?.Accept(false);
 
                     return true;
                 }
-                if (keyData == Keys.Escape || keyData == Keys.Left || keyData == Keys.Delete)
+                if (keyData is Keys.Escape or Keys.Left or Keys.Delete)
                 {
-                    popup.Cancel();
+                    _popup?.Cancel();
                     return true;
                 }
                 if (keyData == Keys.Back)
                 {
 
-                    int _CurrCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
+                    var currCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
 
-                    if (_CurrCaretIndex > _BeginCaretIndex)
+                    if (currCaretIndex > _beginCaretIndex)
                     {
-                        string prefix = Text.Substring(_BeginCaretIndex, _CurrCaretIndex - _BeginCaretIndex);
-                        popup.DoSearch(prefix);
+                        var prefix = Text.Substring(_beginCaretIndex, currCaretIndex - _beginCaretIndex);
+                        _popup?.DoSearch(prefix);
                     }
                     else
                     {
-                        popup.Cancel();
+                        _popup?.Cancel();
                     }
                 }
             }
@@ -970,144 +964,124 @@ namespace Kaxaml.Controls
             return false;
         }
 
-        int _BeginCaretIndex = 0;
+        private int _beginCaretIndex;
 
         private delegate void OneArgDelegate(object arg);
-        public void ShowCompletionWindowUI(object param)
+        public void ShowCompletionWindowUi(object param)
         {
-            _SpaceIsValid = false;
-            if (param is ArrayList)
+            _spaceIsValid = false;
+            if (param is ArrayList items)
             {
-                ArrayList items = (ArrayList)param;
-
-                Window mainWindow = System.Windows.Application.Current.MainWindow;
+                var mainWindow = System.Windows.Application.Current.MainWindow;
 
                 double borderX = 0; // mainWindow.ActualWidth - (mainWindow.Content as FrameworkElement).ActualWidth;
-                double borderY = mainWindow.ActualHeight - (mainWindow.Content as FrameworkElement).ActualHeight;
+                var borderY = mainWindow.ActualHeight - ((FrameworkElement)mainWindow.Content).ActualHeight;
 
-                System.Drawing.Point editorPoint = TextEditor.PointToScreen(new System.Drawing.Point(0, 0));
-                System.Drawing.Point caretPoint = TextEditor.ActiveTextAreaControl.Caret.ScreenPosition;
+                var editorPoint = TextEditor.PointToScreen(new System.Drawing.Point(0, 0));
+                var caretPoint = TextEditor.ActiveTextAreaControl.Caret.ScreenPosition;
 
-                popup = CodeCompletionPopup.Show(items, new Point(editorPoint.X + caretPoint.X + borderX, editorPoint.Y + caretPoint.Y + (FontSize * 1.3) + 3));
-                popup.ResultProvided += w_ResultProvided;
+                _popup = CodeCompletionPopup.Show(items, new Point(editorPoint.X + caretPoint.X + borderX, editorPoint.Y + caretPoint.Y + FontSize * 1.3 + 3));
+                _popup.ResultProvided += w_ResultProvided;
             }
         }
 
-        void ShowCompletionWindow(object param)
+        private void ShowCompletionWindow(object param)
         {
             ShowCompletionWindow(param, TextEditor.ActiveTextAreaControl.Caret.Offset);
         }
 
-        void ShowCompletionWindow(object param, int beginCaretIndex)
+        private void ShowCompletionWindow(object param, int beginCaretIndex)
         {
-            if (!Kaxaml.Properties.Settings.Default.EnableCodeCompletion) return;
+            if (!Properties.Settings.Default.EnableCodeCompletion) return;
 
             if (!CodeCompletionPopup.IsOpenSomewhere)
             {
-                _BeginCaretIndex = beginCaretIndex;
+                _beginCaretIndex = beginCaretIndex;
 
-                if (param is char)
+                if (param is char ch)
                 {
-
-                    char ch = (char)param;
-
                     if (IsCodeCompletionEnabled)
                     {
                         if (ch == char.MaxValue)
                         {
-                            if ((App.Current as App).Snippets != null)
+                            if (((App)System.Windows.Application.Current).Snippets != null)
                             {
-                                ArrayList s = (App.Current as App).Snippets.GetSnippetCompletionItems();
+                                var s = ((App)System.Windows.Application.Current).Snippets?.GetSnippetCompletionItems();
 
-                                if (s.Count > 0)
+                                if (s?.Count > 0)
                                 {
-                                    this.Dispatcher.BeginInvoke(
-                                        System.Windows.Threading.DispatcherPriority.ApplicationIdle,
-                                        new OneArgDelegate(ShowCompletionWindowUI),
+                                    Dispatcher.BeginInvoke(
+                                        DispatcherPriority.ApplicationIdle,
+                                        new OneArgDelegate(ShowCompletionWindowUi),
                                         s);
                                 }
                             }
                         }
                         else
                         {
-                            XmlCompletionDataProvider completionDataProvider = new XmlCompletionDataProvider();
+                            var completionDataProvider = new XmlCompletionDataProvider();
 
                             ICollection c = completionDataProvider.GenerateCompletionData("", TextEditor.ActiveTextAreaControl.TextArea, ch);
 
-                            if (c != null)
-                            {
-                                ArrayList items = new ArrayList(c);
-                                items.Sort();
+                            var items = new ArrayList(c);
+                            items.Sort();
 
-                                this.Dispatcher.BeginInvoke(
-                                    System.Windows.Threading.DispatcherPriority.ApplicationIdle,
-                                    new OneArgDelegate(ShowCompletionWindowUI),
-                                    items);
-                            }
+                            Dispatcher.BeginInvoke(
+                                DispatcherPriority.ApplicationIdle,
+                                new OneArgDelegate(ShowCompletionWindowUi),
+                                items);
                         }
                     }
                 }
             }
         }
 
-        void w_ResultProvided(object sender, ResultProvidedEventArgs e)
+        private void w_ResultProvided(object? _, ResultProvidedEventArgs e)
         {
             // remove the event handler
-            popup.ResultProvided -= w_ResultProvided;
+            _popup!.ResultProvided -= w_ResultProvided;
 
             if (!e.Canceled)
             {
-                int _CurrCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
-                int inputlength = (_CurrCaretIndex - _BeginCaretIndex);
-                if (inputlength < 0) inputlength = 0;
+                var currCaretIndex = TextEditor.ActiveTextAreaControl.Caret.Offset;
+                var inputLength = currCaretIndex - _beginCaretIndex;
+                if (inputLength < 0) inputLength = 0;
 
-                string inserttext = "";
+                var indentedText = "";
 
-                if (e.Item is SnippetCompletionData)
+                if (e.Item is SnippetCompletionData snippet)
                 {
-                    SnippetCompletionData snippet = e.Item as SnippetCompletionData;
                     TextEditor.ActiveTextAreaControl.Caret.ValidateCaretPos();
-                    inserttext = snippet.Snippet.IndentedText(TextEditor.ActiveTextAreaControl.Caret.Position.X - inputlength, true);
+                    indentedText = snippet.Snippet.IndentedText(TextEditor.ActiveTextAreaControl.Caret.Position.X - inputLength, true);
                 }
 
-                if (e.Item is XmlCompletionData)
+                if (e.Item is XmlCompletionData xml)
                 {
-                    XmlCompletionData xml = e.Item as XmlCompletionData;
-
-
-                    inserttext = xml.Text;
+                    indentedText = xml.Text;
                 }
 
-                if (_CurrCaretIndex > _BeginCaretIndex)
+                if (currCaretIndex > _beginCaretIndex)
                 {
 
-                    string prefix = Text.Substring(_BeginCaretIndex, _CurrCaretIndex - _BeginCaretIndex);
+                    var prefix = Text.Substring(_beginCaretIndex, currCaretIndex - _beginCaretIndex);
                     if (e.ForcedAccept || e.Text.ToLowerInvariant().StartsWith(prefix.ToLowerInvariant()))
                     {
                         // clear the user entered text
-                        RemoveString(_BeginCaretIndex, _CurrCaretIndex - _BeginCaretIndex);
+                        RemoveString(_beginCaretIndex, currCaretIndex - _beginCaretIndex);
 
                         // insert the selected string
-                        InsertString(inserttext, _BeginCaretIndex);
+                        InsertString(indentedText, _beginCaretIndex);
 
                         // place the caret at the end of the inserted text
-                        TextEditor.ActiveTextAreaControl.TextArea.Caret.Column += inserttext.Length;
+                        TextEditor.ActiveTextAreaControl.TextArea.Caret.Column += indentedText.Length;
                     }
                 }
-                else if (_CurrCaretIndex - _BeginCaretIndex == 0)
+                else if (currCaretIndex - _beginCaretIndex == 0)
                 {
-                    InsertStringAtCaret(inserttext);
+                    InsertStringAtCaret(indentedText);
                 }
             }
         }
-
-        void CodeCompletionWindowClosed(object sender, EventArgs e)
-        {
-            codeCompletionWindow.Closed -= new EventHandler(CodeCompletionWindowClosed);
-            codeCompletionWindow.Dispose();
-            codeCompletionWindow = null;
-        }
-
 
         #endregion
 
@@ -1115,25 +1089,18 @@ namespace Kaxaml.Controls
 
         public void ReplaceSelectedText(string s)
         {
-            if (TextEditor.ActiveTextAreaControl.SelectionManager.SelectionCollection[0] != null)
             {
-                int offset = TextEditor.ActiveTextAreaControl.SelectionManager.SelectionCollection[0].Offset;
-                int length = TextEditor.ActiveTextAreaControl.SelectionManager.SelectionCollection[0].Length;
+                var offset = TextEditor.ActiveTextAreaControl.SelectionManager.SelectionCollection[0].Offset;
+                var length = TextEditor.ActiveTextAreaControl.SelectionManager.SelectionCollection[0].Length;
 
-                this.RemoveString(offset, length);
-                this.InsertString(s, offset);
+                RemoveString(offset, length);
+                InsertString(s, offset);
 
                 SetSelection(offset, offset + s.Length, true);
             }
         }
 
-        public string SelectedText
-        {
-            get
-            {
-                return TextEditor.ActiveTextAreaControl.SelectionManager.SelectedText;
-            }
-        }
+        public string SelectedText => TextEditor.ActiveTextAreaControl.SelectionManager.SelectedText;
 
         public void SetSelection(int fromOffset, int toOffset, bool suppressSelectionChangedEvent)
         {
@@ -1144,9 +1111,9 @@ namespace Kaxaml.Controls
 
                 if (suppressSelectionChangedEvent)
                 {
-                    TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged -= new EventHandler(SelectionManager_SelectionChanged);
+                    TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged -= SelectionManager_SelectionChanged;
                     TextEditor.ActiveTextAreaControl.SelectionManager.SetSelection(from, to);
-                    TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged += new EventHandler(SelectionManager_SelectionChanged);
+                    TextEditor.ActiveTextAreaControl.TextArea.SelectionManager.SelectionChanged += SelectionManager_SelectionChanged;
                 }
                 else
                 {
@@ -1183,21 +1150,16 @@ namespace Kaxaml.Controls
         }
 
         private string _findText = "";
-        private int _findIndex = 0;
-        private int _findStartIndex = 0;
+        private int _findIndex;
 
         public void Find(string s)
         {
             _findText = s;
             _findIndex = CaretIndex;
 
-            if (SelectedText.ToUpperInvariant() == _findText.ToUpperInvariant())
+            if (string.Equals(SelectedText, _findText, StringComparison.InvariantCultureIgnoreCase))
             {
                 _findIndex = CaretIndex + 1;
-            }
-            else
-            {
-                _findStartIndex = _findIndex;
             }
 
             FindNext();
@@ -1210,14 +1172,14 @@ namespace Kaxaml.Controls
 
         public void FindNext(bool allowStartFromTop)
         {
-            int index = Text.ToUpperInvariant().IndexOf(_findText.ToUpperInvariant(), _findIndex);
+            var index = Text.ToUpperInvariant().IndexOf(_findText.ToUpperInvariant(), _findIndex, StringComparison.Ordinal);
             if (index > 0)
             {
                 SetSelection(index, index + _findText.Length, false);
                 _findIndex = index + 1;
                 CaretIndex = index;
 
-                this.Focus();
+                Focus();
                 TextEditor.Select();
             }
             else if (allowStartFromTop)
@@ -1236,68 +1198,56 @@ namespace Kaxaml.Controls
         {
             if (selectedonly)
             {
-                int c = CaretIndex;
-                string sub = SelectedText;
-                string r = ReplaceEx(sub, s, replacement);
+                var c = CaretIndex;
+                var sub = SelectedText;
+                var r = ReplaceEx(sub, s, replacement);
 
-                this.ReplaceSelectedText(r);
-
-                CaretIndex = c;
+                ReplaceSelectedText(r);
+                
+                //Make sure the text is not shorter as a result of the replacement
+                CaretIndex = Math.Min(c, TextEditor.Document.TextLength);
             }
             else
             {
-                int c = CaretIndex;
-                string r = ReplaceEx(this.Text, s, replacement);
-                this.Text = r;
+                var c = CaretIndex;
+                var r = ReplaceEx(Text, s, replacement);
+                Text = r;
                 CaretIndex = c;
             }
         }
 
         private string ReplaceEx(string original, string pattern, string replacement)
         {
-            int count = 0;
-            int position0 = 0;
-            int position1 = 0;
+            var count = 0;
+            var position0 = 0;
+            int position1;
 
-            string upperString = original.ToUpper();
-            string upperPattern = pattern.ToUpper();
+            var upperString = original.ToUpper();
+            var upperPattern = pattern.ToUpper();
 
-            int inc = (original.Length / pattern.Length) * (replacement.Length - pattern.Length);
-            char[] chars = new char[original.Length + Math.Max(0, inc)];
+            var inc = original.Length / pattern.Length * (replacement.Length - pattern.Length);
+            var chars = new char[original.Length + Math.Max(0, inc)];
 
-            while ((position1 = upperString.IndexOf(upperPattern, position0)) != -1)
+            while ((position1 = upperString.IndexOf(upperPattern, position0, StringComparison.Ordinal)) != -1)
             {
-                for (int i = position0; i < position1; ++i)
+                for (var i = position0; i < position1; ++i)
                     chars[count++] = original[i];
-                for (int i = 0; i < replacement.Length; ++i)
+                for (var i = 0; i < replacement.Length; ++i)
                     chars[count++] = replacement[i];
                 position0 = position1 + pattern.Length;
             }
 
             if (position0 == 0) return original;
 
-            for (int i = position0; i < original.Length; ++i) chars[count++] = original[i];
+            for (var i = position0; i < original.Length; ++i) chars[count++] = original[i];
 
             return new string(chars, 0, count);
         }
 
 
-        public System.IntPtr EditorHandle
-        {
-            get
-            {
-                return TextEditor.Handle;
-            }
-        }
+        public nint EditorHandle => TextEditor.Handle;
 
-        public TextEditorControl HostedEditorControl
-        {
-            get
-            {
-                return TextEditor;
-            }
-        }
-
+        public TextEditorControl HostedEditorControl => TextEditor;
 
         #endregion
 
@@ -1313,24 +1263,17 @@ namespace Kaxaml.Controls
             TextEditor.Redo();
         }
 
-
         #endregion
-
     }
 
     public class TextChangedEventArgs : RoutedEventArgs
     {
         public TextChangedEventArgs(RoutedEvent routedEvent, string text)
         {
-            this.RoutedEvent = routedEvent;
-            this.Text = text;
+            RoutedEvent = routedEvent;
+            Text = text;
         }
 
-        private string _Text;
-        public string Text
-        {
-            get { return _Text; }
-            set { _Text = value; }
-        }
+        public string Text { get; set; }
     }
 }

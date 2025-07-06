@@ -1,6 +1,6 @@
 <UserControl 
   x:Name="This"
-  x:Class="Kaxaml.Plugins.Default.SnapshotPlugin"
+  x:Class="Kaxaml.Plugins.Snapshot.SnapshotPlugin"
   xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:a="clr-namespace:Microsoft.Windows.Themes;assembly=PresentationFramework.Aero"

@@ -17,7 +17,7 @@ namespace Kaxaml.Views
     /// <summary>
     /// Interaction logic for PuginView.xaml
     /// </summary>
-    public partial class PluginView : System.Windows.Controls.UserControl
+    public partial class PluginView : UserControl
     {
 
         public const string PluginSubDir = "\\plugins";
@@ -31,59 +31,58 @@ namespace Kaxaml.Views
         private void LoadPlugins()
         {
             // load the snippets plugin
-            Plugin snippets = new Plugin();
-            snippets.Root = new Snippets();
-            snippets.Name = "Snippets";
-            snippets.Description = "Manage a set of commonly used snippets (Ctrl+N)";
-            snippets.Key = Key.N;
-            snippets.ModifierKeys = ModifierKeys.Control;
-            snippets.Icon = LoadIcon(snippets.GetType(), "Images\\emb_tag.png");
+            var snippets = new Plugin
+            {
+                Root = new Snippets(),
+                Name = "Snippets",
+                Description = "Manage a set of commonly used snippets (Ctrl+N)",
+                Key = Key.N,
+                ModifierKeys = ModifierKeys.Control,
+                Icon = LoadIcon(typeof(Plugin), "Images\\emb_tag.png")
+            };
+
             Plugins.Add(snippets);
-            (App.Current as App).Snippets = snippets.Root as Snippets;
+            ((App)Application.Current).Snippets = (Snippets)snippets.Root;
 
             //// add the find plugin 
-            Plugin find = new Plugin();
-            find.Root = new Find();
-            find.Name = "Find";
-            find.Description = "Find and replace text in the editor (Ctrl+F, F3)";
-            find.Key = Key.F;
-            find.ModifierKeys = ModifierKeys.Control;
-            find.Icon = LoadIcon(snippets.GetType(), "Images\\find.png");
+            var find = new Plugin
+            {
+                Root = new Find(),
+                Name = "Find",
+                Description = "Find and replace text in the editor (Ctrl+F, F3)",
+                Key = Key.F,
+                ModifierKeys = ModifierKeys.Control,
+                Icon = LoadIcon(typeof(Plugin), "Images\\find.png")
+            };
+
             Plugins.Add(find);
             _findPlugin = find;
-            //FindInstance = (Find)find.Root;
-
-            //// add the goto plugin
-            //Plugin gotoline = new Plugin();
-            //gotoline.Root = new Goto();
-            //gotoline.Name = "Goto Line";
-            //gotoline.Description = "Go to the specified line number in the editor.";
-            //gotoline.Key = Key.G;
-            //gotoline.ModifierKeys = ModifierKeys.Control;
-            //Plugins.Add(gotoline);
-
-            string PluginDir = App.StartupPath + PluginSubDir;
+            var pluginDir = App.StartupPath + PluginSubDir;
 
             // if the plugin directory doesn't exist, then we're done
-            if (!Directory.Exists(PluginDir)) return;
+            if (!Directory.Exists(pluginDir)) return;
 
             // get a pointer to the plugin directory
-            DirectoryInfo d = new DirectoryInfo(PluginDir);
+            var d = new DirectoryInfo(pluginDir);
 
             // load each of the plugins in the directory
-            foreach (FileInfo f in d.GetFiles("*.dll"))
+            foreach (var f in d.GetFiles("*.dll"))
             {
-                Assembly asm = Assembly.LoadFile(f.FullName);
-                Type[] types = asm.GetExportedTypes();
-                foreach (Type typ in types)
+                var asm = Assembly.LoadFile(f.FullName);
+                var types = asm.GetExportedTypes();
+                foreach (var typ in types)
                 {
-                    var a = typ.GetCustomAttributes(typeof(PluginAttribute), false).Cast<PluginAttribute>().SingleOrDefault();
+                    var a = typ
+                        .GetCustomAttributes(typeof(PluginAttribute), false)
+                        .Cast<PluginAttribute>()
+                        .SingleOrDefault();
 
-                    if (a != null && typeof(UserControl).IsAssignableFrom(typ))
+                    var userControl = (UserControl?)Activator.CreateInstance(typ);
+                    if (a is not null && userControl is not null && typeof(UserControl).IsAssignableFrom(typ))
                     {
-                        Plugin p = new Plugin()
+                        var p = new Plugin()
                         {
-                            Root = (UserControl)Activator.CreateInstance(typ),
+                            Root = userControl,
                             Name = a.Name,
                             Description = a.Description,
                             Key = a.Key,
@@ -97,60 +96,57 @@ namespace Kaxaml.Views
             }
 
             //// add the settings plugin (we always want this to be at the end)
-            Plugin settings = new Plugin();
-            settings.Root = new Settings();
-            settings.Name = "Settings";
-            settings.Description = "Modify program settings and options (Ctrl+E)";
-            settings.Key = Key.E;
-            settings.ModifierKeys = ModifierKeys.Control;
-            settings.Icon = LoadIcon(snippets.GetType(), "Images\\cog.png");
+            var settings = new Plugin
+            {
+                Root = new Settings(),
+                Name = "Settings",
+                Description = "Modify program settings and options (Ctrl+E)",
+                Key = Key.E,
+                ModifierKeys = ModifierKeys.Control,
+                Icon = LoadIcon(typeof(Plugin), "Images\\cog.png"),
+            };
+
             Plugins.Add(settings);
 
-            //// add the about plugin 
-            Plugin about = new Plugin();
-            about.Root = new About();
-            about.Name = "About";
-            about.Description = "All about Kaxaml";
-            about.Icon = LoadIcon(snippets.GetType(), "Images\\kaxaml.png");
-            Plugins.Add(about);
+            // add the about plugin 
+            var about = new Plugin
+            {
+                Root = new About(),
+                Name = "About",
+                Description = "All about Kaxaml",
+                Icon = LoadIcon(typeof(Plugin), "Images\\kaxaml.png"),
+            };
 
-            //// add the settings plugin (we always want this to be at the end)
-            //Plugin about = new Plugin();
-            //about.Root = new About();
-            //about.Name = "About";
-            //about.Description = "All about Kaxaml.";
-            //Plugins.Add(about);
+            Plugins.Add(about);
         }
 
-        private ImageSource LoadIcon(Type typ, string icon)
+        private ImageSource? LoadIcon(Type typ, string icon)
         {
-            Assembly asm = Assembly.GetAssembly(typ);
-            string iconString = typ.Namespace + '.' + icon.Replace('\\', '.');
-            Stream myStream = asm.GetManifestResourceStream(iconString);
+            var asm = Assembly.GetAssembly(typ);
+            var iconString = typ.Namespace + '.' + icon.Replace('\\', '.');
+            var myStream = asm?.GetManifestResourceStream(iconString);
 
             if (myStream == null)
             {
                 iconString = typ.Name + '.' + icon.Replace('\\', '.');
-                myStream = asm.GetManifestResourceStream(iconString);
+                myStream = asm?.GetManifestResourceStream(iconString);
             }
 
             if (myStream == null)
             {
                 iconString = "Kaxaml.Images.package.png";
-                myStream = asm.GetManifestResourceStream(iconString);
+                myStream = asm?.GetManifestResourceStream(iconString);
             }
 
             if (myStream != null)
             {
-                PngBitmapDecoder bitmapDecoder = new PngBitmapDecoder(myStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                var bitmapDecoder = new PngBitmapDecoder(myStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
                 if (bitmapDecoder.Frames[0] != null && bitmapDecoder.Frames[0] is ImageSource)
                 {
                     return bitmapDecoder.Frames[0];
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
             return null;
         }
@@ -158,29 +154,28 @@ namespace Kaxaml.Views
 
         public List<Plugin> Plugins
         {
-            get { return (List<Plugin>)GetValue(PluginsProperty); }
-            set { SetValue(PluginsProperty, value); }
+            get => (List<Plugin>)GetValue(PluginsProperty); set => SetValue(PluginsProperty, value);
         }
         public static readonly DependencyProperty PluginsProperty =
-            DependencyProperty.Register("Plugins", typeof(List<Plugin>), typeof(PluginView), new UIPropertyMetadata(new List<Plugin>()));
+            DependencyProperty.Register(nameof(Plugins), typeof(List<Plugin>), typeof(PluginView), new UIPropertyMetadata(new List<Plugin>()));
 
         public void OpenPlugin(Key key, ModifierKeys modifierkeys)
         {
-            foreach (Plugin p in Plugins)
+            foreach (var p in Plugins)
             {
                 if (modifierkeys == p.ModifierKeys && key == p.Key)
                 {
                     try
                     {
-                        TabItem t = (TabItem)((FrameworkElement)p.Root).Parent;
+                        var t = (TabItem)p.Root.Parent;
                         t.IsSelected = true;
                         t.Focus();
 
                         UpdateLayout();
 
-                        if (t.Content is FrameworkElement)
+                        if (t.Content is FrameworkElement element)
                         {
-                            (t.Content as FrameworkElement).MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+                            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
                         }
                     }
                     catch (Exception ex)
@@ -194,22 +189,17 @@ namespace Kaxaml.Views
             }
         }
 
-        Plugin _findPlugin = null;
-        internal Plugin GetFindPlugin()
+        private Plugin? _findPlugin;
+
+        internal Plugin? GetFindPlugin()
         {
             return _findPlugin;
         }
 
-        public Plugin SelectedPlugin
+        public Plugin? SelectedPlugin
         {
-            get
-            {
-                return (Plugin)PluginTabControl.SelectedItem;
-            }
-            set
-            {
-                PluginTabControl.SelectedItem = (Plugin)value;
-            }
+            get => (Plugin?)PluginTabControl.SelectedItem;
+            set => PluginTabControl.SelectedItem = value;
         }
 
     }

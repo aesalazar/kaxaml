@@ -1,117 +1,103 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.ComponentModel;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
-namespace Kaxaml.Controls
+namespace Kaxaml.Controls;
+
+/// <summary>
+/// Interaction logic for XamlEditorDialog.xaml
+/// </summary>
+public partial class XamlEditorDialog : Window
 {
-    /// <summary>
-    /// Interaction logic for XamlEditorDialog.xaml
-    /// </summary>
-    public partial class XamlEditorDialog : Window
+    #region fields
+
+    private static string _returnText = "";
+
+    #endregion
+
+    private static XamlEditorDialog? _instance;
+
+    private bool _closedFromButton;
+
+    public XamlEditorDialog()
     {
-        #region fields
+        InitializeComponent();
+    }
 
-        static string _returnText = "";
+    public static string ShowModal(string text, string title, Window owner)
+    {
+        if (_instance == null) _instance = new XamlEditorDialog();
 
-        #endregion
+        _instance.Owner = owner;
+        _instance.Text = text;
+        _instance.Title = title;
 
-        public XamlEditorDialog()
+        var result = _instance.ShowDialog() is true;
+
+        if (result) return _returnText;
+
+        return text;
+    }
+
+    private void DoDone(object sender, RoutedEventArgs e)
+    {
+        _returnText = Text;
+        _closedFromButton = true;
+
+        DialogResult = true;
+        Close();
+        _instance = null;
+    }
+
+    private void DoCancel(object sender, RoutedEventArgs e)
+    {
+        _closedFromButton = true;
+
+        DialogResult = false;
+        Close();
+        _instance = null;
+    }
+
+    protected override void OnClosing(CancelEventArgs e)
+    {
+        if (!_closedFromButton)
         {
-            InitializeComponent();
-        }
+            var r = MessageBox.Show("Do you want to keep the changes you made?", "Keep Changes?",
+                MessageBoxButton.YesNoCancel);
 
-        #region Text (DependencyProperty)
-
-        public string Text
-        {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
-        }
-        public static readonly DependencyProperty TextProperty =
-            DependencyProperty.Register("Text", typeof(string), typeof(XamlEditorDialog), new FrameworkPropertyMetadata(default(string)));
-
-        #endregion
-
-        private static XamlEditorDialog instance = null;
-        public static string ShowModal(string text, string title, Window owner)
-        {
-            if (instance == null)
+            if (r == MessageBoxResult.Yes)
             {
-                instance = new XamlEditorDialog();
+                _returnText = Text;
             }
-
-            instance.Owner = owner;
-            instance.Text = text;
-            instance.Title = title;
-
-            bool result = (bool) instance.ShowDialog();
-
-            if (result)
+            else if (r == MessageBoxResult.No)
             {
-                return _returnText;
+                // do nothing
             }
             else
             {
-                return text;
+                e.Cancel = true;
             }
         }
 
-        bool _closedFromButton = false;
-
-        private void DoDone(object sender, RoutedEventArgs e)
-        {
-            _returnText = Text;
-            _closedFromButton = true;
-
-            DialogResult = true;
-            this.Close();
-            instance = null;
-        }
-
-        private void DoCancel(object sender, RoutedEventArgs e)
-        {
-            _closedFromButton = true;
-
-            DialogResult = false;
-            this.Close();
-            instance = null;
-        }
-
-        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
-        {
-            if (!_closedFromButton)
-            {
-                MessageBoxResult r = MessageBox.Show("Do you want to keep the changes you made?", "Keep Changes?", MessageBoxButton.YesNoCancel);
-
-                if (r == MessageBoxResult.Yes)
-                {
-                    _returnText = Text;
-                }
-                else if (r == MessageBoxResult.No)
-                {
-                    // do nothing
-                }
-                else
-                {
-                    e.Cancel = true;
-                }
-            }
-
-            base.OnClosing(e);
-        }
-
-        protected override void OnClosed(EventArgs e)
-        {
-            instance = null;
-        }
+        base.OnClosing(e);
     }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _instance = null;
+    }
+
+    #region Text (DependencyProperty)
+
+    public string Text
+    {
+        get => (string)GetValue(TextProperty);
+        set => SetValue(TextProperty, value);
+    }
+
+    public static readonly DependencyProperty TextProperty =
+        DependencyProperty.Register(nameof(Text), typeof(string), typeof(XamlEditorDialog),
+            new FrameworkPropertyMetadata(default(string)));
+
+    #endregion
 }

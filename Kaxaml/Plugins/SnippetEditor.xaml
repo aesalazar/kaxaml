@@ -49,7 +49,7 @@
       x:Name="Editor"
       Grid.Row="0"
       Grid.ColumnSpan="7"
-      FontFamily="{Binding Source={x:Static settings:Settings.Default}, Path=EditorFontFamily, Mode=TwoWay}"
+      FontFamilyName="{Binding Source={x:Static settings:Settings.Default}, Path=EditorFontFamily, Mode=TwoWay}"
       FontSize="{Binding Source={x:Static settings:Settings.Default}, Path=EditorFontSize, Mode=TwoWay}"
       ConvertTabs="{Binding Source={x:Static settings:Settings.Default}, Path=ConvertTabs}"
       ConvertTabsCount="{Binding Source={x:Static settings:Settings.Default}, Path=ConvertTabsCount}"

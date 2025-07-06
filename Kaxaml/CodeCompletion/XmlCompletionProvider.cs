@@ -14,26 +14,22 @@ namespace Kaxaml.CodeCompletion
 
         #region Static Fields
 
-        static XmlSchemaCompletionData defaultSchemaCompletionData = null;
+        private static XmlSchemaCompletionData? _defaultSchemaCompletionData;
 
         #endregion Static Fields
 
         #region Fields
 
 
-        protected string preSelection = null;
-        string defaultNamespacePrefix = String.Empty;
+        protected string? preSelection;
+        private readonly string _defaultNamespacePrefix = string.Empty;
 
         #endregion Fields
 
         #region Properties
 
 
-        public static bool IsSchemaLoaded
-        {
-            get { return (defaultSchemaCompletionData != null); }
-        }
-
+        public static bool IsSchemaLoaded => _defaultSchemaCompletionData != null;
 
         #endregion Properties
 
@@ -49,11 +45,11 @@ namespace Kaxaml.CodeCompletion
             }
         }
 
-        private static Exception LoadSchemaFromFile(string filename)
+        private static Exception? LoadSchemaFromFile(string filename)
         {
             try
             {
-                defaultSchemaCompletionData = new XmlSchemaCompletionData(filename);
+                _defaultSchemaCompletionData = new XmlSchemaCompletionData(filename);
                 return null;
             }
             catch (Exception ex)
@@ -62,10 +58,8 @@ namespace Kaxaml.CodeCompletion
                 {
                     throw;
                 }
-                else
-                {
-                    return ex;
-                }
+
+                return ex;
             }
         }
 
@@ -74,29 +68,27 @@ namespace Kaxaml.CodeCompletion
 
         #region ICompletionDataProvider Members
 
-        public int DefaultIndex
-        {
-            get { return 0; }
-        }
+        public int DefaultIndex => 0;
 
         public ICompletionData[] GenerateCompletionData(string fileName, TextArea textArea, char charTyped)
         {
-            string text = String.Concat(textArea.Document.GetText(0, textArea.Caret.Offset), charTyped);
+            var text = string.Concat(textArea.Document.GetText(0, textArea.Caret.Offset), charTyped);
 
             switch (charTyped)
             {
                 case '<':
                     // Child element intellisense.
-                    XmlElementPath parentPath = XmlParser.GetParentElementPath(text);
+                    var parentPath = XmlParser.GetParentElementPath(text);
                     if (parentPath.Elements.Count > 0)
                     {
-                        ICompletionData[] data = GetChildElementCompletionData(parentPath);
+                        var data = GetChildElementCompletionData(parentPath);
                         //returnval = data;
                         return data;
                     }
-                    else if (defaultSchemaCompletionData != null)
+
+                    if (_defaultSchemaCompletionData != null)
                     {
-                        return defaultSchemaCompletionData.GetElementCompletionData(defaultNamespacePrefix);
+                        return _defaultSchemaCompletionData.GetElementCompletionData(_defaultNamespacePrefix);
                     }
                     break;
 
@@ -104,7 +96,7 @@ namespace Kaxaml.CodeCompletion
                     // Attribute intellisense.
                     if (!XmlParser.IsInsideAttributeValue(text, text.Length))
                     {
-                        XmlElementPath path = XmlParser.GetActiveElementStartPath(text, text.Length);
+                        var path = XmlParser.GetActiveElementStartPath(text, text.Length);
                         if (path.Elements.Count > 0)
                         {
                             return GetAttributeCompletionData(path);
@@ -118,10 +110,10 @@ namespace Kaxaml.CodeCompletion
                     // Attribute value intellisense.
                     //if (XmlParser.IsAttributeValueChar(charTyped)) {
                     text = text.Substring(0, text.Length - 1);
-                    string attributeName = XmlParser.GetAttributeName(text, text.Length);
+                    var attributeName = XmlParser.GetAttributeName(text, text.Length);
                     if (attributeName.Length > 0)
                     {
-                        XmlElementPath elementPath = XmlParser.GetActiveElementStartPath(text, text.Length);
+                        var elementPath = XmlParser.GetActiveElementStartPath(text, text.Length);
                         if (elementPath.Elements.Count > 0)
                         {
                             preSelection = charTyped.ToString();
@@ -132,63 +124,62 @@ namespace Kaxaml.CodeCompletion
                     break;
             }
 
-            return null;
-
+            return [];
         }
 
 
-        ICompletionData[] GetChildElementCompletionData(XmlElementPath path)
+        private ICompletionData[] GetChildElementCompletionData(XmlElementPath path)
         {
-            ICompletionData[] completionData = null;
+            ICompletionData[]? completionData = null;
 
-            XmlSchemaCompletionData schema = defaultSchemaCompletionData;
+            var schema = _defaultSchemaCompletionData;
             if (schema != null)
             {
                 completionData = schema.GetChildElementCompletionData(path);
             }
 
-            return completionData;
+            return completionData ?? [];
         }
 
-        ICompletionData[] GetAttributeCompletionData(XmlElementPath path)
+        private ICompletionData[] GetAttributeCompletionData(XmlElementPath path)
         {
-            ICompletionData[] completionData = null;
+            ICompletionData[]? completionData = null;
 
-            XmlSchemaCompletionData schema = defaultSchemaCompletionData;
+            var schema = _defaultSchemaCompletionData;
             if (schema != null)
             {
                 completionData = schema.GetAttributeCompletionData(path);
             }
 
-            return completionData;
+            return completionData ?? [];
         }
 
-        ICompletionData[] GetAttributeValueCompletionData(XmlElementPath path, string name)
+        private ICompletionData[] GetAttributeValueCompletionData(XmlElementPath path, string name)
         {
-            ICompletionData[] completionData = null;
+            ICompletionData[]? completionData = null;
 
-            XmlSchemaCompletionData schema = defaultSchemaCompletionData;
+            var schema = _defaultSchemaCompletionData;
             if (schema != null)
             {
                 completionData = schema.GetAttributeValueCompletionData(path, name);
             }
 
-            return completionData;
+            return completionData ?? [];
         }
 
-        ImageList _ImageList;
+        private ImageList? _imageList;
         public ImageList ImageList
         {
             get
             {
-                if (_ImageList == null)
+                if (_imageList == null)
                 {
-                    _ImageList = new ImageList();
+                    _imageList = new ImageList();
                     //_ImageList.Images.Add(new System.Drawing.Bitmap(@"C:\element2.png"));
 
                 }
 
-                return _ImageList;
+                return _imageList;
             }
         }
 
@@ -199,16 +190,9 @@ namespace Kaxaml.CodeCompletion
             //throw new Exception("The method or operation is not implemented.");
         }
 
-        public string PreSelection
-        {
-            get
-            {
-                return "";
-            }
+        public string PreSelection => "";
 
-            //get { throw new Exception("The method or operation is not implemented."); }
-        }
-
+        //get { throw new Exception("The method or operation is not implemented."); }
         public CompletionDataProviderKeyResult ProcessKey(char key)
         {
             return CompletionDataProviderKeyResult.NormalKey;

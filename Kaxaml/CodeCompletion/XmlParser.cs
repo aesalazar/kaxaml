@@ -29,20 +29,21 @@ namespace Kaxaml.CodeCompletion
         /// -1 if no end tag character is found or a start tag
         /// character is found first.
         /// </returns>
-        static int GetActiveElementEndIndex(string xml, int index)
+        private static int GetActiveElementEndIndex(string xml, int index)
         {
-            int elementEndIndex = index;
+            var elementEndIndex = index;
 
-            for (int i = index; i < xml.Length; ++i)
+            for (var i = index; i < xml.Length; ++i)
             {
 
-                char currentChar = xml[i];
+                var currentChar = xml[i];
                 if (currentChar == '>')
                 {
                     elementEndIndex = i;
                     break;
                 }
-                else if (currentChar == '<')
+
+                if (currentChar == '<')
                 {
                     elementEndIndex = -1;
                     break;
@@ -62,19 +63,20 @@ namespace Kaxaml.CodeCompletion
         /// </returns>
         public static int GetActiveElementStartIndex(string xml, int index)
         {
-            int elementStartIndex = -1;
+            var elementStartIndex = -1;
 
-            int currentIndex = index - 1;
-            for (int i = 0; i < index; ++i)
+            var currentIndex = index - 1;
+            for (var i = 0; i < index; ++i)
             {
 
-                char currentChar = xml[currentIndex];
+                var currentChar = xml[currentIndex];
                 if (currentChar == '<')
                 {
                     elementStartIndex = currentIndex;
                     break;
                 }
-                else if (currentChar == '>')
+
+                if (currentChar == '>')
                 {
                     break;
                 }
@@ -93,21 +95,21 @@ namespace Kaxaml.CodeCompletion
         /// is returned.</remarks>
         public static XmlElementPath GetActiveElementStartPath(string xml, int index)
         {
-            XmlElementPath path = new XmlElementPath();
+            var path = new XmlElementPath();
 
-            string elementText = GetActiveElementStartText(xml, index);
+            var elementText = GetActiveElementStartText(xml, index);
 
             if (elementText != null)
             {
-                QualifiedName elementName = GetElementName(elementText);
-                NamespaceURI elementNamespace = GetElementNamespace(elementText);
+                var elementName = GetElementName(elementText);
+                var elementNamespace = GetElementNamespace(elementText);
 
                 path = GetParentElementPath(xml.Substring(0, index));
                 if (elementNamespace.Namespace.Length == 0)
                 {
                     if (path.Elements.Count > 0)
                     {
-                        QualifiedName parentName = path.Elements[path.Elements.Count - 1];
+                        var parentName = path.Elements[path.Elements.Count - 1];
                         elementNamespace.Namespace = parentName.Namespace;
                         elementNamespace.Prefix = parentName.Prefix;
                     }
@@ -123,17 +125,17 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// Gets the active element path given the element text.
         /// </summary>
-        static XmlElementPath GetActiveElementStartPath(string xml, int index, string elementText)
+        private static XmlElementPath GetActiveElementStartPath(string xml, int index, string elementText)
         {
-            QualifiedName elementName = GetElementName(elementText);
-            NamespaceURI elementNamespace = GetElementNamespace(elementText);
+            var elementName = GetElementName(elementText);
+            var elementNamespace = GetElementNamespace(elementText);
 
-            XmlElementPath path = GetParentElementPath(xml.Substring(0, index));
+            var path = GetParentElementPath(xml.Substring(0, index));
             if (elementNamespace.Namespace.Length == 0)
             {
                 if (path.Elements.Count > 0)
                 {
-                    QualifiedName parentName = path.Elements[path.Elements.Count - 1];
+                    var parentName = path.Elements[path.Elements.Count - 1];
                     elementNamespace.Namespace = parentName.Namespace;
                     elementNamespace.Prefix = parentName.Prefix;
                 }
@@ -155,17 +157,17 @@ namespace Kaxaml.CodeCompletion
         {
             // Find first non xml element name character to the right of the index.
             index = GetCorrectedIndex(xml.Length, index);
-            int currentIndex = index;
+            var currentIndex = index;
             for (; currentIndex < xml.Length; ++currentIndex)
             {
-                char ch = xml[currentIndex];
+                var ch = xml[currentIndex];
                 if (!IsXmlNameChar(ch))
                 {
                     break;
                 }
             }
 
-            string elementText = GetElementNameAtIndex(xml, currentIndex);
+            var elementText = GetElementNameAtIndex(xml, currentIndex);
             if (elementText != null)
             {
                 return GetActiveElementStartPath(xml, currentIndex, elementText);
@@ -180,14 +182,14 @@ namespace Kaxaml.CodeCompletion
         /// <returns>
         /// Returns the text up to and including the start tag &lt; character.
         /// </returns>
-        static string GetActiveElementStartText(string xml, int index)
+        private static string? GetActiveElementStartText(string xml, int index)
         {
-            int elementStartIndex = GetActiveElementStartIndex(xml, index);
+            var elementStartIndex = GetActiveElementStartIndex(xml, index);
             if (elementStartIndex >= 0)
             {
                 if (elementStartIndex < index)
                 {
-                    int elementEndIndex = GetActiveElementEndIndex(xml, index);
+                    var elementEndIndex = GetActiveElementEndIndex(xml, index);
                     if (elementEndIndex >= index)
                     {
                         return xml.Substring(elementStartIndex, elementEndIndex - elementStartIndex);
@@ -205,7 +207,7 @@ namespace Kaxaml.CodeCompletion
         {
             if (xml.Length == 0)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             index = GetCorrectedIndex(xml.Length, index);
@@ -213,23 +215,23 @@ namespace Kaxaml.CodeCompletion
             return GetAttributeName(xml, index, true, true, true);
         }
 
-        static string GetAttributeName(string xml, int index, bool ignoreWhitespace, bool ignoreQuote, bool ignoreEqualsSign)
+        private static string GetAttributeName(string xml, int index, bool ignoreWhitespace, bool ignoreQuote, bool ignoreEqualsSign)
         {
-            string name = String.Empty;
+            var name = string.Empty;
 
             // From the end of the string work backwards until we have
             // picked out the attribute name.
-            StringBuilder reversedAttributeName = new StringBuilder();
+            var reversedAttributeName = new StringBuilder();
 
-            int currentIndex = index;
-            bool invalidString = true;
+            var currentIndex = index;
+            var invalidString = true;
 
-            for (int i = 0; i <= index; ++i)
+            for (var i = 0; i <= index; ++i)
             {
 
-                char currentChar = xml[currentIndex];
+                var currentChar = xml[currentIndex];
 
-                if (Char.IsLetterOrDigit(currentChar))
+                if (char.IsLetterOrDigit(currentChar))
                 {
                     if (!ignoreEqualsSign)
                     {
@@ -237,7 +239,7 @@ namespace Kaxaml.CodeCompletion
                         reversedAttributeName.Append(currentChar);
                     }
                 }
-                else if (Char.IsWhiteSpace(currentChar))
+                else if (char.IsWhiteSpace(currentChar))
                 {
                     if (ignoreWhitespace == false)
                     {
@@ -246,7 +248,7 @@ namespace Kaxaml.CodeCompletion
                         break;
                     }
                 }
-                else if ((currentChar == '\'') || (currentChar == '\"'))
+                else if (currentChar is '\'' or '\"')
                 {
                     if (ignoreQuote)
                     {
@@ -299,23 +301,23 @@ namespace Kaxaml.CodeCompletion
         {
             index = GetCorrectedIndex(xml.Length, index);
 
-            bool ignoreWhitespace = true;
-            bool ignoreEqualsSign = false;
-            bool ignoreQuote = false;
+            var ignoreWhitespace = true;
+            var ignoreEqualsSign = false;
+            var ignoreQuote = false;
 
             if (IsInsideAttributeValue(xml, index))
             {
                 // Find attribute name start.
-                int elementStartIndex = GetActiveElementStartIndex(xml, index);
+                var elementStartIndex = GetActiveElementStartIndex(xml, index);
                 if (elementStartIndex == -1)
                 {
-                    return String.Empty;
+                    return string.Empty;
                 }
 
                 // Find equals sign.
-                for (int i = index; i > elementStartIndex; --i)
+                for (var i = index; i > elementStartIndex; --i)
                 {
-                    char ch = xml[i];
+                    var ch = xml[i];
                     if (ch == '=')
                     {
                         index = i;
@@ -329,10 +331,10 @@ namespace Kaxaml.CodeCompletion
                 // Find end of attribute name.
                 for (; index < xml.Length; ++index)
                 {
-                    char ch = xml[index];
-                    if (!Char.IsLetterOrDigit(ch))
+                    var ch = xml[index];
+                    if (!char.IsLetterOrDigit(ch))
                     {
-                        if (ch == '\'' || ch == '\"')
+                        if (ch is '\'' or '\"')
                         {
                             ignoreQuote = true;
                             ignoreEqualsSign = true;
@@ -354,22 +356,22 @@ namespace Kaxaml.CodeCompletion
         {
             if (!IsInsideAttributeValue(xml, index))
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             index = GetCorrectedIndex(xml.Length, index);
 
-            int elementStartIndex = GetActiveElementStartIndex(xml, index);
+            var elementStartIndex = GetActiveElementStartIndex(xml, index);
             if (elementStartIndex == -1)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             // Find equals sign.
-            int equalsSignIndex = -1;
-            for (int i = index; i > elementStartIndex; --i)
+            var equalsSignIndex = -1;
+            for (var i = index; i > elementStartIndex; --i)
             {
-                char ch = xml[i];
+                var ch = xml[i];
                 if (ch == '=')
                 {
                     equalsSignIndex = i;
@@ -379,19 +381,19 @@ namespace Kaxaml.CodeCompletion
 
             if (equalsSignIndex == -1)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             // Find attribute value.
-            char quoteChar = ' ';
-            bool foundQuoteChar = false;
-            StringBuilder attributeValue = new StringBuilder();
-            for (int i = equalsSignIndex; i < xml.Length; ++i)
+            var quoteChar = ' ';
+            var foundQuoteChar = false;
+            var attributeValue = new StringBuilder();
+            for (var i = equalsSignIndex; i < xml.Length; ++i)
             {
-                char ch = xml[i];
+                var ch = xml[i];
                 if (!foundQuoteChar)
                 {
-                    if (ch == '\"' || ch == '\'')
+                    if (ch is '\"' or '\'')
                     {
                         quoteChar = ch;
                         foundQuoteChar = true;
@@ -404,19 +406,20 @@ namespace Kaxaml.CodeCompletion
                         // End of attribute value.
                         return attributeValue.ToString();
                     }
-                    else if (IsAttributeValueChar(ch) || (ch == '\"' || ch == '\''))
+
+                    if (IsAttributeValueChar(ch) || ch == '\"' || ch == '\'')
                     {
                         attributeValue.Append(ch);
                     }
                     else
                     {
                         // Invalid character found.
-                        return String.Empty;
+                        return string.Empty;
                     }
                 }
             }
 
-            return String.Empty;
+            return string.Empty;
         }
 
         /// <summary>
@@ -427,7 +430,7 @@ namespace Kaxaml.CodeCompletion
         /// <param name="index">The current index.</param>
         /// <returns>The index unchanged if the index is smaller than the
         /// length of the string; otherwise it returns length - 1.</returns>
-        static int GetCorrectedIndex(int length, int index)
+        private static int GetCorrectedIndex(int length, int index)
         {
             if (index >= length)
             {
@@ -441,13 +444,13 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         /// <param name="xml">This string must start at the 
         /// element we are interested in.</param>
-        static QualifiedName GetElementName(string xml)
+        private static QualifiedName GetElementName(string xml)
         {
-            string name = String.Empty;
+            var name = string.Empty;
 
             // Find the end of the element name.
             xml = xml.Replace("\r\n", " ");
-            int index = xml.IndexOf(' ');
+            var index = xml.IndexOf(' ');
             if (index > 0)
             {
                 name = xml.Substring(1, index - 1);
@@ -457,9 +460,9 @@ namespace Kaxaml.CodeCompletion
                 name = xml.Substring(1);
             }
 
-            QualifiedName qualifiedName = new QualifiedName();
+            var qualifiedName = new QualifiedName();
 
-            int prefixIndex = name.IndexOf(':');
+            var prefixIndex = name.IndexOf(':');
             if (prefixIndex > 0)
             {
                 qualifiedName.Prefix = name.Substring(0, prefixIndex);
@@ -476,12 +479,12 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// Gets the element name at the specified index.
         /// </summary>
-        static string GetElementNameAtIndex(string xml, int index)
+        private static string? GetElementNameAtIndex(string xml, int index)
         {
-            int elementStartIndex = GetActiveElementStartIndex(xml, index);
+            var elementStartIndex = GetActiveElementStartIndex(xml, index);
             if (elementStartIndex >= 0 && elementStartIndex < index)
             {
-                int elementEndIndex = GetActiveElementEndIndex(xml, index);
+                var elementEndIndex = GetActiveElementEndIndex(xml, index);
                 if (elementEndIndex == -1)
                 {
                     elementEndIndex = xml.IndexOf(' ', elementStartIndex);
@@ -500,24 +503,24 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         /// <param name="xml">This string must start at the 
         /// element we are interested in.</param>
-        static NamespaceURI GetElementNamespace(string xml)
+        private static NamespaceUri GetElementNamespace(string xml)
         {
-            NamespaceURI namespaceURI = new NamespaceURI();
+            var namespaceUri = new NamespaceUri();
 
-            Match match = Regex.Match(xml, ".*?(xmlns\\s*?|xmlns:.*?)=\\s*?['\\\"](.*?)['\\\"]");
+            var match = Regex.Match(xml, ".*?(xmlns\\s*?|xmlns:.*?)=\\s*?['\\\"](.*?)['\\\"]");
             if (match.Success)
             {
-                namespaceURI.Namespace = match.Groups[2].Value;
+                namespaceUri.Namespace = match.Groups[2].Value;
 
-                string xmlns = match.Groups[1].Value.Trim();
-                int prefixIndex = xmlns.IndexOf(':');
+                var xmlns = match.Groups[1].Value.Trim();
+                var prefixIndex = xmlns.IndexOf(':');
                 if (prefixIndex > 0)
                 {
-                    namespaceURI.Prefix = xmlns.Substring(prefixIndex + 1);
+                    namespaceUri.Prefix = xmlns.Substring(prefixIndex + 1);
                 }
             }
 
-            return namespaceURI;
+            return namespaceUri;
         }
 
         /// <summary>
@@ -525,7 +528,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public static XmlElementPath GetParentElementPath(string xml)
         {
-            XmlElementPath path = new XmlElementPath();
+            var path = new XmlElementPath();
 
             try
             {
@@ -541,7 +544,7 @@ namespace Kaxaml.CodeCompletion
                                 case XmlNodeType.Element:
                                     if (!xmlReader.IsEmptyElement)
                                     {
-                                        QualifiedName elementName = new QualifiedName(xmlReader.LocalName, xmlReader.NamespaceURI, xmlReader.Prefix);
+                                        var elementName = new QualifiedName(xmlReader.LocalName, xmlReader.NamespaceURI, xmlReader.Prefix);
                                         path.Elements.Add(elementName);
                                     }
                                     break;
@@ -572,13 +575,13 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public static bool IsAttributeValueChar(char ch)
         {
-            if (Char.IsLetterOrDigit(ch) ||
-                (ch == ':') ||
-                (ch == '/') ||
-                (ch == '_') ||
-                (ch == '.') ||
-                (ch == '-') ||
-                (ch == '#'))
+            if (char.IsLetterOrDigit(ch) ||
+                ch == ':' ||
+                ch == '/' ||
+                ch == '_' ||
+                ch == '.' ||
+                ch == '-' ||
+                ch == '#')
             {
                 return true;
             }
@@ -601,7 +604,7 @@ namespace Kaxaml.CodeCompletion
                 index = xml.Length;
             }
 
-            int elementStartIndex = GetActiveElementStartIndex(xml, index);
+            var elementStartIndex = GetActiveElementStartIndex(xml, index);
             if (elementStartIndex == -1)
             {
                 return false;
@@ -610,19 +613,20 @@ namespace Kaxaml.CodeCompletion
             // Count the number of double quotes and single quotes that exist
             // before the first equals sign encountered going backwards to
             // the start of the active element.
-            bool foundEqualsSign = false;
-            int doubleQuotesCount = 0;
-            int singleQuotesCount = 0;
-            char lastQuoteChar = ' ';
-            for (int i = index - 1; i > elementStartIndex; --i)
+            var foundEqualsSign = false;
+            var doubleQuotesCount = 0;
+            var singleQuotesCount = 0;
+            var lastQuoteChar = ' ';
+            for (var i = index - 1; i > elementStartIndex; --i)
             {
-                char ch = xml[i];
+                var ch = xml[i];
                 if (ch == '=')
                 {
                     foundEqualsSign = true;
                     break;
                 }
-                else if (ch == '\"')
+
+                if (ch == '\"')
                 {
                     lastQuoteChar = ch;
                     ++doubleQuotesCount;
@@ -634,16 +638,16 @@ namespace Kaxaml.CodeCompletion
                 }
             }
 
-            bool isInside = false;
+            var isInside = false;
 
             if (foundEqualsSign)
             {
                 // Odd number of quotes?
-                if ((lastQuoteChar == '\"') && ((doubleQuotesCount % 2) > 0))
+                if (lastQuoteChar == '\"' && doubleQuotesCount % 2 > 0)
                 {
                     isInside = true;
                 }
-                else if ((lastQuoteChar == '\'') && ((singleQuotesCount % 2) > 0))
+                else if (lastQuoteChar == '\'' && singleQuotesCount % 2 > 0)
                 {
                     isInside = true;
                 }
@@ -658,10 +662,8 @@ namespace Kaxaml.CodeCompletion
             {
                 return false;
             }
-            else
-            {
-                return true;
-            }
+
+            return true;
         }
 
         /// <summary>
@@ -686,16 +688,16 @@ namespace Kaxaml.CodeCompletion
 
             // From the end of the string work backwards until we have
             // picked out the last attribute and reached some whitespace.
-            StringBuilder reversedAttributeName = new StringBuilder();
+            var reversedAttributeName = new StringBuilder();
 
-            bool ignoreWhitespace = true;
-            int currentIndex = index;
-            for (int i = 0; i < index; ++i)
+            var ignoreWhitespace = true;
+            var currentIndex = index;
+            for (var i = 0; i < index; ++i)
             {
 
-                char currentChar = xml[currentIndex];
+                var currentChar = xml[currentIndex];
 
-                if (Char.IsWhiteSpace(currentChar))
+                if (char.IsWhiteSpace(currentChar))
                 {
                     if (ignoreWhitespace == false)
                     {
@@ -703,7 +705,7 @@ namespace Kaxaml.CodeCompletion
                         break;
                     }
                 }
-                else if (Char.IsLetterOrDigit(currentChar) || (currentChar == ':'))
+                else if (char.IsLetterOrDigit(currentChar) || currentChar == ':')
                 {
                     ignoreWhitespace = false;
                     reversedAttributeName.Append(currentChar);
@@ -719,9 +721,9 @@ namespace Kaxaml.CodeCompletion
 
             // Did we get a namespace?
 
-            bool isNamespace = false;
+            var isNamespace = false;
 
-            if ((reversedAttributeName.ToString() == "snlmx") || (reversedAttributeName.ToString().EndsWith(":snlmx")))
+            if (reversedAttributeName.ToString() == "snlmx" || reversedAttributeName.ToString().EndsWith(":snlmx"))
             {
                 isNamespace = true;
             }
@@ -734,12 +736,12 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public static bool IsXmlNameChar(char ch)
         {
-            if (Char.IsLetterOrDigit(ch) ||
-                (ch == ':') ||
-                (ch == '/') ||
-                (ch == '_') ||
-                (ch == '.') ||
-                (ch == '-'))
+            if (char.IsLetterOrDigit(ch) ||
+                ch == ':' ||
+                ch == '/' ||
+                ch == '_' ||
+                ch == '.' ||
+                ch == '-')
             {
                 return true;
             }
@@ -747,12 +749,12 @@ namespace Kaxaml.CodeCompletion
             return false;
         }
 
-        static string ReverseString(string text)
+        private static string ReverseString(string text)
         {
-            StringBuilder reversedString = new StringBuilder(text);
+            var reversedString = new StringBuilder(text);
 
-            int index = text.Length;
-            foreach (char ch in text)
+            var index = text.Length;
+            foreach (var ch in text)
             {
                 --index;
                 reversedString[index] = ch;
@@ -770,26 +772,24 @@ namespace Kaxaml.CodeCompletion
         /// Helper class.  Holds the namespace URI and the prefix currently
         /// in use for this namespace.
         /// </summary>
-        class NamespaceURI
+        private class NamespaceUri
         {
 
             #region Fields
 
-
-            string namespaceURI = String.Empty;
-            string prefix = String.Empty;
+            private string _prefix = string.Empty;
 
             #endregion Fields
 
             #region Constructors
 
-            public NamespaceURI(string namespaceURI, string prefix)
+            public NamespaceUri(string namespaceUri, string prefix)
             {
-                this.namespaceURI = namespaceURI;
-                this.prefix = prefix;
+                Namespace = namespaceUri;
+                this._prefix = prefix;
             }
 
-            public NamespaceURI()
+            public NamespaceUri()
             {
             }
 
@@ -798,30 +798,17 @@ namespace Kaxaml.CodeCompletion
             #region Properties
 
 
-            public string Namespace
-            {
-                get
-                {
-                    return namespaceURI;
-                }
-                set
-                {
-                    namespaceURI = value;
-                }
-            }
+            public string Namespace { get; set; } = string.Empty;
 
             public string Prefix
             {
-                get
-                {
-                    return prefix;
-                }
+                get => _prefix;
                 set
                 {
-                    prefix = value;
-                    if (prefix == null)
+                    _prefix = value;
+                    if (_prefix == null)
                     {
-                        prefix = String.Empty;
+                        _prefix = string.Empty;
                     }
                 }
             }
@@ -854,14 +841,6 @@ namespace Kaxaml.CodeCompletion
     /// </summary>
     public class XmlElementPath
     {
-
-        #region Fields
-
-
-        QualifiedNameCollection elements = new QualifiedNameCollection();
-
-        #endregion Fields
-
         #region Constructors
 
         public XmlElementPath()
@@ -877,13 +856,7 @@ namespace Kaxaml.CodeCompletion
         /// Gets the elements specifying the path.
         /// </summary>
         /// <remarks>The order of the elements determines the path.</remarks>
-        public QualifiedNameCollection Elements
-        {
-            get
-            {
-                return elements;
-            }
-        }
+        public QualifiedNameCollection Elements { get; } = new ();
 
 
         #endregion Properties
@@ -894,19 +867,18 @@ namespace Kaxaml.CodeCompletion
         /// An xml element path is considered to be equal if 
         /// each path item has the same name and namespace.
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
 
-            if (!(obj is XmlElementPath)) return false;
-            if (this == obj) return true;
+            if (obj is not XmlElementPath rhs) return false;
+            if (this == rhs) return true;
 
-            XmlElementPath rhs = (XmlElementPath)obj;
-            if (elements.Count == rhs.elements.Count)
+            if (Elements.Count == rhs.Elements.Count)
             {
 
-                for (int i = 0; i < elements.Count; ++i)
+                for (var i = 0; i < Elements.Count; ++i)
                 {
-                    if (!elements[i].Equals(rhs.elements[i]))
+                    if (!Elements[i].Equals(rhs.Elements[i]))
                     {
                         return false;
                     }
@@ -919,7 +891,7 @@ namespace Kaxaml.CodeCompletion
 
         public override int GetHashCode()
         {
-            return elements.GetHashCode();
+            return Elements.GetHashCode();
         }
 
         #endregion Overridden Methods
@@ -930,16 +902,16 @@ namespace Kaxaml.CodeCompletion
         /// Finds the first parent that does belong in the specified
         /// namespace.
         /// </summary>
-        int FindNonMatchingParentElement(string namespaceUri)
+        private int FindNonMatchingParentElement(string namespaceUri)
         {
-            int index = -1;
+            var index = -1;
 
-            if (elements.Count > 1)
+            if (Elements.Count > 1)
             {
                 // Start the check from the the last but one item.
-                for (int i = elements.Count - 2; i >= 0; --i)
+                for (var i = Elements.Count - 2; i >= 0; --i)
                 {
-                    QualifiedName name = elements[i];
+                    var name = Elements[i];
                     if (name.Namespace != namespaceUri)
                     {
                         index = i;
@@ -953,12 +925,12 @@ namespace Kaxaml.CodeCompletion
         /// <summary>
         /// Removes elements up to and including the specified index.
         /// </summary>
-        void RemoveParentElements(int index)
+        private void RemoveParentElements(int index)
         {
             while (index >= 0)
             {
                 --index;
-                elements.RemoveFirst();
+                Elements.RemoveFirst();
             }
         }
 
@@ -975,12 +947,12 @@ namespace Kaxaml.CodeCompletion
         /// </remarks>
         public void Compact()
         {
-            if (elements.Count > 0)
+            if (Elements.Count > 0)
             {
-                QualifiedName lastName = Elements[Elements.Count - 1];
-                if (lastName != null)
+                var lastName = Elements[Elements.Count - 1];
+                if (lastName is not null)
                 {
-                    int index = FindNonMatchingParentElement(lastName.Namespace);
+                    var index = FindNonMatchingParentElement(lastName.Namespace);
                     if (index != -1)
                     {
                         RemoveParentElements(index);
@@ -1013,10 +985,7 @@ namespace Kaxaml.CodeCompletion
 
         #region Fields
 
-
-        string prefix = String.Empty;
-
-        XmlQualifiedName xmlQualifiedName = XmlQualifiedName.Empty;
+        private XmlQualifiedName _xmlQualifiedName = XmlQualifiedName.Empty;
 
         #endregion Fields
 
@@ -1024,12 +993,12 @@ namespace Kaxaml.CodeCompletion
 
         public QualifiedName(string name, string namespaceUri, string prefix)
         {
-            xmlQualifiedName = new XmlQualifiedName(name, namespaceUri);
-            this.prefix = prefix;
+            _xmlQualifiedName = new XmlQualifiedName(name, namespaceUri);
+            Prefix = prefix;
         }
 
         public QualifiedName(string name, string namespaceUri)
-            : this(name, namespaceUri, String.Empty)
+            : this(name, namespaceUri, string.Empty)
         {
         }
 
@@ -1047,14 +1016,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public string Namespace
         {
-            get
-            {
-                return xmlQualifiedName.Namespace;
-            }
-            set
-            {
-                xmlQualifiedName = new XmlQualifiedName(xmlQualifiedName.Name, value);
-            }
+            get => _xmlQualifiedName.Namespace; set => _xmlQualifiedName = new XmlQualifiedName(_xmlQualifiedName.Name, value);
         }
 
         /// <summary>
@@ -1062,30 +1024,13 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         public string Name
         {
-            get
-            {
-                return xmlQualifiedName.Name;
-            }
-            set
-            {
-                xmlQualifiedName = new XmlQualifiedName(value, xmlQualifiedName.Namespace);
-            }
+            get => _xmlQualifiedName.Name; set => _xmlQualifiedName = new XmlQualifiedName(value, _xmlQualifiedName.Namespace);
         }
 
         /// <summary>
         /// Gets the namespace prefix used.
         /// </summary>
-        public string Prefix
-        {
-            get
-            {
-                return prefix;
-            }
-            set
-            {
-                prefix = value;
-            }
-        }
+        public string Prefix { get; set; } = string.Empty;
 
 
         #endregion Properties
@@ -1099,13 +1044,13 @@ namespace Kaxaml.CodeCompletion
 
         public static bool operator ==(QualifiedName lhs, QualifiedName rhs)
         {
-            bool equals = false;
+            var equals = false;
 
-            if (((object)lhs != null) && ((object)rhs != null))
+            if ((object?)lhs != null && (object?)rhs != null)
             {
                 equals = lhs.Equals(rhs);
             }
-            else if (((object)lhs == null) && ((object)rhs == null))
+            else if ((object?)lhs == null && (object?)rhs == null)
             {
                 equals = true;
             }
@@ -1121,21 +1066,20 @@ namespace Kaxaml.CodeCompletion
         /// A qualified name is considered equal if the namespace and 
         /// name are the same.  The prefix is ignored.
         /// </summary>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            bool equals = false;
+            var equals = false;
 
-            QualifiedName qualifiedName = obj as QualifiedName;
-            if (qualifiedName != null)
+            if (obj is QualifiedName qualifiedName)
             {
-                equals = xmlQualifiedName.Equals(qualifiedName.xmlQualifiedName);
+                equals = _xmlQualifiedName.Equals(qualifiedName._xmlQualifiedName);
             }
             else
             {
-                XmlQualifiedName name = obj as XmlQualifiedName;
+                var name = obj as XmlQualifiedName;
                 if (name != null)
                 {
-                    equals = xmlQualifiedName.Equals(name);
+                    equals = _xmlQualifiedName.Equals(name);
                 }
             }
 
@@ -1144,7 +1088,7 @@ namespace Kaxaml.CodeCompletion
 
         public override int GetHashCode()
         {
-            return xmlQualifiedName.GetHashCode();
+            return _xmlQualifiedName.GetHashCode();
         }
 
         #endregion Overridden Methods
@@ -1173,7 +1117,7 @@ namespace Kaxaml.CodeCompletion
         /// </param>
         public QualifiedNameCollection(QualifiedNameCollection val)
         {
-            this.AddRange(val);
+            AddRange(val);
         }
 
         /// <summary>
@@ -1184,7 +1128,7 @@ namespace Kaxaml.CodeCompletion
         /// </param>
         public QualifiedNameCollection(QualifiedName[] val)
         {
-            this.AddRange(val);
+            AddRange(val);
         }
 
         /// <summary>
@@ -1206,11 +1150,11 @@ namespace Kaxaml.CodeCompletion
         {
             get
             {
-                string prefix = String.Empty;
+                var prefix = string.Empty;
 
                 if (Count > 0)
                 {
-                    QualifiedName name = this[Count - 1];
+                    var name = this[Count - 1];
                     prefix = name.Prefix;
                 }
 
@@ -1227,16 +1171,9 @@ namespace Kaxaml.CodeCompletion
         /// <exception cref='ArgumentOutOfRangeException'><paramref name='index'/> is outside the valid range of indexes for the collection.</exception>
         public QualifiedName this[int index]
         {
-            get
-            {
-                return ((QualifiedName)(List[index]));
-            }
-            set
-            {
-                List[index] = value;
-            }
+            get => (QualifiedName?)List[index] ?? throw new InvalidOperationException($"Item at index {index} is null but should not be.");
+            set => List[index] = value;
         }
-
 
         #endregion Properties
 
@@ -1260,12 +1197,12 @@ namespace Kaxaml.CodeCompletion
         /// <param name='val'>
         ///    An array of type <see cref='QualifiedName'/> containing the objects to add to the collection.
         /// </param>
-        /// <seealso cref='QualifiedNameCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void AddRange(QualifiedName[] val)
         {
-            for (int i = 0; i < val.Length; i++)
+            for (var i = 0; i < val.Length; i++)
             {
-                this.Add(val[i]);
+                Add(val[i]);
             }
         }
 
@@ -1275,12 +1212,12 @@ namespace Kaxaml.CodeCompletion
         /// <param name='val'>
         ///    A <see cref='QualifiedNameCollection'/> containing the objects to add to the collection.
         /// </param>
-        /// <seealso cref='QualifiedNameCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void AddRange(QualifiedNameCollection val)
         {
-            for (int i = 0; i < val.Count; i++)
+            for (var i = 0; i < val.Count; i++)
             {
-                this.Add(val[i]);
+                Add(val[i]);
             }
         }
 
@@ -1293,7 +1230,7 @@ namespace Kaxaml.CodeCompletion
         /// <see langword='true'/> if the <see cref='QualifiedName'/> is contained in the collection; 
         ///   otherwise, <see langword='false'/>.
         /// </returns>
-        /// <seealso cref='QualifiedNameCollection.IndexOf'/>
+        /// <seealso cref='IndexOf'/>
         public bool Contains(QualifiedName val)
         {
             return List.Contains(val);
@@ -1338,7 +1275,7 @@ namespace Kaxaml.CodeCompletion
         ///   The index of the <see cref='QualifiedName'/> of <paramref name='val'/> in the 
         ///   <see cref='QualifiedNameCollection'/>, if found; otherwise, -1.
         /// </returns>
-        /// <seealso cref='QualifiedNameCollection.Contains'/>
+        /// <seealso cref='Contains'/>
         public int IndexOf(QualifiedName val)
         {
             return List.IndexOf(val);
@@ -1349,7 +1286,7 @@ namespace Kaxaml.CodeCompletion
         /// </summary>
         /// <param name='index'>The zero-based index where <paramref name='val'/> should be inserted.</param>
         /// <param name='val'>The <see cref='QualifiedName'/> to insert.</param>
-        /// <seealso cref='QualifiedNameCollection.Add'/>
+        /// <seealso cref='Add'/>
         public void Insert(int index, QualifiedName val)
         {
             List.Insert(index, val);
@@ -1403,9 +1340,8 @@ namespace Kaxaml.CodeCompletion
 
             #region Fields
 
-
-            IEnumerable temp;
-            IEnumerator baseEnumerator;
+            private readonly IEnumerable _temp;
+            private readonly IEnumerator _baseEnumerator;
 
             #endregion Fields
 
@@ -1416,8 +1352,8 @@ namespace Kaxaml.CodeCompletion
             /// </summary>
             public QualifiedNameEnumerator(QualifiedNameCollection mappings)
             {
-                this.temp = ((IEnumerable)(mappings));
-                this.baseEnumerator = temp.GetEnumerator();
+                _temp = mappings;
+                _baseEnumerator = _temp.GetEnumerator();
             }
 
             #endregion Constructors
@@ -1425,25 +1361,12 @@ namespace Kaxaml.CodeCompletion
             #region Properties
 
 
-            object IEnumerator.Current
-            {
-                get
-                {
-                    return baseEnumerator.Current;
-                }
-            }
+            object IEnumerator.Current => _baseEnumerator.Current;
 
             /// <summary>
             ///   Gets the current <see cref='QualifiedName'/> in the <seealso cref='QualifiedNameCollection'/>.
             /// </summary>
-            public QualifiedName Current
-            {
-                get
-                {
-                    return ((QualifiedName)(baseEnumerator.Current));
-                }
-            }
-
+            public QualifiedName Current => (QualifiedName)_baseEnumerator.Current;
 
             #endregion Properties
 
@@ -1454,7 +1377,7 @@ namespace Kaxaml.CodeCompletion
             /// </summary>
             public bool MoveNext()
             {
-                return baseEnumerator.MoveNext();
+                return _baseEnumerator.MoveNext();
             }
 
             /// <summary>
@@ -1462,7 +1385,7 @@ namespace Kaxaml.CodeCompletion
             /// </summary>
             public void Reset()
             {
-                baseEnumerator.Reset();
+                _baseEnumerator.Reset();
             }
 
             #endregion Public Methods

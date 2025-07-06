@@ -19,7 +19,7 @@ namespace Kaxaml.Plugins
     /// Interaction logic for Settings.xaml
     /// </summary>
 
-    public partial class Settings : System.Windows.Controls.UserControl
+    public partial class Settings : UserControl
     {
 
 		#region Constructors 
@@ -35,12 +35,12 @@ namespace Kaxaml.Plugins
 
         private void EditAgDefaultXaml(object sender, RoutedEventArgs e)
         {
-            Kaxaml.Properties.Settings.Default.AgDefaultXaml = XamlEditorDialog.ShowModal(Kaxaml.Properties.Settings.Default.AgDefaultXaml, "Default Silverlight Xaml", Application.Current.MainWindow);
+            Properties.Settings.Default.AgDefaultXaml = XamlEditorDialog.ShowModal(Properties.Settings.Default.AgDefaultXaml, "Default Silverlight Xaml", Application.Current.MainWindow);
         }
 
-        private void EditWPFDefaultXaml(object sender, RoutedEventArgs e)
+        private void EditWpfDefaultXaml(object sender, RoutedEventArgs e)
         {
-            Kaxaml.Properties.Settings.Default.WPFDefaultXaml = XamlEditorDialog.ShowModal(Kaxaml.Properties.Settings.Default.WPFDefaultXaml, "Default WPF Xaml", Application.Current.MainWindow);
+            Properties.Settings.Default.WPFDefaultXaml = XamlEditorDialog.ShowModal(Properties.Settings.Default.WPFDefaultXaml, "Default WPF Xaml", Application.Current.MainWindow);
         }
 
 		#endregion Private Methods 

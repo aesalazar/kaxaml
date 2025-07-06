@@ -6,6 +6,8 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UseWPF>true</UseWPF>
 		<BaseOutputPath></BaseOutputPath>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<RootNamespace>Kaxaml.Plugins.ColorPicker</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
 	  <None Remove="Images\add.png" />

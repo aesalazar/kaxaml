@@ -11,38 +11,38 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace Kaxaml.Plugins.Controls
+namespace KaxamlPlugins.Controls
 {
     public class ElementCursorDecorator : Decorator
     {
-        CursorAdorner _CursorAdorner;
+        private CursorAdorner? _cursorAdorner;
 
         protected override void OnMouseEnter(MouseEventArgs e)
         {
             // setup the adorner layer
-            AdornerLayer _AdornerLayer = AdornerLayer.GetAdornerLayer(this);
+            var adornerLayer = AdornerLayer.GetAdornerLayer(this);
 
-            if (_AdornerLayer == null)
+            if (adornerLayer == null)
             {
                 return;
             }
 
-            if (_CursorAdorner == null)
+            if (_cursorAdorner == null)
             {
-                _CursorAdorner = new CursorAdorner(this, this.CursorElement);
+                _cursorAdorner = new CursorAdorner(this, CursorElement);
             }
 
-            _AdornerLayer.Add(_CursorAdorner);
+            adornerLayer.Add(_cursorAdorner);
 
             base.OnMouseEnter(e);
         }
 
         protected override void OnMouseLeave(MouseEventArgs e)
         {
-            if (_CursorAdorner != null)
+            if (_cursorAdorner != null)
             {
-                AdornerLayer layer = VisualTreeHelper.GetParent(_CursorAdorner) as AdornerLayer;
-                layer.Remove(_CursorAdorner);
+                var layer = VisualTreeHelper.GetParent(_cursorAdorner) as AdornerLayer;
+                layer?.Remove(_cursorAdorner);
             }
 
             base.OnMouseLeave(e);
@@ -50,7 +50,7 @@ namespace Kaxaml.Plugins.Controls
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            _CursorAdorner.Offset = e.GetPosition(this);
+            if (_cursorAdorner != null) _cursorAdorner.Offset = e.GetPosition(this);
             base.OnMouseMove(e);
         }
 
@@ -61,12 +61,10 @@ namespace Kaxaml.Plugins.Controls
         }
 
         public UIElement CursorElement
-        {
-            get { return (UIElement)GetValue(CursorElementProperty); }
-            set { SetValue(CursorElementProperty, value); }
+        { get => (UIElement)GetValue(CursorElementProperty); set => SetValue(CursorElementProperty, value);
         }
         public static readonly DependencyProperty CursorElementProperty =
-            DependencyProperty.Register("CursorElement", typeof(UIElement), typeof(ElementCursorDecorator), new UIPropertyMetadata(null));
+            DependencyProperty.Register(nameof(CursorElement), typeof(UIElement), typeof(ElementCursorDecorator), new UIPropertyMetadata(null));
 
         protected override void OnRender(DrawingContext dc)
         {
@@ -76,42 +74,36 @@ namespace Kaxaml.Plugins.Controls
 
     internal sealed class CursorAdorner : Adorner
     {
-        UIElement _Cursor;
+        private readonly UIElement _cursor;
 
-        private Point _Offset;
+        private Point _offset;
         public Point Offset
         {
-            get { return _Offset; }
+            get => _offset;
             set
             {
-                _Offset = value;
+                _offset = value;
                 InvalidateArrange();
             }
         }
 
-        public CursorAdorner(ElementCursorDecorator Owner, UIElement Cursor)
-            : base(Owner)
+        public CursorAdorner(ElementCursorDecorator owner, UIElement cursor)
+            : base(owner)
         {
-            _Cursor = Cursor;
-            this.AddVisualChild(_Cursor);
+            _cursor = cursor;
+            AddVisualChild(_cursor);
         }
 
         protected override Visual GetVisualChild(int index)
         {
-            return _Cursor;
+            return _cursor;
         }
 
-        protected override int VisualChildrenCount
-        {
-            get
-            {
-                return 1;
-            }
-        }
+        protected override int VisualChildrenCount => 1;
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            _Cursor.Arrange(new Rect(Offset, _Cursor.DesiredSize));
+            _cursor.Arrange(new Rect(Offset, _cursor.DesiredSize));
             return finalSize;
         }
 

@@ -104,7 +104,7 @@
             <TextBlock Foreground="#FFF" Grid.Row="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,30,0">Default WPF XAML:</TextBlock>
             <TextBlock Foreground="#8FFF" Grid.Row="2" VerticalAlignment="Center" Opacity="0.5" TextTrimming="CharacterEllipsis" Margin="106,0,26,0" Text="{Binding Source={x:Static settings:Settings.Default}, Path=WPFDefaultXaml, Converter={StaticResource RemoveLineBreaksConverter}}" TextWrapping="NoWrap" />
         
-            <Button Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditWPFDefaultXaml">
+            <Button Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditWpfDefaultXaml">
               <Image Width="12" Height="12" Source="\Images\pencil.png" />
             </Button>
             

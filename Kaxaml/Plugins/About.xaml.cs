@@ -12,7 +12,7 @@ namespace Kaxaml.Plugins
         public About()
         {
             InitializeComponent();
-            AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(this.HandleRequestNavigate), false);
+            AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(HandleRequestNavigate), false);
             Loaded += About_Loaded;
         }
 
@@ -20,15 +20,16 @@ namespace Kaxaml.Plugins
         {
             Loaded -= About_Loaded;
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            VersionTextBlock.Text = $"v{version.Major}.{version.Minor}.{version.Build}";
+            VersionTextBlock.Text = version is not null 
+                ? $"v{version.Major}.{version.Minor}.{version.Build}"
+                : "UNKNOWN";
         }
 
-        void HandleRequestNavigate(object sender, RoutedEventArgs e)
+        private void HandleRequestNavigate(object sender, RoutedEventArgs e)
         {
-            Hyperlink hl = (e.OriginalSource as Hyperlink);
-            if (hl != null)
+            if (e.OriginalSource is Hyperlink hl)
             {
-                string navigateUri = hl.NavigateUri.ToString();
+                var navigateUri = hl.NavigateUri.ToString();
                 Process.Start(new ProcessStartInfo(navigateUri));
                 e.Handled = true;
             }

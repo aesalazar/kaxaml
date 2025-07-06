@@ -5,7 +5,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using KaxamlPlugins;
 
-namespace Kaxaml.Plugins.Controls
+namespace KaxamlPlugins.Controls
 {
     public class TextDragger : Decorator
     {
@@ -16,43 +16,50 @@ namespace Kaxaml.Plugins.Controls
 
         public string Text
         {
-            get { return (string)GetValue(TextProperty); }
-            set { SetValue(TextProperty, value); }
+            get => (string)GetValue(TextProperty); 
+            set => SetValue(TextProperty, value);
         }
-        public static readonly DependencyProperty TextProperty =
-            DependencyProperty.Register("Text", typeof(string), typeof(TextDragger), new UIPropertyMetadata(string.Empty));
+
+        public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
+            nameof(Text), 
+            typeof(string), 
+            typeof(TextDragger), 
+            new UIPropertyMetadata(string.Empty));
 
         public object Data
-        {
-            get { return (object)GetValue(DataProperty); }
-            set { SetValue(DataProperty, value); }
+        { 
+            get => GetValue(DataProperty); 
+            set => SetValue(DataProperty, value);
         }
-        public static readonly DependencyProperty DataProperty =
-            DependencyProperty.Register("Data", typeof(object), typeof(TextDragger), new UIPropertyMetadata(null));
+        public static readonly DependencyProperty DataProperty = DependencyProperty.Register(
+            nameof(Data), 
+            typeof(object), 
+            typeof(TextDragger), 
+            new UIPropertyMetadata(null));
 
-        bool IsClipboardSet = false;
+        private bool _isClipboardSet;
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
             if (e.ClickCount == 1)
             {
-                if (!String.IsNullOrEmpty(Text))
+                if (!string.IsNullOrEmpty(Text))
                 {
                     Clipboard.SetText(Text);
-                    IsClipboardSet = true;
+                    _isClipboardSet = true;
                 }
                 else if (Data != null)
                 {
                     Clipboard.SetText(Data.ToString());
-                    IsClipboardSet = true;
+                    _isClipboardSet = true;
                 }
             }
             else if (e.ClickCount == 2)
             {
-                if (IsClipboardSet)
+                if (_isClipboardSet)
                 {
-                    KaxamlInfo.Editor.InsertStringAtCaret(Text);
-                    IsClipboardSet = false;
+                    KaxamlInfo.Editor?.InsertStringAtCaret(Text);
+                    _isClipboardSet = false;
                 }
             }
             base.OnMouseDown(e);
@@ -61,21 +68,21 @@ namespace Kaxaml.Plugins.Controls
         protected override void OnRender(DrawingContext drawingContext)
         {
             // need this to ensure hittesting
-            drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, this.ActualWidth, this.ActualHeight));
+            drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, ActualWidth, ActualHeight));
             base.OnRender(drawingContext);
         }
 
-        bool IsDragging = false;
+        private bool _isDragging;
 
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && (!IsDragging))
+            if (e.LeftButton == MouseButtonState.Pressed && !_isDragging)
             {
                 StartDrag();
             }
             else if (e.LeftButton == MouseButtonState.Released)
             {
-                IsDragging = false;
+                _isDragging = false;
             }
 
             base.OnPreviewMouseMove(e);
@@ -83,7 +90,7 @@ namespace Kaxaml.Plugins.Controls
 
         private void StartDrag()
         {
-            DataObject obj = new DataObject(DataFormats.Text, Text);
+            var obj = new DataObject(DataFormats.Text, Text);
 
             if (obj != null)
             {

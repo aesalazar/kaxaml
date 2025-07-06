@@ -11,25 +11,18 @@ namespace Kaxaml.Documents
 
         #region Static Methods
 
-        public static XamlDocument FromFile(string fullPath)
+        public static XamlDocument? FromFile(string fullPath)
         {
             if (File.Exists(fullPath))
             {
-                string sourceText = File.ReadAllText(fullPath);
+                var sourceText = File.ReadAllText(fullPath);
+                var directory = Path.GetDirectoryName(fullPath) 
+                    ?? throw new Exception($"No directory found: {fullPath}");
 
-                XamlDocument document = null;
-
-                if (sourceText.Contains("http://schemas.microsoft.com/winfx/2006/xaml/presentation"))
+                var document = new WpfDocument(directory, sourceText)
                 {
-                    document = new WpfDocument(Path.GetDirectoryName(fullPath), sourceText);
-                }
-                else
-                {
-                    document = new AgDocument(Path.GetDirectoryName(fullPath), sourceText);
-                }
-
-
-                document.FullPath = fullPath;
+                    FullPath = fullPath
+                };
                 return document;
             }
 
@@ -43,187 +36,159 @@ namespace Kaxaml.Documents
 
         public XamlDocument(string folder)
         {
-            _Folder = folder;
+            _folder = folder;
         }
 
         #endregion
 
         #region Fields
 
-        static string TempFilenamePreface = "default";
-        static int TempFilenameCount = 0;
+        private const string TempFilenamePreface = "default";
+        private static int _tempFilenameCount;
 
         #endregion
 
         #region Public Properties
 
-        private string _Folder = "";
+        private string _folder;
         public string Folder
         {
-            get
-            {
-                return _Folder;
-            }
+            get => _folder;
             set
             {
-                if (_Folder != value)
+                if (_folder != value)
                 {
-                    _Folder = value;
+                    _folder = value;
                     NotifyPropertyChanged("Folder");
                     NotifyPropertyChanged("FullPath");
                 }
             }
         }
 
-        private string _Filename;
+        private string _filename = string.Empty;
         public string Filename
         {
             get
             {
-                if (String.IsNullOrEmpty(_Filename))
+                if (string.IsNullOrEmpty(_filename))
                 {
                     return TemporaryFilename;
                 }
-                else
-                {
-                    return _Filename;
-                }
+
+                return _filename;
             }
             set
             {
-                if (_Filename != value)
+                if (_filename != value)
                 {
-                    _Filename = value;
+                    _filename = value;
                     NotifyPropertyChanged("Filename");
                     NotifyPropertyChanged("FullPath");
                 }
             }
         }
 
-        string _TemporaryFilename = "";
+        private string _temporaryFilename = "";
         public string TemporaryFilename
         {
             get
             {
-                if (string.IsNullOrEmpty(_TemporaryFilename))
+                if (string.IsNullOrEmpty(_temporaryFilename))
                 {
-                    string temp = "";
-                    if (TempFilenameCount == 0)
+                    string temp;
+                    if (_tempFilenameCount == 0)
                     {
                         temp = TempFilenamePreface + ".xaml";
                     }
                     else
                     {
-                        temp = TempFilenamePreface + TempFilenameCount + ".xaml";
+                        temp = TempFilenamePreface + _tempFilenameCount + ".xaml";
                     }
-                    _TemporaryFilename = temp;
-                    TempFilenameCount++;
+                    _temporaryFilename = temp;
+                    _tempFilenameCount++;
                 }
-                return _TemporaryFilename;
+                return _temporaryFilename;
             }
         }
 
 
-        private string _SourceText;
-        public string SourceText
+        private string? _sourceText;
+        public string? SourceText
         {
-            get { return _SourceText; }
+            get => _sourceText;
             set
             {
-                if (_SourceText != value)
+                if (_sourceText != value)
                 {
-                    _SourceText = value;
+                    _sourceText = value;
                     NeedsSave = true;
                     NotifyPropertyChanged("SourceText");
                 }
             }
         }
 
-        private bool _NeedsSave = false;
+        private bool _needsSave;
         public bool NeedsSave
         {
-            get { return _NeedsSave; }
+            get => _needsSave;
             private set
             {
-                if (_NeedsSave != value)
+                if (_needsSave != value)
                 {
-                    _NeedsSave = value;
+                    _needsSave = value;
                     NotifyPropertyChanged("NeedsSave");
                 }
             }
         }
 
-        public bool UsingTemporaryFilename
-        {
-            get
-            {
-                return (String.IsNullOrEmpty(_Filename));
-            }
-        }
+        public bool UsingTemporaryFilename => string.IsNullOrEmpty(_filename);
 
         public string FullPath
         {
             get
             {
-                if (String.IsNullOrEmpty(Filename))
+                if (string.IsNullOrEmpty(Filename))
                 {
                     return Path.Combine(Folder, TemporaryFilename);
                 }
-                else
-                {
-                    return Path.Combine(Folder, Filename);
-                }
+
+                return Path.Combine(Folder, Filename);
             }
             set
             {
-                Folder = Path.GetDirectoryName(value);
+                Folder = Path.GetDirectoryName(value) ?? string.Empty;
                 Filename = Path.GetFileName(value);
             }
         }
 
-        public string BackupPath
-        {
-            get
-            {
-                return Path.Combine(Path.GetDirectoryName(FullPath), Path.GetFileNameWithoutExtension(FullPath) + ".backup");
-            }
-        }
+        public string BackupPath => Path.Combine(
+            Path.GetDirectoryName(FullPath) ?? string.Empty, 
+            Path.GetFileNameWithoutExtension(FullPath) + ".backup");
 
-        private ImageSource _PreviewImage;
-        public ImageSource PreviewImage
+        private ImageSource? _previewImage;
+        public ImageSource? PreviewImage
         {
             get
             {
-                if (_PreviewImage == null)
+                if (_previewImage == null)
                 {
                     // look for a preview image on disk and load it
                     // Path.Combine(Path.GetDirectoryName(FullPath), Path.GetFileNameWithoutExtension(FullPath) + ".preview");
                 }
 
-                return _PreviewImage;
+                return _previewImage;
             }
             set
             {
-                if (_PreviewImage != value)
+                if (_previewImage != value)
                 {
-                    _PreviewImage = value;
+                    _previewImage = value;
                     NotifyPropertyChanged("PreviewImage");
                 }
             }
         }
 
-        private XamlDocumentType _xamlDocumentType;
-        public XamlDocumentType XamlDocumentType
-        {
-            get
-            {
-                return (_xamlDocumentType);
-            }
-            protected set
-            {
-                _xamlDocumentType = value;
-            }
-        }
+        public XamlDocumentType XamlDocumentType { get; protected set; }
 
         #endregion
 
@@ -231,7 +196,7 @@ namespace Kaxaml.Documents
 
         protected void InitializeSourceText(string text)
         {
-            _SourceText = text;
+            _sourceText = text;
         }
 
         private bool SaveFile(string fullPath)
@@ -249,7 +214,7 @@ namespace Kaxaml.Documents
             if (SaveFile(fullPath))
             {
                 NeedsSave = false;
-                this.FullPath = fullPath;
+                FullPath = fullPath;
                 return true;
             }
             return false;
@@ -274,14 +239,11 @@ namespace Kaxaml.Documents
 
         #region INotifyPropertyChanged
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        private void NotifyPropertyChanged(String info)
+        private void NotifyPropertyChanged(string info)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
         #endregion

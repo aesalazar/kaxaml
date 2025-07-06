@@ -10,9 +10,6 @@ namespace Kaxaml.CodeCompletion
     /// </summary>
     public class XmlCompletionData : ICompletionData, IComparable
     {
-        string text;
-        DataType dataType = DataType.XmlElement;
-        string description = String.Empty;
 
         /// <summary>
         /// The type of text held in this object.
@@ -29,7 +26,7 @@ namespace Kaxaml.CodeCompletion
         }
 
         public XmlCompletionData(string text)
-            : this(text, String.Empty, DataType.XmlElement)
+            : this(text, string.Empty, DataType.XmlElement)
         {
         }
 
@@ -39,80 +36,46 @@ namespace Kaxaml.CodeCompletion
         }
 
         public XmlCompletionData(string text, DataType dataType)
-            : this(text, String.Empty, dataType)
+            : this(text, string.Empty, dataType)
         {
         }
 
         public XmlCompletionData(string text, string description, DataType dataType)
         {
-            this.text = text;
-            this.description = description;
-            this.dataType = dataType;
+            Text = text;
+            Description = description;
+            CompletionDataType = dataType;
         }
 
-        public int ImageIndex
-        {
-            get
-            {
-                return 0;
-            }
-        }
+        public int ImageIndex => 0;
 
-        public string Text
-        {
-            get
-            {
-                return text;
-            }
-            set
-            {
-                text = value;
-            }
-        }
+        public string Text { get; set; }
 
         /// <summary>
         /// Returns the xml item's documentation as retrieved from
         /// the xs:annotation/xs:documentation element.
         /// </summary>
-        public string Description
-        {
-            get
-            {
-                return description;
-            }
-        }
+        public string Description { get; }
 
-        public double Priority
-        {
-            get
-            {
-                return 0;
-            }
-        }
+        public double Priority => 0;
 
-        public DataType CompletionDataType
-        {
-            get
-            {
-                return dataType;
-            }
-        }
+        public DataType CompletionDataType { get; }
 
         public bool InsertAction(TextArea textArea, char ch)
         {
-            if ((dataType == DataType.XmlElement) || (dataType == DataType.XmlAttributeValue))
+            if (CompletionDataType is DataType.XmlElement or DataType.XmlAttributeValue)
             {
-                textArea.InsertString(text);
+                textArea.InsertString(Text);
             }
-            else if (dataType == DataType.NamespaceUri)
+            else if (CompletionDataType == DataType.NamespaceUri)
             {
-                textArea.InsertString(String.Concat("\"", text, "\""));
+                textArea.InsertString(string.Concat("\"", Text, "\""));
             }
             else
             {
                 // Insert an attribute.
-                Caret caret = textArea.Caret;
-                textArea.InsertString(String.Concat(text, "=\"\""));
+                var caret = textArea.Caret;
+                textArea.InsertString(string.Concat(Text, "=\"\""));
 
                 // Move caret into the middle of the attribute quotes.
                 caret.Position = textArea.Document.OffsetToPosition(caret.Offset - 1);
@@ -120,13 +83,13 @@ namespace Kaxaml.CodeCompletion
             return false;
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
-            if ((obj == null) || !(obj is XmlCompletionData))
+            if (obj is not XmlCompletionData data)
             {
                 return -1;
             }
-            return text.CompareTo(((XmlCompletionData)obj).text);
+            return string.Compare(Text, data.Text, StringComparison.Ordinal);
         }
     }
 }

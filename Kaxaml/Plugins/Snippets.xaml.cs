@@ -23,18 +23,15 @@ namespace Kaxaml.Plugins.Default
 
         #region Const Fields
 
-        private const string _SnippetsFile = "KaxamlSnippets.xml";
+        private const string SnippetsFile = "KaxamlSnippets.xml";
 
         #endregion Const Fields
 
         #region Fields
 
-
-        private ObservableCollection<SnippetCategory> _SnippetCategories;
-
-        private TextBoxOverlay _tbo;
-        EventHandler<TextBoxOverlayHideEventArgs> SnippetHidden;
-        EventHandler<TextBoxOverlayHideEventArgs> CategoryHidden;
+        private TextBoxOverlay? _tbo;
+        private EventHandler<TextBoxOverlayHideEventArgs>? _snippetHidden;
+        private EventHandler<TextBoxOverlayHideEventArgs>? _categoryHidden;
 
         #endregion Fields
 
@@ -59,28 +56,28 @@ namespace Kaxaml.Plugins.Default
         }
 
 
-        private string _SnippetsFullPath
+        private string SnippetsFullPath
         {
             get
             {
-                FileInfo fi = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                string dir = fi.DirectoryName;
-                return dir + "\\" + _SnippetsFile;
+                var fi = new FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location);
+                var dir = fi.DirectoryName;
+                return dir + "\\" + SnippetsFile;
             }
         }
 
 
-        private TextBoxOverlay _TextBoxOverlay
+        private TextBoxOverlay TextBoxOverlay
         {
             get
             {
                 if (_tbo == null)
                 {
                     _tbo = new TextBoxOverlay();
-                    Style style = null;
+                    var style = (Style?)null;
                     try
                     {
-                        style = (Style)this.FindResource("TextBoxOverlayStyle");
+                        style = (Style)FindResource("TextBoxOverlayStyle");
                     }
                     catch (Exception ex)
                     {
@@ -100,7 +97,7 @@ namespace Kaxaml.Plugins.Default
 
         #region Event Handlers
 
-        void editor_CommitValues(object sender, RoutedEventArgs e)
+        private void editor_CommitValues(object sender, RoutedEventArgs e)
         {
             WriteValues();
         }
@@ -111,12 +108,12 @@ namespace Kaxaml.Plugins.Default
 
         private void MoveSnippetDown(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = (Snippet)lbi.DataContext;
-            SnippetCategory c = s.Category;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
+            var s = (Snippet)lbi.DataContext;
+            var c = s.Category;
 
-            int index = c.Snippets.IndexOf(s);
+            var index = c.Snippets.IndexOf(s);
             if (index < c.Snippets.Count - 1)
             {
                 c.Snippets.Move(index, index + 1);
@@ -127,12 +124,12 @@ namespace Kaxaml.Plugins.Default
 
         private void MoveSnippetUp(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = (Snippet)lbi.DataContext;
-            SnippetCategory c = s.Category;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
+            var s = (Snippet)lbi.DataContext;
+            var c = s.Category;
 
-            int index = c.Snippets.IndexOf(s);
+            var index = c.Snippets.IndexOf(s);
             if (index > 0)
             {
                 c.Snippets.Move(index, index - 1);
@@ -147,9 +144,9 @@ namespace Kaxaml.Plugins.Default
 
         public void DeleteCategory(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            TabItem t = (TabItem)cm.PlacementTarget;
-            SnippetCategory s = (SnippetCategory)t.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var t = (TabItem)cm.PlacementTarget;
+            var s = (SnippetCategory)t.DataContext;
 
             if (MessageBox.Show("Are you sure you want to delete the category " + s.Name + " and all associated snippets?", "Delete Category?", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
             {
@@ -160,18 +157,19 @@ namespace Kaxaml.Plugins.Default
 
         public void DeleteSnippet(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = (Snippet)lbi.DataContext;
-            SnippetCategory c = s.Category;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
+            var s = (Snippet)lbi.DataContext;
+            var c = s.Category;
             c.Snippets.Remove(s);
             WriteValues();
         }
 
-        public void DoCategoryHidden(object o, TextBoxOverlayHideEventArgs e)
+        public void DoCategoryHidden(object? o, TextBoxOverlayHideEventArgs e)
         {
-            TabItem ti = (TabItem)o;
-            SnippetCategory c = (SnippetCategory)ti.DataContext;
+            ArgumentNullException.ThrowIfNull(o);
+            var ti = (TabItem)o;
+            var c = (SnippetCategory)ti.DataContext;
 
             if (e.Result == TextBoxOverlayResult.Accept)
             {
@@ -179,15 +177,15 @@ namespace Kaxaml.Plugins.Default
                 WriteValues();
             }
 
-            _TextBoxOverlay.Hidden -= CategoryHidden;
+            TextBoxOverlay.Hidden -= _categoryHidden;
         }
 
         public void DoDrop(object o, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(typeof(Snippet)))
             {
-                SnippetCategory sc = (SnippetCategory)(o as FrameworkElement).DataContext;
-                Snippet s = (Snippet)(e.Data.GetData(typeof(Snippet)));
+                var sc = (SnippetCategory)((FrameworkElement)o).DataContext;
+                var s = (Snippet)e.Data.GetData(typeof(Snippet));
 
                 // make sure we're not dragging into the same category
                 if (s.Category == sc) return;
@@ -209,9 +207,9 @@ namespace Kaxaml.Plugins.Default
             }
             else if (e.Data.GetDataPresent(DataFormats.Text))
             {
-                string Text = (string)e.Data.GetData(DataFormats.Text);
-                SnippetCategory sc = (SnippetCategory)(o as FrameworkElement).DataContext;
-                sc.AddSnippet("New Snippet", "", Text);
+                var text = (string)e.Data.GetData(DataFormats.Text);
+                var sc = (SnippetCategory)((FrameworkElement)o).DataContext;
+                sc.AddSnippet("New Snippet", "", text);
 
                 // write the xaml file
                 WriteValues();
@@ -220,7 +218,7 @@ namespace Kaxaml.Plugins.Default
             // if the drop target is a TabItem, then expand it 
             if (o.GetType() == typeof(TabItem))
             {
-                TabItem ti = (TabItem)o;
+                var ti = (TabItem)o;
                 ti.IsSelected = true;
             }
         }
@@ -230,14 +228,16 @@ namespace Kaxaml.Plugins.Default
             if (e.Data.GetDataPresent(DataFormats.Text))
             {
                 // create a new category
-                SnippetCategory sc = new SnippetCategory();
-                sc.Name = "New Category";
+                var sc = new SnippetCategory
+                {
+                    Name = "New Category"
+                };
                 SnippetCategories.Add(sc);
 
-                string Text = (string)e.Data.GetData(DataFormats.Text);
-                sc.AddSnippet("New Snippet", "", Text);
+                var text = (string)e.Data.GetData(DataFormats.Text);
+                sc.AddSnippet("New Snippet", "", text);
 
-                TabItem ti = (TabItem)SnippetCategoriesTabControl.ItemContainerGenerator.ContainerFromItem(sc);
+                var ti = (TabItem)SnippetCategoriesTabControl.ItemContainerGenerator.ContainerFromItem(sc);
                 if (ti != null) ti.IsSelected = true;
 
                 // write the xaml file
@@ -245,17 +245,18 @@ namespace Kaxaml.Plugins.Default
 
                 // don't allow drops here anymore
                 MainGrid.AllowDrop = false;
-                MainGrid.Drop -= new DragEventHandler(DoGridDrop);
+                MainGrid.Drop -= DoGridDrop;
             }
 
         }
 
-        public void DoSnippetHidden(object o, TextBoxOverlayHideEventArgs e)
+        public void DoSnippetHidden(object? o, TextBoxOverlayHideEventArgs e)
         {
-            _TextBoxOverlay.Hidden -= SnippetHidden;
+            ArgumentNullException.ThrowIfNull(o);
+            TextBoxOverlay.Hidden -= _snippetHidden;
 
-            ListBoxItem lbi = (ListBoxItem)o;
-            Snippet s = (Snippet)lbi.DataContext;
+            var lbi = (ListBoxItem)o;
+            var s = (Snippet)lbi.DataContext;
 
             if (e.Result == TextBoxOverlayResult.Accept)
             {
@@ -266,29 +267,28 @@ namespace Kaxaml.Plugins.Default
 
         public void EditSnippet(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = lbi.DataContext as Snippet;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
 
-            if (s != null)
+            if (lbi.DataContext is Snippet s)
             {
-                SnippetEditor editor = SnippetEditor.Show(s, Application.Current.MainWindow);
-                editor.CommitValues += new RoutedEventHandler(editor_CommitValues);
+                var editor = SnippetEditor.Show(s, Application.Current.MainWindow);
+                editor.CommitValues += editor_CommitValues;
             }
         }
 
         public ArrayList GetSnippetCompletionItems()
         {
-            ArrayList items = new ArrayList();
+            var items = new ArrayList();
             items.Sort();
 
-            foreach (SnippetCategory c in SnippetCategories)
+            foreach (var c in SnippetCategories)
             {
-                foreach (Snippet s in c.Snippets)
+                foreach (var s in c.Snippets)
                 {
                     if (!string.IsNullOrEmpty(s.Shortcut))
                     {
-                        SnippetCompletionData item = new SnippetCompletionData(s.Text, s.Shortcut, s);
+                        var item = new SnippetCompletionData(s.Text, s.Shortcut, s);
                         items.Add(item);
                     }
                 }
@@ -302,17 +302,17 @@ namespace Kaxaml.Plugins.Default
             if (SnippetCategories.Count == 0)
             {
                 MainGrid.AllowDrop = true;
-                MainGrid.Drop += new DragEventHandler(DoGridDrop);
+                MainGrid.Drop += DoGridDrop;
             }
         }
 
         public void MoveCategoryDown(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            TabItem t = (TabItem)cm.PlacementTarget;
-            SnippetCategory s = (SnippetCategory)t.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var t = (TabItem)cm.PlacementTarget;
+            var s = (SnippetCategory)t.DataContext;
 
-            int index = SnippetCategories.IndexOf(s);
+            var index = SnippetCategories.IndexOf(s);
             if (index < SnippetCategories.Count - 1)
             {
                 SnippetCategories.Move(index, index + 1);
@@ -321,11 +321,11 @@ namespace Kaxaml.Plugins.Default
 
         public void MoveCategoryUp(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            TabItem t = (TabItem)cm.PlacementTarget;
-            SnippetCategory s = (SnippetCategory)t.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var t = (TabItem)cm.PlacementTarget;
+            var s = (SnippetCategory)t.DataContext;
 
-            int index = SnippetCategories.IndexOf(s);
+            var index = SnippetCategories.IndexOf(s);
             if (index > 0)
             {
                 SnippetCategories.Move(index, index - 1);
@@ -334,16 +334,18 @@ namespace Kaxaml.Plugins.Default
 
         public void NewCategory(object o, EventArgs e)
         {
-            SnippetCategory s = new SnippetCategory();
-            s.Name = "New Category";
+            var s = new SnippetCategory
+            {
+                Name = "New Category"
+            };
             SnippetCategories.Add(s);
         }
 
         public void NewSnippet(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = (Snippet)lbi.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
+            var s = (Snippet)lbi.DataContext;
             WriteValues();
 
         }
@@ -352,47 +354,46 @@ namespace Kaxaml.Plugins.Default
         {
             SnippetCategories.Clear();
 
-            XmlDocument xml = new XmlDocument();
+            var xml = new XmlDocument();
 
             try
             {
-                xml.Load(_SnippetsFullPath);
+                xml.Load(SnippetsFullPath);
             }
-            catch (System.IO.FileNotFoundException)
+            catch (FileNotFoundException)
             {
                 return;
             }
 
-            XmlNode root = xml.DocumentElement;
+            var root = xml.DocumentElement;
+            if(root is null ) return;
 
-            foreach (XmlNode CategoryNode in root.ChildNodes)
+            foreach (XmlNode categoryNode in root.ChildNodes)
             {
-                if (CategoryNode.Name == "Category")
+                if (categoryNode.Name == "Category")
                 {
                     // look for a matching categor
-                    SnippetCategory c = null;
+                    var c = (SnippetCategory?)null;
 
-                    foreach (SnippetCategory sc in SnippetCategories)
+                    foreach (var sc in SnippetCategories)
                     {
-                        if (sc.Name.CompareTo(CategoryNode.Attributes["Name"].Value) == 0) c = sc;
+                        if (sc.Name?.CompareTo(categoryNode.Attributes?["Name"]?.Value) == 0) c = sc;
                     }
 
                     if (c == null)
                     {
-                        c = new SnippetCategory();
-                        c.Name = CategoryNode.Attributes["Name"].Value;
+                        c = new SnippetCategory
+                        {
+                            Name = categoryNode.Attributes?["Name"]?.Value ?? string.Empty,
+                        };
                         SnippetCategories.Add(c);
                     }
 
-                    foreach (XmlNode SnippetNode in CategoryNode.ChildNodes)
+                    foreach (XmlNode snippetNode in categoryNode.ChildNodes)
                     {
-                        string name = "";
-                        string shortcut = "";
-
-                        if (SnippetNode.Attributes["Name"] != null) name = SnippetNode.Attributes["Name"].Value;
-                        if (SnippetNode.Attributes["Shortcut"] != null) shortcut = SnippetNode.Attributes["Shortcut"].Value;
-
-                        c.AddSnippet(name, shortcut, SnippetNode.InnerText);
+                        var name = snippetNode.Attributes?["Name"]?.Value ?? string.Empty;
+                        var shortcut = snippetNode.Attributes?["Shortcut"]?.Value ?? string.Empty;
+                        c.AddSnippet(name, shortcut, snippetNode.InnerText);
                     }
                 }
             }
@@ -400,15 +401,15 @@ namespace Kaxaml.Plugins.Default
 
         public void RenameCategory(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            TabItem ti = (TabItem)cm.PlacementTarget;
-            SnippetCategory c = (SnippetCategory)ti.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var ti = (TabItem)cm.PlacementTarget;
+            var c = (SnippetCategory)ti.DataContext;
 
-            if (CategoryHidden == null) CategoryHidden = DoCategoryHidden;
-            _TextBoxOverlay.Hidden += CategoryHidden;
+            _categoryHidden ??= DoCategoryHidden;
+            TextBoxOverlay.Hidden += _categoryHidden;
 
-            _TextBoxOverlay.Hidden += DoCategoryHidden;
-            _TextBoxOverlay.Show((ti as FrameworkElement), new Rect(new Point(14, 2), new Size(ti.ActualWidth - 20, 20)), c.Name);
+            TextBoxOverlay.Hidden += DoCategoryHidden;
+            TextBoxOverlay.Show(ti, new Rect(new Point(14, 2), new Size(ti.ActualWidth - 20, 20)), c.Name);
 
             WriteValues();
 
@@ -416,15 +417,15 @@ namespace Kaxaml.Plugins.Default
 
         public void RenameSnippet(object o, EventArgs e)
         {
-            ContextMenu cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-            ListBoxItem lbi = (ListBoxItem)cm.PlacementTarget;
-            Snippet s = (Snippet)lbi.DataContext;
+            var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
+            var lbi = (ListBoxItem)cm.PlacementTarget;
+            var s = (Snippet)lbi.DataContext;
 
-            if (SnippetHidden == null) SnippetHidden = DoSnippetHidden;
-            _TextBoxOverlay.Hidden += SnippetHidden;
+            _snippetHidden ??= DoSnippetHidden;
+            TextBoxOverlay.Hidden += _snippetHidden;
 
             // HACK: i'm handling the offset here rather than in the style
-            _TextBoxOverlay.Show((lbi as FrameworkElement), new Rect(new Point(14, 0), new Size(lbi.ActualWidth - 14, lbi.ActualHeight)), s.Name);
+            TextBoxOverlay.Show(lbi, new Rect(new Point(14, 0), new Size(lbi.ActualWidth - 14, lbi.ActualHeight)), s.Name);
 
             WriteValues();
 
@@ -432,33 +433,36 @@ namespace Kaxaml.Plugins.Default
 
         public void WriteValues()
         {
-            XmlTextWriter xmlWriter = new XmlTextWriter(_SnippetsFullPath, System.Text.Encoding.UTF8);
-            xmlWriter.Formatting = Formatting.Indented;
+            var xmlWriter = new XmlTextWriter(SnippetsFullPath, System.Text.Encoding.UTF8)
+            {
+                Formatting = Formatting.Indented
+            };
             xmlWriter.WriteProcessingInstruction("xml", "version='1.0' encoding='UTF-8'");
             xmlWriter.WriteStartElement("Snippets");
             xmlWriter.Close();
 
-            XmlDocument xml = new XmlDocument();
-            xml.Load(_SnippetsFullPath);
+            var xml = new XmlDocument();
+            xml.Load(SnippetsFullPath);
 
-            XmlNode root = xml.DocumentElement;
+            var root = xml.DocumentElement 
+                ?? throw new Exception($"Missing root element on snippet:{SnippetsFullPath}");
 
-            foreach (SnippetCategory c in SnippetCategories)
+            foreach (var c in SnippetCategories)
             {
-                XmlElement cnode = xml.CreateElement("Category");
+                var cnode = xml.CreateElement("Category");
                 cnode.SetAttribute("Name", c.Name);
 
                 if (c.Snippets != null)
                 {
 
-                    foreach (Snippet s in c.Snippets)
+                    foreach (var s in c.Snippets)
                     {
-                        XmlElement snode = xml.CreateElement("Snippet");
+                        var snode = xml.CreateElement("Snippet");
                         snode.SetAttribute("Name", s.Name);
                         snode.SetAttribute("Shortcut", s.Shortcut);
                         cnode.AppendChild(snode);
 
-                        XmlCDataSection cdata = xml.CreateCDataSection(s.Text);
+                        var cdata = xml.CreateCDataSection(s.Text);
                         snode.AppendChild(cdata);
                     }
 
@@ -466,7 +470,7 @@ namespace Kaxaml.Plugins.Default
                 }
             }
 
-            xml.Save(_SnippetsFullPath);
+            xml.Save(SnippetsFullPath);
 
         }
 
@@ -481,9 +485,9 @@ namespace Kaxaml.Plugins.Default
 
         public SnippetCompletionData(string description, string text, Snippet snippet)
         {
-            _Description = description;
-            _Text = text;
-            _Snippet = snippet;
+            Description = description;
+            Text = text;
+            Snippet = snippet;
         }
 
         #endregion Constructors
@@ -491,40 +495,20 @@ namespace Kaxaml.Plugins.Default
 
         #region ICompletionData Members
 
-        private string _Description;
-        public string Description
-        {
-            get { return _Description; }
-        }
+        public string Description { get; }
 
-        public int ImageIndex
-        {
-            get { return 0; }
-        }
+        public int ImageIndex => 0;
 
         public bool InsertAction(ICSharpCode.TextEditor.TextArea textArea, char ch)
         {
             return true;
         }
 
-        public double Priority
-        {
-            get { return 0; }
-        }
+        public double Priority => 0;
 
-        private string _Text;
-        public string Text
-        {
-            get { return _Text; }
-            set { _Text = value; }
-        }
+        public string Text { get; set; }
 
-        private Snippet _Snippet;
-        public Snippet Snippet
-        {
-            get { return _Snippet; }
-            set { _Snippet = value; }
-        }
+        public Snippet Snippet { get; set; }
 
 
         #endregion
@@ -533,8 +517,8 @@ namespace Kaxaml.Plugins.Default
 
         public int CompareTo(object obj)
         {
-            SnippetCompletionData s = (SnippetCompletionData)obj;
-            return (s.Text.CompareTo(this.Text));
+            var s = (SnippetCompletionData)obj;
+            return s.Text.CompareTo(Text);
         }
 
         #endregion
@@ -546,11 +530,11 @@ namespace Kaxaml.Plugins.Default
         #region Fields
 
 
-        private string _Name;
-        private string _Shortcut;
-        private string _Text;
+        private string _name;
+        private string _shortcut;
+        private string _text;
 
-        private SnippetCategory _Category;
+        private SnippetCategory _category;
 
         #endregion Fields
 
@@ -558,10 +542,10 @@ namespace Kaxaml.Plugins.Default
 
         public Snippet(string name, string shortcut, string text, SnippetCategory category)
         {
-            Name = name;
-            Shortcut = shortcut;
-            Text = text;
-            Category = category;
+            _name = name;
+            _shortcut = shortcut;
+            _text = text;
+            _category = category;
         }
 
         #endregion Constructors
@@ -571,12 +555,12 @@ namespace Kaxaml.Plugins.Default
 
         public string Name
         {
-            get { return _Name; }
+            get => _name;
             set
             {
-                if (_Name != value)
+                if (_name != value)
                 {
-                    _Name = value;
+                    _name = value;
                     OnPropertyChanged("Name");
                 }
             }
@@ -584,12 +568,12 @@ namespace Kaxaml.Plugins.Default
 
         public string Shortcut
         {
-            get { return _Shortcut; }
+            get => _shortcut;
             set
             {
-                if (_Shortcut != value)
+                if (_shortcut != value)
                 {
-                    _Shortcut = value;
+                    _shortcut = value;
                     OnPropertyChanged("Shortcut");
                 }
             }
@@ -597,12 +581,12 @@ namespace Kaxaml.Plugins.Default
 
         public string Text
         {
-            get { return _Text; }
+            get => _text;
             set
             {
-                if (_Text != value)
+                if (_text != value)
                 {
-                    _Text = value;
+                    _text = value;
                     OnPropertyChanged("Text");
                 }
             }
@@ -611,12 +595,12 @@ namespace Kaxaml.Plugins.Default
 
         public SnippetCategory Category
         {
-            get { return _Category; }
+            get => _category;
             set
             {
-                if (_Category != value)
+                if (_category != value)
                 {
-                    _Category = value;
+                    _category = value;
                     OnPropertyChanged("Category");
                 }
             }
@@ -627,7 +611,7 @@ namespace Kaxaml.Plugins.Default
 
         #region Events
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion Events
 
@@ -642,12 +626,9 @@ namespace Kaxaml.Plugins.Default
 
         #region Private Methods
 
-        private void OnPropertyChanged(String info)
+        private void OnPropertyChanged(string info)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
         #endregion Private Methods
@@ -656,16 +637,16 @@ namespace Kaxaml.Plugins.Default
 
         public string IndentedText(int count, bool skipFirstLine)
         {
-            string t = Text.Replace("\r\n", "\n");
+            var t = Text.Replace("\r\n", "\n");
 
             if (t.CompareTo(Text) != 0)
             {
                 // separate Text into lines
-                string[] lines = t.Split('\n');
+                var lines = t.Split('\n');
 
                 // generate the "indent" string
-                string indent = "";
-                for (int i = 0; i < count; i++)
+                var indent = "";
+                for (var i = 0; i < count; i++)
                 {
                     indent = indent + " ";
                 }
@@ -673,8 +654,8 @@ namespace Kaxaml.Plugins.Default
                 // append indent to the beginning of each string and
                 // generate the result string (with newly inserted line ends)
 
-                string result = "";
-                for (int i = 0; i < lines.Length; i++)
+                var result = "";
+                for (var i = 0; i < lines.Length; i++)
                 {
                     if (skipFirstLine && i == 0)
                     {
@@ -707,7 +688,7 @@ namespace Kaxaml.Plugins.Default
 
         #region Fields
 
-        private string _Name;
+        private string _name = string.Empty;
 
         #endregion Fields
 
@@ -717,12 +698,12 @@ namespace Kaxaml.Plugins.Default
 
         public string Name
         {
-            get { return _Name; }
+            get => _name;
             set
             {
-                if (_Name != value)
+                if (_name != value)
                 {
-                    _Name = value;
+                    _name = value;
                     OnPropertyChanged("Name");
                 }
             }
@@ -733,18 +714,15 @@ namespace Kaxaml.Plugins.Default
 
         #region Events
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         #endregion Events
 
         #region Private Methods
 
-        private void OnPropertyChanged(String info)
+        private void OnPropertyChanged(string info)
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
         }
 
         #endregion Private Methods
@@ -753,7 +731,7 @@ namespace Kaxaml.Plugins.Default
 
         public void AddSnippet(string name, string shortcut, string text)
         {
-            Snippet s = new Snippet(name, shortcut, text, this);
+            var s = new Snippet(name, shortcut, text, this);
             Snippets.Add(s);
         }
 
@@ -794,11 +772,11 @@ namespace Kaxaml.Plugins.Default
         #region Fields
 
 
-        private bool IsOpen = false;
+        private bool _isOpen;
 
-        private AdornerLayer _AdornerLayer = null;
-        private ElementAdorner _ElementAdorner = null;
-        private UIElement _Element;
+        private AdornerLayer? _adornerLayer;
+        private ElementAdorner? _elementAdorner;
+        private UIElement? _element;
 
         #endregion Fields
 
@@ -813,7 +791,7 @@ namespace Kaxaml.Plugins.Default
 
         #region Events
 
-        public event EventHandler<TextBoxOverlayHideEventArgs> Hidden;
+        public event EventHandler<TextBoxOverlayHideEventArgs>? Hidden;
 
         #endregion Events
 
@@ -823,12 +801,12 @@ namespace Kaxaml.Plugins.Default
         {
             if (e.Key == Key.Enter)
             {
-                if (IsOpen) Hide(TextBoxOverlayResult.Accept);
+                if (_isOpen) Hide(TextBoxOverlayResult.Accept);
             }
 
             if (e.Key == Key.Escape)
             {
-                if (IsOpen) Hide(TextBoxOverlayResult.Cancel);
+                if (_isOpen) Hide(TextBoxOverlayResult.Cancel);
             }
 
             base.OnKeyDown(e);
@@ -836,19 +814,19 @@ namespace Kaxaml.Plugins.Default
 
         protected override void OnLostFocus(RoutedEventArgs e)
         {
-            if (IsOpen) Hide(TextBoxOverlayResult.Accept);
+            if (_isOpen) Hide(TextBoxOverlayResult.Accept);
             base.OnLostFocus(e);
         }
 
         protected override void OnLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
         {
-            if (IsOpen) Hide(TextBoxOverlayResult.Accept);
+            if (_isOpen) Hide(TextBoxOverlayResult.Accept);
             base.OnLostKeyboardFocus(e);
         }
 
         protected override void OnLostMouseCapture(MouseEventArgs e)
         {
-            if (IsOpen) Hide(TextBoxOverlayResult.Accept);
+            if (_isOpen) Hide(TextBoxOverlayResult.Accept);
             base.OnLostMouseCapture(e);
         }
 
@@ -858,57 +836,54 @@ namespace Kaxaml.Plugins.Default
 
         public void Hide(TextBoxOverlayResult result)
         {
-            if (IsOpen) // only hide once
+            if (_isOpen) // only hide once
             {
-                if (_ElementAdorner != null)
+                if (_elementAdorner != null)
                 {
-                    AdornerLayer layer = VisualTreeHelper.GetParent(_ElementAdorner) as AdornerLayer;
-                    if (layer != null)
+                    if (VisualTreeHelper.GetParent(_elementAdorner) is AdornerLayer layer)
                     {
-                        _ElementAdorner.Hide();
-                        layer.Remove(_ElementAdorner);
+                        _elementAdorner.Hide();
+                        layer.Remove(_elementAdorner);
                     }
                 }
 
-                TextBoxOverlayHideEventArgs e = new TextBoxOverlayHideEventArgs(result, Text);
+                var e = new TextBoxOverlayHideEventArgs(result, Text);
                 OnHidden(e);
 
-                IsOpen = false;
+                _isOpen = false;
             }
         }
 
         public void OnHidden(TextBoxOverlayHideEventArgs e)
         {
-            if (Hidden != null) Hidden(_Element, e);
+            Hidden?.Invoke(_element, e);
         }
 
-        public void Show(UIElement element, Rect rect, string InitialValue)
+        public void Show(UIElement element, Rect rect, string initialValue)
         {
-            Size size = rect.Size;
-            Point offset = rect.Location;
+            var size = rect.Size;
+            var offset = rect.Location;
 
             Height = size.Height;
             Width = size.Width;
 
-            Text = InitialValue;
+            Text = initialValue;
             SelectAll();
 
-            _Element = element;
+            _element = element;
 
-            _AdornerLayer = AdornerLayer.GetAdornerLayer(element);
+            _adornerLayer = AdornerLayer.GetAdornerLayer(element);
 
-            if (_AdornerLayer == null)
+            if (_adornerLayer == null)
             {
                 return;
             }
-            else
-            {
-                _ElementAdorner = new ElementAdorner(element, this, offset);
-                _AdornerLayer.Add(_ElementAdorner);
-                this.Focus();
-            }
 
-            IsOpen = true;
+            _elementAdorner = new ElementAdorner(element, this, offset);
+            _adornerLayer.Add(_elementAdorner);
+            Focus();
+
+            _isOpen = true;
         }
 
         #endregion Public Methods
@@ -921,8 +896,8 @@ namespace Kaxaml.Plugins.Default
         #region Fields
 
 
-        private Point _Offset;
-        UIElement _Element;
+        private Point _offset;
+        private UIElement? _element;
 
         #endregion Fields
 
@@ -931,9 +906,9 @@ namespace Kaxaml.Plugins.Default
         public ElementAdorner(UIElement owner, UIElement element, Point offset)
             : base(owner)
         {
-            _Element = element;
+            _element = element;
 
-            this.AddVisualChild(element);
+            AddVisualChild(element);
             Offset = offset;
         }
 
@@ -942,21 +917,15 @@ namespace Kaxaml.Plugins.Default
         #region Properties
 
 
-        protected override int VisualChildrenCount
-        {
-            get
-            {
-                return 1;
-            }
-        }
+        protected override int VisualChildrenCount => 1;
 
 
         public Point Offset
         {
-            get { return _Offset; }
+            get => _offset;
             set
             {
-                _Offset = value;
+                _offset = value;
                 InvalidateArrange();
             }
         }
@@ -968,13 +937,13 @@ namespace Kaxaml.Plugins.Default
 
         protected override Size ArrangeOverride(Size finalSize)
         {
-            _Element.Arrange(new Rect(Offset, _Element.DesiredSize));
+            _element?.Arrange(new Rect(Offset, _element.DesiredSize));
             return finalSize;
         }
 
-        protected override Visual GetVisualChild(int index)
+        protected override Visual? GetVisualChild(int index)
         {
-            return _Element;
+            return _element;
         }
 
         #endregion Overridden Methods
@@ -983,8 +952,8 @@ namespace Kaxaml.Plugins.Default
 
         internal void Hide()
         {
-            this.RemoveVisualChild(_Element);
-            _Element = null;
+            RemoveVisualChild(_element);
+            _element = null;
         }
 
         #endregion Methods
