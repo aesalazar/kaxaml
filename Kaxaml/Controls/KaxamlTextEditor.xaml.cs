@@ -1203,8 +1203,9 @@ namespace Kaxaml.Controls
                 var r = ReplaceEx(sub, s, replacement);
 
                 ReplaceSelectedText(r);
-
-                CaretIndex = c;
+                
+                //Make sure the text is not shorter as a result of the replacement
+                CaretIndex = Math.Min(c, TextEditor.Document.TextLength);
             }
             else
             {
