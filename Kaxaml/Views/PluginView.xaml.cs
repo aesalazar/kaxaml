@@ -72,6 +72,12 @@ namespace Kaxaml.Views
                 var types = asm.GetExportedTypes();
                 foreach (var typ in types)
                 {
+                    if (!typeof(UserControl).IsAssignableFrom(typ))
+                    {
+                        //TODO: Figure out why this became necessary in this branch
+                        continue;
+                    }
+
                     var a = typ
                         .GetCustomAttributes(typeof(PluginAttribute), false)
                         .Cast<PluginAttribute>()
