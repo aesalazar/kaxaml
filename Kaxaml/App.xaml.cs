@@ -1,20 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using Kaxaml.Plugins.Default;
+using KaxamlPlugins.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kaxaml;
 
 public partial class App
 {
     private static string? _startupPath;
-    private IHost? _host;
+
+    private static readonly IEnumerable<Type> DiTypes =
+    [
+        typeof(MainWindow),
+        typeof(App)
+    ];
+
+    private ILogger<App> _logger = NullLogger<App>.Instance;
 
     public Snippets? Snippets { get; set; }
 
@@ -64,35 +73,23 @@ public partial class App
         base.OnStartup(e);
         StartupArgs = e.Args;
 
-        _host = Host.CreateDefaultBuilder()
-            .ConfigureLogging(logging =>
-            {
-                logging.ClearProviders();
-                logging.AddConsole();
-                logging.SetMinimumLevel(LogLevel.Information);
-            })
-            .ConfigureServices((_, services) =>
-            {
-                services.AddSingleton<MainWindow>();
-                services.AddSingleton<App>();
-            })
-            .Build();
+        ApplicationDiServiceProvider.Initialize(DiTypes);
+        _logger = ApplicationDiServiceProvider
+            .Services
+            .GetRequiredService<ILogger<App>>();
 
-        var logger = _host.Services.GetRequiredService<ILogger<App>>();
-        logger.LogInformation("Application is starting.");
-
-        var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-        mainWindow.Show();
+        _logger.LogInformation("Application is starting with Main Window...");
+        ApplicationDiServiceProvider
+            .Services
+            .GetRequiredService<MainWindow>()
+            .Show();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
-        if (_host is not null)
-        {
-            _host.StopAsync().GetAwaiter().GetResult();
-            _host.Dispose();
-        }
-
+        _logger.LogInformation("Application shutdown started...");
+        ApplicationDiServiceProvider.Shutdown().GetAwaiter().GetResult();
         base.OnExit(e);
+        _logger.LogInformation("Application shutdown complete.");
     }
 }
