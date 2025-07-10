@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace KaxamlPlugins;
+namespace KaxamlPlugins.Utilities;
 
 public static class HelpersUtilities
 {
@@ -8,7 +8,7 @@ public static class HelpersUtilities
     ///     Returns true if the provided <see cref="Exception" /> is considered 'critical'
     /// </summary>
     /// <param name="exception">The <see cref="Exception" /> to evaluate for critical-ness.</param>
-    /// <returns>true if the Exception is conisdered critical; otherwise, false.</returns>
+    /// <returns>true if the Exception is considered critical; otherwise, false.</returns>
     /// <remarks>
     ///     These exceptions are consider critical:
     ///     <list type="bullets">

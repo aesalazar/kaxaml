@@ -9,6 +9,7 @@ using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using Kaxaml.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 

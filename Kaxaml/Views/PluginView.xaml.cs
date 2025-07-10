@@ -12,6 +12,7 @@ using Kaxaml.Plugins;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
+using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

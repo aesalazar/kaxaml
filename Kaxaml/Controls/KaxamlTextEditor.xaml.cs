@@ -10,6 +10,7 @@ using ICSharpCode.TextEditor.Document;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
+using KaxamlPlugins.Utilities;
 
 namespace Kaxaml.Controls
 {

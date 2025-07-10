@@ -5,7 +5,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Gui.CompletionWindow;
-using KaxamlPlugins;
+using KaxamlPlugins.Utilities;
 
 namespace Kaxaml.CodeCompletion
 {
