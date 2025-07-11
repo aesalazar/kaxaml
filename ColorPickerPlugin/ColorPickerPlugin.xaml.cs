@@ -6,35 +6,36 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using KaxamlPlugins;
 using KaxamlPlugins.Controls;
+using KaxamlPlugins.DependencyInjection;
+using KaxamlPlugins.Utilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kaxaml.Plugins.ColorPicker
 {
-    /// <summary>
-    /// Interaction logic for UserControl1.xaml
-    /// </summary>
-
     [Plugin(
         Name = "Color Picker",
         Icon = "Images\\icon.png",
-        Description = "Generate colors and save palletes (Ctrl+P)",
+        Description = "Generate colors and save pallets (Ctrl+P)",
         ModifierKeys = ModifierKeys.Control,
         Key = Key.P
      )]
-
-    public partial class ColorPickerPlugin : UserControl
+    public partial class ColorPickerPlugin
     {
+        private readonly ILogger<ColorPickerPlugin> _logger;
+
         public ColorPickerPlugin()
         {
             InitializeComponent();
+            _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<ColorPickerPlugin>>();
             Colors = new ObservableCollection<Color>();
             ColorString = Properties.Settings.Default.Colors;
 
             KaxamlInfo.EditSelectionChanged += KaxamlInfo_EditSelectionChanged;
+            _logger.LogInformation("Initializing Color Picker Plugin complete.");
         }
 
         #region Sync Interaction Logic
-
-        private ColorConverter _converter = new();
 
         private void KaxamlInfo_EditSelectionChanged(string? selectedText)
         {
@@ -159,6 +160,7 @@ namespace Kaxaml.Plugins.ColorPicker
         {
             var c = (Color)((FrameworkElement)o).DataContext;
             C.Color = c;
+            _logger.LogDebug("Color Picker set: {C}", c);
         }
 
         #endregion
@@ -169,14 +171,19 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public ObservableCollection<Color> Colors
-        { get => (ObservableCollection<Color>)GetValue(ColorsProperty); set => SetValue(ColorsProperty, value);
+        {
+            get => (ObservableCollection<Color>)GetValue(ColorsProperty); 
+            set => SetValue(ColorsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for Colors
         /// </summary>
-        public static readonly DependencyProperty ColorsProperty =
-            DependencyProperty.Register(nameof(Colors), typeof(ObservableCollection<Color>), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(default(ObservableCollection<Color>), ColorsChanged));
+        public static readonly DependencyProperty ColorsProperty = DependencyProperty.Register(
+            nameof(Colors), 
+            typeof(ObservableCollection<Color>), 
+            typeof(ColorPickerPlugin), 
+            new FrameworkPropertyMetadata(default(ObservableCollection<Color>), ColorsChanged));
 
         /// <summary>
         /// PropertyChangedCallback for Colors
@@ -205,6 +212,7 @@ namespace Kaxaml.Plugins.ColorPicker
                     s = s + c + _delimiter;
                 }
                 ColorString = s;
+                _logger.LogDebug("Updated Color String: {Color}", ColorString);
 
                 _updateInternal = false;
             }
@@ -218,16 +226,19 @@ namespace Kaxaml.Plugins.ColorPicker
         /// description of the property
         /// </summary>
         public string ColorString
-        { get => (string)GetValue(ColorStringProperty); set => SetValue(ColorStringProperty, value);
+        { 
+            get => (string)GetValue(ColorStringProperty);
+            set => SetValue(ColorStringProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ColorString
         /// </summary>
-        public static readonly DependencyProperty ColorStringProperty =
-            DependencyProperty.Register(nameof(ColorString), typeof(string), typeof(ColorPickerPlugin), new FrameworkPropertyMetadata(
-                default(string),
-                ColorStringChanged));
+        public static readonly DependencyProperty ColorStringProperty = DependencyProperty.Register(
+            nameof(ColorString), 
+            typeof(string), 
+            typeof(ColorPickerPlugin), 
+            new FrameworkPropertyMetadata(default(string), ColorStringChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ColorString
@@ -253,6 +264,7 @@ namespace Kaxaml.Plugins.ColorPicker
                             {
                                 var c = ColorPickerUtil.ColorFromString(s);
                                 owner.Colors.Add(c);
+                                owner._logger.LogDebug("Added to Colors: {C}", c);
                             }
                         }
                         catch (Exception ex)

@@ -1,15 +1,16 @@
 using System;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Windows;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
+using Kaxaml.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.Utilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
 namespace Kaxaml
@@ -17,20 +18,83 @@ namespace Kaxaml
     /// <summary>
     /// Interaction logic for Window1.xaml
     /// </summary>
-
-    public partial class MainWindow : Window
+    public partial class MainWindow
     {
+        private readonly ILogger<MainWindow> _logger;
+
+        #region Private Methods
+
+        private BitmapSource RenderContent()
+        {
+            if (KaxamlInfo.Frame?.Content is not FrameworkElement element)
+                element = KaxamlInfo.Frame
+                          ?? throw new Exception("Expecting a FrameworkElement");
+
+            var width = (int)element.ActualWidth;
+            var height = (int)element.ActualHeight;
+            var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            rtb.Render(element);
+
+            return rtb;
+        }
+
+        #endregion
+
+        #region Overrides
+
+        protected override void OnDrop(DragEventArgs e)
+        {
+            var filenames = (string[]?)e.Data.GetData("FileDrop", true);
+
+            if (filenames is { Length: > 0 })
+            {
+                var first = (XamlDocument?)null;
+                foreach (var f in filenames)
+                {
+                    var ext = Path.GetExtension(f).ToLower();
+                    if (ext.Equals(".png") || ext.Equals(".jpg") || ext.Equals(".jpeg") || ext.Equals(".bmp") ||
+                        ext.Equals(".gif"))
+                    {
+                        // get a relative version of the file name
+                        var docFolder = DocumentsView.SelectedDocument?.Folder ??
+                                        throw new Exception("Expecting Selected Document");
+                        var rfilename = f.Replace(docFolder + "\\", "");
+
+                        // create and insert the xaml
+                        var xaml = Settings.Default.PasteImageXaml;
+                        xaml = xaml.Replace("$source$", rfilename);
+                        DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(xaml);
+                    }
+                    else
+                    {
+                        var doc = XamlDocument.FromFile(f);
+
+                        if (doc != null)
+                        {
+                            DocumentsView.XamlDocuments.Add(doc);
+                            first ??= doc;
+                        }
+                    }
+                }
+
+                if (first != null) DocumentsView.SelectedDocument = first;
+            }
+        }
+
+        #endregion
+
         //-------------------------------------------------------------------
         //
         //  Constructors
         //
         //-------------------------------------------------------------------
 
-
         #region Constructors
 
-        public MainWindow()
+        public MainWindow(ILogger<MainWindow> logger)
         {
+            _logger = logger;
+            _logger.LogInformation("Initializing Main Window...");
             InitializeComponent();
 
             KaxamlInfo.MainWindow = this;
@@ -170,23 +234,28 @@ namespace Kaxaml
             // load or create startup documents
 
             if (App.StartupArgs.Length > 0)
-            {
                 foreach (var s in App.StartupArgs)
                 {
+                    _logger.LogInformation("Apply startup arg: {arg}", s);
                     if (File.Exists(s))
                     {
                         var doc = XamlDocument.FromFile(s);
                         if (doc is not null) XamlDocuments.Add(doc);
                     }
+                    else
+                    {
+                        _logger.LogInformation("File does not exist: {arg}", s);
+                    }
                 }
-            }
 
             if (XamlDocuments.Count == 0)
             {
                 var doc = new WpfDocument(Directory.GetCurrentDirectory());
                 XamlDocuments.Add(doc);
+                _logger.LogInformation("Created new WPF document: {Path}", doc.FullPath);
             }
 
+            _logger.LogInformation("Initializing Main Window complete.");
         }
 
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
@@ -194,12 +263,13 @@ namespace Kaxaml
             PluginView.OpenPlugin(e.Key, Keyboard.Modifiers);
         }
 
-        #endregion        //-------------------------------------------------------------------
+        #endregion
+
+        //-------------------------------------------------------------------
         //
         //  Dependency Properties
         //
         //-------------------------------------------------------------------
-
 
         #region XamlDocuments (DependencyProperty)
 
@@ -207,32 +277,38 @@ namespace Kaxaml
         /// The collection of XamlDocuments that are currently actively being edited.
         /// </summary>
         public ObservableCollection<XamlDocument> XamlDocuments
-        { get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty); set => SetValue(XamlDocumentsProperty, value);
+        {
+            get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty);
+            set => SetValue(XamlDocumentsProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for XamlDocuments
         /// </summary>
-        public static readonly DependencyProperty XamlDocumentsProperty =
-            DependencyProperty.Register(nameof(XamlDocuments), typeof(ObservableCollection<XamlDocument>), typeof(MainWindow), new FrameworkPropertyMetadata(new ObservableCollection<XamlDocument>(), XamlDocumentsChanged));
+        public static readonly DependencyProperty XamlDocumentsProperty = DependencyProperty.Register(
+            nameof(XamlDocuments),
+            typeof(ObservableCollection<XamlDocument>),
+            typeof(MainWindow),
+            new FrameworkPropertyMetadata(new ObservableCollection<XamlDocument>(), XamlDocumentsChanged));
 
         /// <summary>
         /// PropertyChangedCallback for XamlDocuments
         /// </summary>
         private static void XamlDocumentsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is MainWindow owner)
+            if (obj is MainWindow _)
             {
                 // handle changed event here
             }
         }
 
-        #endregion        //-------------------------------------------------------------------
+        #endregion
+
+        //-------------------------------------------------------------------
         //
         //  Commands
         //
         //-------------------------------------------------------------------
-
 
         #region ParseCommand
 
@@ -240,28 +316,12 @@ namespace Kaxaml
 
         private void Parse_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                if (DocumentsView.SelectedView != null)
-                {
-                    DocumentsView.SelectedView.Parse();
-                }
-            }
+            if (Equals(sender, this)) DocumentsView.SelectedView?.Parse();
         }
 
         private void Parse_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                if (DocumentsView.SelectedView != null)
-                {
-                    args.CanExecute = true;
-                }
-                else
-                {
-                    args.CanExecute = false;
-                }
-            }
+            if (Equals(sender, this)) args.CanExecute = DocumentsView.SelectedView != null;
         }
 
         #endregion
@@ -276,17 +336,13 @@ namespace Kaxaml
             {
                 var doc = new WpfDocument(Directory.GetCurrentDirectory());
                 XamlDocuments.Add(doc);
-
                 DocumentsView.SelectedDocument = doc;
-
             }
         }
+
         private void NewWPFTab_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -302,19 +358,18 @@ namespace Kaxaml
                 XamlDocument? document = null;
 
                 if (args.Parameter != null)
-                {
                     document = args.Parameter as XamlDocument;
-                }
                 else if (DocumentsView.SelectedView != null)
-                {
                     document = DocumentsView.SelectedView.XamlDocument;
-                }
 
                 if (document != null)
                 {
                     if (document.NeedsSave)
                     {
-                        var result = MessageBox.Show("The document " + document.Filename + " has not been saved. Would you like to save it before closing?", "Save Document", MessageBoxButton.YesNoCancel);
+                        var result = MessageBox.Show(
+                            "The document " + document.Filename +
+                            " has not been saved. Would you like to save it before closing?", "Save Document",
+                            MessageBoxButton.YesNoCancel);
 
                         if (result == MessageBoxResult.Yes) document.Save();
                         if (result == MessageBoxResult.Cancel) return;
@@ -327,19 +382,8 @@ namespace Kaxaml
 
         private void CloseTab_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                if (DocumentsView.XamlDocuments.Count > 1)
-                {
-                    args.CanExecute = true;
-                }
-                else
-                {
-                    args.CanExecute = false;
-                }
-            }
+            if (Equals(sender, this)) args.CanExecute = DocumentsView.XamlDocuments.Count > 1;
         }
-
 
         #endregion
 
@@ -350,28 +394,16 @@ namespace Kaxaml
         private void Save_Executed(object sender, ExecutedRoutedEventArgs args)
         {
             if (Equals(sender, this))
-            {
                 if (DocumentsView.SelectedView?.XamlDocument != null)
                 {
                     var document = DocumentsView.SelectedView.XamlDocument;
                     Save(document);
                 }
-            }
         }
 
         private void Save_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                if (DocumentsView.SelectedView != null)
-                {
-                    args.CanExecute = true;
-                }
-                else
-                {
-                    args.CanExecute = false;
-                }
-            }
+            if (Equals(sender, this)) args.CanExecute = DocumentsView.SelectedView != null;
         }
 
         #endregion
@@ -383,28 +415,16 @@ namespace Kaxaml
         private void SaveAs_Executed(object sender, ExecutedRoutedEventArgs args)
         {
             if (Equals(sender, this))
-            {
                 if (DocumentsView.SelectedView?.XamlDocument != null)
                 {
                     var document = DocumentsView.SelectedView.XamlDocument;
                     SaveAs(document);
                 }
-            }
         }
 
         private void SaveAs_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                if (DocumentsView.SelectedView != null)
-                {
-                    args.CanExecute = true;
-                }
-                else
-                {
-                    args.CanExecute = false;
-                }
-            }
+            if (Equals(sender, this)) args.CanExecute = DocumentsView.SelectedView != null;
         }
 
         #endregion
@@ -424,23 +444,18 @@ namespace Kaxaml
 
                 if (sfd.ShowDialog(KaxamlInfo.MainWindow) == true)
                 {
-                    using (var fs = new FileStream(sfd.FileName, FileMode.Create))
-                    {
-                        var rtb = RenderContent();
-                        var encoder = new PngBitmapEncoder();
-                        encoder.Frames.Add(BitmapFrame.Create(rtb));
-                        encoder.Save(fs);
-                    }
+                    using var fs = new FileStream(sfd.FileName, FileMode.Create);
+                    var rtb = RenderContent();
+                    var encoder = new PngBitmapEncoder();
+                    encoder.Frames.Add(BitmapFrame.Create(rtb));
+                    encoder.Save(fs);
                 }
             }
         }
 
         private void SaveAsImage_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -451,18 +466,12 @@ namespace Kaxaml
 
         private void Open_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                Open();
-            }
+            if (Equals(sender, this)) Open();
         }
 
         private void Open_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -473,18 +482,12 @@ namespace Kaxaml
 
         private void Exit_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                Application.Current.Shutdown();
-            }
+            if (Equals(sender, this)) Application.Current.Shutdown();
         }
 
         private void Exit_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -495,18 +498,12 @@ namespace Kaxaml
 
         private void ZoomIn_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                StatusView.ZoomIn();
-            }
+            if (Equals(sender, this)) StatusView.ZoomIn();
         }
 
         private void ZoomIn_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -517,18 +514,12 @@ namespace Kaxaml
 
         private void ZoomOut_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                StatusView.ZoomOut();
-            }
+            if (Equals(sender, this)) StatusView.ZoomOut();
         }
 
         private void ZoomOut_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -539,18 +530,12 @@ namespace Kaxaml
 
         private void ActualSize_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                StatusView.ActualSize();
-            }
+            if (Equals(sender, this)) StatusView.ActualSize();
         }
 
         private void ActualSize_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -561,18 +546,12 @@ namespace Kaxaml
 
         private void Paste_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(Clipboard.GetText());
-            }
+            if (Equals(sender, this)) DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(Clipboard.GetText());
         }
 
         private void Paste_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = Clipboard.ContainsText();
-            }
+            if (Equals(sender, this)) args.CanExecute = Clipboard.ContainsText();
         }
 
         #endregion
@@ -584,21 +563,18 @@ namespace Kaxaml
         private void PasteImage_Executed(object sender, ExecutedRoutedEventArgs args)
         {
             if (Equals(sender, this))
-            {
                 if (Clipboard.ContainsImage())
                 {
                     var src = Clipboard.GetImage();
 
                     if (src != null)
-                    {
                         try
                         {
                             // find and/or create the folder
+                            var folder = Settings.Default.PasteImageFolder;
+                            string absfolder;
 
-                            var folder = Properties.Settings.Default.PasteImageFolder;
-                            var absfolder = "";
-
-                            if (!folder.Contains(":"))
+                            if (!folder.Contains(':'))
                             {
                                 var selectedDocFolder = DocumentsView.SelectedDocument?.Folder 
                                     ?? throw new Exception("Expecting Selected Document");
@@ -610,15 +586,10 @@ namespace Kaxaml
                             }
 
                             // create the folder if it doesn't exist
-
-                            if (!Directory.Exists(absfolder))
-                            {
-                                Directory.CreateDirectory(absfolder);
-                            }
+                            if (!Directory.Exists(absfolder)) Directory.CreateDirectory(absfolder);
 
                             // create a unique filename
-
-                            var filename = Properties.Settings.Default.PasteImageFile;
+                            var filename = Settings.Default.PasteImageFile;
                             var tempfile = Path.Combine(absfolder, filename);
                             var number = 1;
 
@@ -630,7 +601,6 @@ namespace Kaxaml
                             }
 
                             // save the image from the clipboard
-
                             using (var fs = new FileStream(absfilename, FileMode.Create))
                             {
                                 var encoder = new JpegBitmapEncoder
@@ -650,30 +620,20 @@ namespace Kaxaml
                             var rfilename = absfilename.Replace(docFolder + "\\", "");
 
                             // create and insert the xaml
-
-                            var xaml = Properties.Settings.Default.PasteImageXaml;
+                            var xaml = Settings.Default.PasteImageXaml;
                             xaml = xaml.Replace("$source$", rfilename);
                             DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(xaml);
                         }
                         catch (Exception ex)
                         {
-                            if (ex.IsCriticalException())
-                            {
-                                throw;
-                            }
+                            if (ex.IsCriticalException()) throw;
                         }
-
-                    }
                 }
-            }
         }
 
         private void PasteImage_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = Clipboard.ContainsImage();
-            }
+            if (Equals(sender, this)) args.CanExecute = Clipboard.ContainsImage();
         }
 
         #endregion
@@ -694,9 +654,7 @@ namespace Kaxaml
         private void Copy_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
             if (Equals(sender, this))
-            {
                 args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView?.TextEditor?.SelectedText);
-            }
         }
 
         #endregion
@@ -732,18 +690,13 @@ namespace Kaxaml
 
         private void Delete_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                DocumentsView?.SelectedView?.TextEditor?.ReplaceSelectedText("");
-            }
+            if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.ReplaceSelectedText("");
         }
 
         private void Delete_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
             if (Equals(sender, this))
-            {
                 args.CanExecute = !string.IsNullOrEmpty(DocumentsView?.SelectedView?.TextEditor?.SelectedText);
-            }
         }
 
         #endregion
@@ -754,18 +707,12 @@ namespace Kaxaml
 
         private void Redo_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                DocumentsView?.SelectedView?.TextEditor?.Redo();
-            }
+            if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.Redo();
         }
 
         private void Redo_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -776,18 +723,12 @@ namespace Kaxaml
 
         private void Undo_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                DocumentsView?.SelectedView?.TextEditor?.Undo();
-            }
+            if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.Undo();
         }
 
         private void Undo_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -798,18 +739,12 @@ namespace Kaxaml
 
         private void Find_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                PluginView.SelectedPlugin = PluginView.GetFindPlugin();
-            }
+            if (Equals(sender, this)) PluginView.SelectedPlugin = PluginView.GetFindPlugin();
         }
 
         private void Find_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -833,10 +768,7 @@ namespace Kaxaml
 
         private void FindNext_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
         #endregion
@@ -847,36 +779,29 @@ namespace Kaxaml
 
         private void Replace_Executed(object sender, ExecutedRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                PluginView.SelectedPlugin = PluginView.GetFindPlugin();
-            }
+            if (Equals(sender, this)) PluginView.SelectedPlugin = PluginView.GetFindPlugin();
         }
 
         private void Replace_CanExecute(object sender, CanExecuteRoutedEventArgs args)
         {
-            if (Equals(sender, this))
-            {
-                args.CanExecute = true;
-            }
+            if (Equals(sender, this)) args.CanExecute = true;
         }
 
-        #endregion        //-------------------------------------------------------------------
+        #endregion
+
+        //-------------------------------------------------------------------
         //
         //  Methods
         //
         //-------------------------------------------------------------------
 
-
         #region Public Methods
-
 
         private OpenFileDialog? _openDialog;
 
         public bool Open()
         {
             if (_openDialog == null)
-            {
                 _openDialog = new OpenFileDialog
                 {
                     AddExtension = true,
@@ -887,7 +812,6 @@ namespace Kaxaml
                     CheckPathExists = true,
                     RestoreDirectory = true
                 };
-            }
 
             if (_openDialog.ShowDialog() is true)
             {
@@ -916,141 +840,44 @@ namespace Kaxaml
 
         public bool Save(XamlDocument document)
         {
-            if (document.UsingTemporaryFilename)
-            {
-                return SaveAs(document);
-            }
+            var saved = document.UsingTemporaryFilename
+                ? SaveAs(document)
+                : document.Save();
 
-            return document.Save();
+            _logger.LogInformation(
+                "Saved '{Path}': {Result}",
+                document.FullPath,
+                saved);
+
+            return saved;
         }
 
         public bool SaveAs(XamlDocument document)
         {
-            if (_saveDialog == null)
+            _saveDialog ??= new SaveFileDialog
             {
-                _saveDialog = new SaveFileDialog
-                {
-                    AddExtension = true,
-                    DefaultExt = ".xaml",
-                    Filter = "XAML file|*.xaml|All files|*.*"
-                };
-            }
+                AddExtension = true,
+                DefaultExt = ".xaml",
+                Filter = "XAML file|*.xaml|All files|*.*"
+            };
 
             _saveDialog.FileName = document.Filename;
 
-            if (_saveDialog.ShowDialog() is true)
+            if (_saveDialog.ShowDialog() is not true) return false;
+            if (document.SaveAs(_saveDialog.FileName))
             {
-                if (document.SaveAs(_saveDialog.FileName))
-                {
-                    return true;
-                }
-
-                MessageBox.Show("The file could not be saved as " + _saveDialog.FileName + ".");
-                return false;
+                _logger.LogInformation("Saved '{Path}'.", document.FullPath);
+                return true;
             }
 
+            MessageBox.Show("The file could not be saved as " + _saveDialog.FileName + ".");
+            _logger.LogInformation("Could not save '{Path}'.", document.FullPath);
             return false;
         }
 
         public void Close(XamlDocument document)
         {
-
-        }
-
-        #endregion
-
-        #region Private Methods
-
-        private BitmapSource RenderContent()
-        {
-            if (KaxamlInfo.Frame?.Content is not FrameworkElement element)
-            {
-                element = KaxamlInfo.Frame 
-                    ?? throw new Exception("Expecting a FrameworkElement");
-            }
-
-            var width = (int)element.ActualWidth;
-            var height = (int)element.ActualHeight;
-            var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-            rtb.Render(element);
-
-            return rtb;
-        }
-
-        #endregion
-
-        #region Overrides
-
-        protected override void OnDrop(DragEventArgs e)
-        {
-            var filenames = (string[])e.Data.GetData("FileDrop", true);
-
-            if (filenames is { Length: > 0 })
-            {
-                var first = (XamlDocument?)null;
-                foreach (var f in filenames)
-                {
-                    var ext = Path.GetExtension(f).ToLower();
-                    if (ext.Equals(".png") || ext.Equals(".jpg") || ext.Equals(".jpeg") || ext.Equals(".bmp") || ext.Equals(".gif"))
-                    {
-                        // get a relative version of the file name
-                        var docFolder = DocumentsView.SelectedDocument?.Folder ?? throw new Exception("Expecting Selected Document");
-                        var rfilename = f.Replace(docFolder + "\\", "");
-
-                        // create and insert the xaml
-                        var xaml = Properties.Settings.Default.PasteImageXaml;
-                        xaml = xaml.Replace("$source$", rfilename);
-                        DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(xaml);
-                    }
-                    else
-                    {
-                        var doc = XamlDocument.FromFile(f);
-
-                        if (doc != null)
-                        {
-                            DocumentsView.XamlDocuments.Add(doc);
-                            if (first == null) first = doc;
-                        }
-                    }
-                }
-
-                if (first != null)
-                {
-                    DocumentsView.SelectedDocument = first;
-                }
-            }
-        }
-
-        #endregion
-    }
-
-    public class WindowTitleConverter : IMultiValueConverter
-    {
-
-
-        #region IValueConverter Members
-
-        public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (values.Length == 2)
-            {
-                if (values[0] is string str && values[1] is bool b)
-                {
-                    var title = str;
-                    if (b) title += "*";
-                    title += " - Kaxaml";
-
-                    return title;
-                }
-            }
-
-            return null;
-        }
-
-        public object[]? ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-
-            return null;
+            _logger.LogInformation("Closed '{Path}'.", document.FullPath);
         }
 
         #endregion

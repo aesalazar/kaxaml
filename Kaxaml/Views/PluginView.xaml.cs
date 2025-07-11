@@ -11,26 +11,31 @@ using System.Windows.Media.Imaging;
 using Kaxaml.Plugins;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
+using KaxamlPlugins.DependencyInjection;
+using KaxamlPlugins.Utilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kaxaml.Views
 {
-    /// <summary>
-    /// Interaction logic for PuginView.xaml
-    /// </summary>
-    public partial class PluginView : UserControl
+    public partial class PluginView
     {
-
         public const string PluginSubDir = "\\plugins";
+        private readonly ILogger<PluginView> _logger;
 
         public PluginView()
         {
+            _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
+            _logger.LogInformation("Initializing Plugin View...");
             InitializeComponent();
             LoadPlugins();
+            _logger.LogInformation("Initializing Plugin View complete.");
         }
 
         private void LoadPlugins()
         {
             // load the snippets plugin
+            _logger.LogInformation("Loading Snippets...");
             var snippets = new Plugin
             {
                 Root = new Snippets(),
@@ -45,6 +50,7 @@ namespace Kaxaml.Views
             ((App)Application.Current).Snippets = (Snippets)snippets.Root;
 
             //// add the find plugin 
+            _logger.LogInformation("Loading Find...");
             var find = new Plugin
             {
                 Root = new Find(),
@@ -60,21 +66,31 @@ namespace Kaxaml.Views
             var pluginDir = App.StartupPath + PluginSubDir;
 
             // if the plugin directory doesn't exist, then we're done
-            if (!Directory.Exists(pluginDir)) return;
+            _logger.LogInformation("Loading plugin folder: {Folder}", pluginDir);
+            if (!Directory.Exists(pluginDir))
+            {
+                _logger.LogInformation("Plugin folder does not exist.");
+                return;
+            }
 
             // get a pointer to the plugin directory
             var d = new DirectoryInfo(pluginDir);
 
             // load each of the plugins in the directory
-            foreach (var f in d.GetFiles("*.dll"))
+            var pluginFiles = d.GetFiles("*.dll");
+            _logger.LogInformation("Processing {Count} discovered files...", pluginFiles.Length);
+            
+            foreach (var f in pluginFiles)
             {
+                _logger.LogInformation("Assembly: {File}", f.FullName);
                 var asm = Assembly.LoadFile(f.FullName);
                 var types = asm.GetExportedTypes();
                 foreach (var typ in types)
                 {
+                    _logger.LogInformation("Type: {Type}", typ.FullName);
                     if (!typeof(UserControl).IsAssignableFrom(typ))
                     {
-                        //TODO: Figure out why this became necessary in this branch
+                        _logger.LogWarning("Skipping non UserControl in Plugin folder...");
                         continue;
                     }
 
@@ -83,10 +99,17 @@ namespace Kaxaml.Views
                         .Cast<PluginAttribute>()
                         .SingleOrDefault();
 
-                    var userControl = (UserControl?)Activator.CreateInstance(typ);
-                    if (a is not null && userControl is not null && typeof(UserControl).IsAssignableFrom(typ))
+                    if (a is null)
                     {
-                        var p = new Plugin()
+                        _logger.LogInformation("Skipping unattributed type...");
+                        continue;
+                    }
+
+                    _logger.LogInformation("Loading plugin: {Attribute}", a.ToString());
+                    var userControl = (UserControl?)Activator.CreateInstance(typ);
+                    if (userControl is not null)
+                    {
+                        Plugins.Add(new Plugin
                         {
                             Root = userControl,
                             Name = a.Name,
@@ -94,12 +117,12 @@ namespace Kaxaml.Views
                             Key = a.Key,
                             ModifierKeys = a.ModifierKeys,
                             Icon = LoadIcon(typ, a.Icon)
-                        };
-
-                        Plugins.Add(p);
+                        });
                     }
                 }
             }
+            
+            _logger.LogInformation("Plugin load complete with {Count} plugins added.", Plugins.Count);
 
             //// add the settings plugin (we always want this to be at the end)
             var settings = new Plugin
@@ -147,23 +170,22 @@ namespace Kaxaml.Views
             if (myStream != null)
             {
                 var bitmapDecoder = new PngBitmapDecoder(myStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
-                if (bitmapDecoder.Frames[0] != null && bitmapDecoder.Frames[0] is ImageSource)
-                {
-                    return bitmapDecoder.Frames[0];
-                }
-
-                return null;
+                return bitmapDecoder.Frames[0];
             }
             return null;
         }
 
-
         public List<Plugin> Plugins
         {
-            get => (List<Plugin>)GetValue(PluginsProperty); set => SetValue(PluginsProperty, value);
+            get => (List<Plugin>)GetValue(PluginsProperty);
+            set => SetValue(PluginsProperty, value);
         }
-        public static readonly DependencyProperty PluginsProperty =
-            DependencyProperty.Register(nameof(Plugins), typeof(List<Plugin>), typeof(PluginView), new UIPropertyMetadata(new List<Plugin>()));
+
+        public static readonly DependencyProperty PluginsProperty = DependencyProperty.Register(
+            nameof(Plugins), 
+            typeof(List<Plugin>), 
+            typeof(PluginView), 
+            new UIPropertyMetadata(new List<Plugin>()));
 
         public void OpenPlugin(Key key, ModifierKeys modifierkeys)
         {

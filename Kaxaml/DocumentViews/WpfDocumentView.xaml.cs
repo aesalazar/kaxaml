@@ -12,6 +12,7 @@ using Kaxaml.Controls;
 using Kaxaml.Documents;
 using Kaxaml.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.Utilities;
 
 namespace Kaxaml.DocumentViews
 {

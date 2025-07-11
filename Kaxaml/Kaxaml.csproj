@@ -68,10 +68,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\KaxamlPlugins\KaxamlPlugins.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<None Update="KaxamlSnippets.xml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -105,16 +101,20 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\KaxamlPlugins\KaxamlPlugins.csproj" />
+
 		<ProjectReference Include="..\ColorPickerPlugin\ColorPickerPlugin.csproj">
 			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 			<OutputItemType>PluginAssembly</OutputItemType>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</ProjectReference>
+
 		<ProjectReference Include="..\SnapshotPlugin\SnapshotPlugin.csproj">
 			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 			<OutputItemType>PluginAssembly</OutputItemType>
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</ProjectReference>
+
 		<ProjectReference Include="..\XamlScrubberPlugin\XamlScrubberPlugin.csproj">
 			<ReferenceOutputAssembly>true</ReferenceOutputAssembly>
 			<OutputItemType>PluginAssembly</OutputItemType>
@@ -122,29 +122,44 @@
 		</ProjectReference>
 	</ItemGroup>
 
-	<Target Name="CopyPlugins" AfterTargets="Build">
+	<Target Name="CopyBuildPlugins" AfterTargets="Build">
 		<ItemGroup>
-			<PluginAssemblies 
-				Include="@(PluginAssembly)" />
-			<PluginAssemblies 
-				Include="@(PluginAssembly->'%(RootDir)%(Directory)%(Filename).pdb')" 
-				Condition="Exists('%(RootDir)%(Directory)%(Filename).pdb')" />
+			<!-- Filter only plugin assemblies -->
+			<PluginProjects
+				Include="@(ProjectReference)"
+				Condition="'%(OutputItemType)' == 'PluginAssembly'" />
+
+			<!-- Collect DLLs and PDBs from plugin outputs -->
+			<PluginFiles
+				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).dll" />
+			<PluginFiles
+				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).pdb" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(PluginAssemblies)" DestinationFolder="$(TargetDir)Plugins\" SkipUnchangedFiles="true" OverwriteReadOnlyFiles="true" />
+		<Copy
+			SourceFiles="@(PluginFiles)"
+			DestinationFolder="$(TargetDir)Plugins"
+			SkipUnchangedFiles="true" />
 	</Target>
 
-
-	<Target Name="CopyPluginAssemblies" AfterTargets="Publish">
+	<Target Name="CopyPublishPlugins" AfterTargets="Publish">
 		<ItemGroup>
-			<!-- Collect both DLLs and PDBs from plugin project outputs -->
-			<PluginFiles 
-				Include="@(ProjectReference->'%(RootDir)%(Directory)bin\$(Configuration)\$(TargetFramework)\%(Filename).dll')" />
-			<PluginFiles 
-				Include="@(ProjectReference->'%(RootDir)%(Directory)bin\$(Configuration)\$(TargetFramework)\%(Filename).pdb')" />
+			<!-- Filter only plugin assemblies -->
+			<PluginProjects
+				Include="@(ProjectReference)"
+				Condition="'%(OutputItemType)' == 'PluginAssembly'" />
+
+			<!-- Collect DLLs and PDBs from plugin outputs -->
+			<PluginFiles
+				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).dll" />
+			<PluginFiles
+				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).pdb" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(PublishDir)Plugins" SkipUnchangedFiles="true" />
+		<Copy
+			SourceFiles="@(PluginFiles)"
+			DestinationFolder="$(PublishDir)Plugins"
+			SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>
