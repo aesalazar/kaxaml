@@ -327,11 +327,16 @@
         />
         <LineBreak/>
         <Run Text="© 2009 Robby Ingebretsen"/>
-        <LineBreak/>
-        <Hyperlink Foreground="#FFFFFFFF">
-            <Run Text="www.kaxaml.com"/>
-        </Hyperlink>
     </TextBlock>
+
+    <!--LOG FILES BUTTON-->
+    <Button 
+        Content="Log Files"
+        Padding="6,2" 
+        Canvas.Left="180"
+        Canvas.Top="80"
+        Click="LogFilesButton_Click"
+    />
 
     <TextBlock Canvas.Left="20" Canvas.Top="110" TextWrapping="Wrap" Width="220" Foreground="#C0C0C0">
     <TextBlock.Resources>

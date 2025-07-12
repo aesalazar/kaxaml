@@ -1,39 +1,96 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Documents;
+using KaxamlPlugins.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-namespace Kaxaml.Plugins
+namespace Kaxaml.Plugins;
 
+public partial class About
 {
-    public partial class About : UserControl
+    private readonly ILogger<About> _logger;
+
+    public About()
     {
-        public About()
-        {
-            InitializeComponent();
-            AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(HandleRequestNavigate), false);
-            Loaded += About_Loaded;
-        }
+        InitializeComponent();
+        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<About>>();
+        AddHandler(Hyperlink.RequestNavigateEvent, new RoutedEventHandler(HandleRequestNavigate), false);
+        Loaded += About_Loaded;
+        _logger.LogInformation("Initializing About Plugin complete.");
+    }
 
-        private void About_Loaded(object sender, RoutedEventArgs e)
-        {
-            Loaded -= About_Loaded;
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            VersionTextBlock.Text = version is not null 
-                ? $"v{version.Major}.{version.Minor}.{version.Build}"
-                : "UNKNOWN";
-        }
+    private void About_Loaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= About_Loaded;
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        VersionTextBlock.Text = version is not null
+            ? $"v{version.Major}.{version.Minor}.{version.Build}"
+            : "UNKNOWN";
 
-        private void HandleRequestNavigate(object sender, RoutedEventArgs e)
+        _logger.LogInformation(
+            "Loaded About Plugin complete with Version: {Version}",
+            VersionTextBlock.Text);
+    }
+
+    private void HandleRequestNavigate(object sender, RoutedEventArgs e)
+    {
+        if (e.OriginalSource is not Hyperlink hl) return;
+        var navigateUri = hl.NavigateUri.ToString();
+        _logger.LogInformation("Launch URL: {Url}", navigateUri);
+
+        try
         {
-            if (e.OriginalSource is Hyperlink hl)
+            Process.Start(new ProcessStartInfo(navigateUri));
+            e.Handled = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to open URL: {Url}", navigateUri);
+            MessageBox.Show(
+                $"Unable to open URL:\n{ex.Message}",
+                "Open URL Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+    }
+
+    private void LogFilesButton_Click(object sender, RoutedEventArgs e)
+    {
+        var folder = ApplicationDiServiceProvider.LogDirectory;
+        if (!Directory.Exists(folder))
+        {
+            _logger.LogWarning("Missing log folder: {Folder}", folder);
+            MessageBox.Show(
+                $"The folder \"{folder}\" does not exist.",
+                "Missing Log Folder",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+        else
+        {
+            _logger.LogInformation("Opening log folder: {Folder}", folder);
+
+            try
             {
-                var navigateUri = hl.NavigateUri.ToString();
-                Process.Start(new ProcessStartInfo(navigateUri));
-                e.Handled = true;
+                Process.Start("explorer.exe", folder);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Failed to open log folder: {Folder}",
+                    folder);
+
+                MessageBox.Show(
+                    $"Unable to open log folder:\n{ex.Message}",
+                    "Open Folder Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
             }
         }
-
     }
 }

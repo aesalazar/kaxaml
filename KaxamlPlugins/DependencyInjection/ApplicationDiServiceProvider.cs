@@ -1,7 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.IO;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NLog;
 using NLog.Extensions.Logging;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace KaxamlPlugins.DependencyInjection;
 
@@ -17,6 +20,13 @@ public static class ApplicationDiServiceProvider
     private static IHost? _host;
 
     /// <summary>
+    /// Logging folder for the application.
+    /// </summary>
+    public static string LogDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Kaxaml", "Logs");
+
+    /// <summary>
     /// Allows reference to DI container from UI Controls.
     /// </summary>
     /// <remarks>
@@ -26,13 +36,18 @@ public static class ApplicationDiServiceProvider
     public static IServiceProvider Services { get; private set; } = null!;
 
     /// <summary>
-    /// Builds the DI Container.
+    /// Builds the DI Container and the Logger.
     /// </summary>
     /// <param name="typesToRegister">Types to register as singletons.</param>
     /// <exception cref="Exception">Thrown if already called.</exception>
     public static void Initialize(IEnumerable<Type> typesToRegister)
     {
-        if (_host is not null) throw new Exception("DI Host has already be initialized");
+        if (_host is not null)
+            throw new Exception("DI Host has already been initialized");
+        if (LogManager.Configuration is null)
+            throw new Exception("Log Configuration has not been loaded");
+
+        LogManager.Configuration.Variables["logDir"] = LogDirectory;
 
         _host = Host
             .CreateDefaultBuilder()
