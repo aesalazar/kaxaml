@@ -8,7 +8,9 @@
 		<BaseOutputPath></BaseOutputPath>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<RootNamespace>Kaxaml.Plugins.ColorPicker</RootNamespace>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
+
 	<ItemGroup>
 	  <None Remove="Images\add.png" />
 	  <None Remove="Images\connect.png" />
@@ -50,13 +52,16 @@
 	  <Resource Include="Images\resultset_previous.png" />
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Update="Properties\Settings.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
 		<Compile Update="Properties\Settings.Designer.cs">
 			<DesignTimeSharedInput>True</DesignTimeSharedInput>
 			<AutoGen>True</AutoGen>
 			<DependentUpon>Settings.settings</DependentUpon>
 		</Compile>
-	</ItemGroup>
-	<ItemGroup>
 		<None Update="Properties\Settings.settings">
 			<Generator>SettingsSingleFileGenerator</Generator>
 			<LastGenOutput>Settings.Designer.cs</LastGenOutput>

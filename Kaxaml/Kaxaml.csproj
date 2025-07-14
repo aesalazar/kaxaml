@@ -9,7 +9,18 @@
 		<ApplicationIcon>kaxaml.ico</ApplicationIcon>
 		<Nullable>enable</Nullable>
 		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<!--INCLUDE FOR generic.xaml-->
+		<AssemblyAttribute Include="System.Windows.ThemeInfoAttribute">
+			<_Parameter1>System.Windows.ResourceDictionaryLocation.None</_Parameter1>
+			<_Parameter1_IsLiteral>true</_Parameter1_IsLiteral>
+			<_Parameter2>System.Windows.ResourceDictionaryLocation.SourceAssembly</_Parameter2>
+			<_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
+		</AssemblyAttribute>
+	</ItemGroup>
 
 	<ItemGroup>
 		<None Remove="Images\add.png" />
@@ -122,12 +133,27 @@
 		</ProjectReference>
 	</ItemGroup>
 
+	<ItemGroup>
+		<Compile Update="Properties\Settings.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
+		<Compile Update="Properties\Settings.Designer.cs">
+			<DesignTimeSharedInput>True</DesignTimeSharedInput>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Settings.settings</DependentUpon>
+		</Compile>
+		<None Update="Properties\Settings.settings">
+			<Generator>SettingsSingleFileGenerator</Generator>
+			<LastGenOutput>Settings.Designer.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
+
 	<Target Name="CopyBuildPlugins" AfterTargets="Build">
 		<ItemGroup>
 			<!-- Filter only plugin assemblies -->
-			<PluginProjects
-				Include="@(ProjectReference)"
-				Condition="'%(OutputItemType)' == 'PluginAssembly'" />
+			<PluginProjects Include="@(ProjectReference)" Condition="'%(OutputItemType)' == 'PluginAssembly'" />
 
 			<!-- Collect DLLs and PDBs from plugin outputs -->
 			<PluginFiles
@@ -136,18 +162,13 @@
 				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).pdb" />
 		</ItemGroup>
 
-		<Copy
-			SourceFiles="@(PluginFiles)"
-			DestinationFolder="$(TargetDir)Plugins"
-			SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(TargetDir)Plugins" SkipUnchangedFiles="true" />
 	</Target>
 
 	<Target Name="CopyPublishPlugins" AfterTargets="Publish">
 		<ItemGroup>
 			<!-- Filter only plugin assemblies -->
-			<PluginProjects
-				Include="@(ProjectReference)"
-				Condition="'%(OutputItemType)' == 'PluginAssembly'" />
+			<PluginProjects Include="@(ProjectReference)" Condition="'%(OutputItemType)' == 'PluginAssembly'" />
 
 			<!-- Collect DLLs and PDBs from plugin outputs -->
 			<PluginFiles
@@ -156,10 +177,7 @@
 				Include="%(PluginProjects.RootDir)%(PluginProjects.Directory)bin\$(Configuration)\$(TargetFramework)\%(PluginProjects.Filename).pdb" />
 		</ItemGroup>
 
-		<Copy
-			SourceFiles="@(PluginFiles)"
-			DestinationFolder="$(PublishDir)Plugins"
-			SkipUnchangedFiles="true" />
+		<Copy SourceFiles="@(PluginFiles)" DestinationFolder="$(PublishDir)Plugins" SkipUnchangedFiles="true" />
 	</Target>
 
 </Project>
