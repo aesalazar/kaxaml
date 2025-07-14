@@ -4,10 +4,7 @@ using System.Windows;
 
 namespace Kaxaml.Controls;
 
-/// <summary>
-/// Interaction logic for XamlEditorDialog.xaml
-/// </summary>
-public partial class XamlEditorDialog : Window
+public partial class XamlEditorDialog
 {
     #region fields
 

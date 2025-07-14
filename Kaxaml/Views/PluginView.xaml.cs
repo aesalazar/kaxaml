@@ -16,219 +16,207 @@ using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Kaxaml.Views
+namespace Kaxaml.Views;
+
+public partial class PluginView
 {
-    public partial class PluginView
+    public const string PluginSubDir = "\\plugins";
+
+    public static readonly DependencyProperty PluginsProperty = DependencyProperty.Register(
+        nameof(Plugins),
+        typeof(List<Plugin>),
+        typeof(PluginView),
+        new UIPropertyMetadata(new List<Plugin>()));
+
+    private readonly ILogger<PluginView> _logger;
+
+    private Plugin? _findPlugin;
+
+    public PluginView()
     {
-        public const string PluginSubDir = "\\plugins";
-        private readonly ILogger<PluginView> _logger;
+        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
+        _logger.LogInformation("Initializing Plugin View...");
+        InitializeComponent();
+        LoadPlugins();
+        _logger.LogInformation("Initializing Plugin View complete.");
+    }
 
-        public PluginView()
+    public List<Plugin> Plugins
+    {
+        get => (List<Plugin>)GetValue(PluginsProperty);
+        set => SetValue(PluginsProperty, value);
+    }
+
+    public Plugin? SelectedPlugin
+    {
+        get => (Plugin?)PluginTabControl.SelectedItem;
+        set => PluginTabControl.SelectedItem = value;
+    }
+
+    private void LoadPlugins()
+    {
+        // load the snippets plugin
+        _logger.LogInformation("Loading Snippets...");
+        var snippets = new Plugin
         {
-            _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
-            _logger.LogInformation("Initializing Plugin View...");
-            InitializeComponent();
-            LoadPlugins();
-            _logger.LogInformation("Initializing Plugin View complete.");
+            Root = new Snippets(),
+            Name = "Snippets",
+            Description = "Manage a set of commonly used snippets (Ctrl+N)",
+            Key = Key.N,
+            ModifierKeys = ModifierKeys.Control,
+            Icon = LoadIcon(typeof(Plugin), "Images\\emb_tag.png")
+        };
+
+        Plugins.Add(snippets);
+        ((App)Application.Current).Snippets = (Snippets)snippets.Root;
+
+        //// add the find plugin 
+        _logger.LogInformation("Loading Find...");
+        var find = new Plugin
+        {
+            Root = new Find(),
+            Name = "Find",
+            Description = "Find and replace text in the editor (Ctrl+F, F3)",
+            Key = Key.F,
+            ModifierKeys = ModifierKeys.Control,
+            Icon = LoadIcon(typeof(Plugin), "Images\\find.png")
+        };
+
+        Plugins.Add(find);
+        _findPlugin = find;
+        var pluginDir = App.StartupPath + PluginSubDir;
+
+        // if the plugin directory doesn't exist, then we're done
+        _logger.LogInformation("Loading plugin folder: {Folder}", pluginDir);
+        if (!Directory.Exists(pluginDir))
+        {
+            _logger.LogInformation("Plugin folder does not exist.");
+            return;
         }
 
-        private void LoadPlugins()
+        // get a pointer to the plugin directory
+        var d = new DirectoryInfo(pluginDir);
+
+        // load each of the plugins in the directory
+        var pluginFiles = d.GetFiles("*.dll");
+        _logger.LogInformation("Processing {Count} discovered files...", pluginFiles.Length);
+
+        foreach (var f in pluginFiles)
         {
-            // load the snippets plugin
-            _logger.LogInformation("Loading Snippets...");
-            var snippets = new Plugin
+            _logger.LogInformation("Assembly: {File}", f.FullName);
+            var asm = Assembly.LoadFile(f.FullName);
+            var types = asm.GetExportedTypes();
+            foreach (var typ in types)
             {
-                Root = new Snippets(),
-                Name = "Snippets",
-                Description = "Manage a set of commonly used snippets (Ctrl+N)",
-                Key = Key.N,
-                ModifierKeys = ModifierKeys.Control,
-                Icon = LoadIcon(typeof(Plugin), "Images\\emb_tag.png")
-            };
-
-            Plugins.Add(snippets);
-            ((App)Application.Current).Snippets = (Snippets)snippets.Root;
-
-            //// add the find plugin 
-            _logger.LogInformation("Loading Find...");
-            var find = new Plugin
-            {
-                Root = new Find(),
-                Name = "Find",
-                Description = "Find and replace text in the editor (Ctrl+F, F3)",
-                Key = Key.F,
-                ModifierKeys = ModifierKeys.Control,
-                Icon = LoadIcon(typeof(Plugin), "Images\\find.png")
-            };
-
-            Plugins.Add(find);
-            _findPlugin = find;
-            var pluginDir = App.StartupPath + PluginSubDir;
-
-            // if the plugin directory doesn't exist, then we're done
-            _logger.LogInformation("Loading plugin folder: {Folder}", pluginDir);
-            if (!Directory.Exists(pluginDir))
-            {
-                _logger.LogInformation("Plugin folder does not exist.");
-                return;
-            }
-
-            // get a pointer to the plugin directory
-            var d = new DirectoryInfo(pluginDir);
-
-            // load each of the plugins in the directory
-            var pluginFiles = d.GetFiles("*.dll");
-            _logger.LogInformation("Processing {Count} discovered files...", pluginFiles.Length);
-            
-            foreach (var f in pluginFiles)
-            {
-                _logger.LogInformation("Assembly: {File}", f.FullName);
-                var asm = Assembly.LoadFile(f.FullName);
-                var types = asm.GetExportedTypes();
-                foreach (var typ in types)
+                _logger.LogInformation("Type: {Type}", typ.FullName);
+                if (!typeof(UserControl).IsAssignableFrom(typ))
                 {
-                    _logger.LogInformation("Type: {Type}", typ.FullName);
-                    if (!typeof(UserControl).IsAssignableFrom(typ))
-                    {
-                        _logger.LogWarning("Skipping non UserControl in Plugin folder...");
-                        continue;
-                    }
-
-                    var a = typ
-                        .GetCustomAttributes(typeof(PluginAttribute), false)
-                        .Cast<PluginAttribute>()
-                        .SingleOrDefault();
-
-                    if (a is null)
-                    {
-                        _logger.LogInformation("Skipping unattributed type...");
-                        continue;
-                    }
-
-                    _logger.LogInformation("Loading plugin: {Attribute}", a.ToString());
-                    var userControl = (UserControl?)Activator.CreateInstance(typ);
-                    if (userControl is not null)
-                    {
-                        Plugins.Add(new Plugin
-                        {
-                            Root = userControl,
-                            Name = a.Name,
-                            Description = a.Description,
-                            Key = a.Key,
-                            ModifierKeys = a.ModifierKeys,
-                            Icon = LoadIcon(typ, a.Icon)
-                        });
-                    }
+                    _logger.LogWarning("Skipping non UserControl in Plugin folder...");
+                    continue;
                 }
-            }
-            
-            _logger.LogInformation("Plugin load complete with {Count} plugins added.", Plugins.Count);
 
-            //// add the settings plugin (we always want this to be at the end)
-            var settings = new Plugin
-            {
-                Root = new Settings(),
-                Name = "Settings",
-                Description = "Modify program settings and options (Ctrl+E)",
-                Key = Key.E,
-                ModifierKeys = ModifierKeys.Control,
-                Icon = LoadIcon(typeof(Plugin), "Images\\cog.png"),
-            };
+                var a = typ
+                    .GetCustomAttributes(typeof(PluginAttribute), false)
+                    .Cast<PluginAttribute>()
+                    .SingleOrDefault();
 
-            Plugins.Add(settings);
-
-            // add the about plugin 
-            var about = new Plugin
-            {
-                Root = new About(),
-                Name = "About",
-                Description = "All about Kaxaml",
-                Icon = LoadIcon(typeof(Plugin), "Images\\kaxaml.png"),
-            };
-
-            Plugins.Add(about);
-        }
-
-        private ImageSource? LoadIcon(Type typ, string icon)
-        {
-            var asm = Assembly.GetAssembly(typ);
-            var iconString = typ.Namespace + '.' + icon.Replace('\\', '.');
-            var myStream = asm?.GetManifestResourceStream(iconString);
-
-            if (myStream == null)
-            {
-                iconString = typ.Name + '.' + icon.Replace('\\', '.');
-                myStream = asm?.GetManifestResourceStream(iconString);
-            }
-
-            if (myStream == null)
-            {
-                iconString = "Kaxaml.Images.package.png";
-                myStream = asm?.GetManifestResourceStream(iconString);
-            }
-
-            if (myStream != null)
-            {
-                var bitmapDecoder = new PngBitmapDecoder(myStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
-                return bitmapDecoder.Frames[0];
-            }
-            return null;
-        }
-
-        public List<Plugin> Plugins
-        {
-            get => (List<Plugin>)GetValue(PluginsProperty);
-            set => SetValue(PluginsProperty, value);
-        }
-
-        public static readonly DependencyProperty PluginsProperty = DependencyProperty.Register(
-            nameof(Plugins), 
-            typeof(List<Plugin>), 
-            typeof(PluginView), 
-            new UIPropertyMetadata(new List<Plugin>()));
-
-        public void OpenPlugin(Key key, ModifierKeys modifierkeys)
-        {
-            foreach (var p in Plugins)
-            {
-                if (modifierkeys == p.ModifierKeys && key == p.Key)
+                if (a is null)
                 {
-                    try
-                    {
-                        var t = (TabItem)p.Root.Parent;
-                        t.IsSelected = true;
-                        t.Focus();
-
-                        UpdateLayout();
-
-                        if (t.Content is FrameworkElement element)
-                        {
-                            element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        if (ex.IsCriticalException())
-                        {
-                            throw;
-                        }
-                    }
+                    _logger.LogInformation("Skipping unattributed type...");
+                    continue;
                 }
+
+                _logger.LogInformation("Loading plugin: {Attribute}", a.ToString());
+                var userControl = (UserControl?)Activator.CreateInstance(typ);
+                if (userControl is not null)
+                    Plugins.Add(new Plugin
+                    {
+                        Root = userControl,
+                        Name = a.Name,
+                        Description = a.Description,
+                        Key = a.Key,
+                        ModifierKeys = a.ModifierKeys,
+                        Icon = LoadIcon(typ, a.Icon)
+                    });
             }
         }
 
-        private Plugin? _findPlugin;
+        _logger.LogInformation("Plugin load complete with {Count} plugins added.", Plugins.Count);
 
-        internal Plugin? GetFindPlugin()
+        //// add the settings plugin (we always want this to be at the end)
+        var settings = new Plugin
         {
-            return _findPlugin;
+            Root = new Settings(),
+            Name = "Settings",
+            Description = "Modify program settings and options (Ctrl+E)",
+            Key = Key.E,
+            ModifierKeys = ModifierKeys.Control,
+            Icon = LoadIcon(typeof(Plugin), "Images\\cog.png")
+        };
+
+        Plugins.Add(settings);
+
+        // add the about plugin 
+        var about = new Plugin
+        {
+            Root = new About(),
+            Name = "About",
+            Description = "All about Kaxaml",
+            Icon = LoadIcon(typeof(Plugin), "Images\\kaxaml.png")
+        };
+
+        Plugins.Add(about);
+    }
+
+    private ImageSource? LoadIcon(Type typ, string icon)
+    {
+        var asm = Assembly.GetAssembly(typ);
+        var iconString = typ.Namespace + '.' + icon.Replace('\\', '.');
+        var myStream = asm?.GetManifestResourceStream(iconString);
+
+        if (myStream == null)
+        {
+            iconString = typ.Name + '.' + icon.Replace('\\', '.');
+            myStream = asm?.GetManifestResourceStream(iconString);
         }
 
-        public Plugin? SelectedPlugin
+        if (myStream == null)
         {
-            get => (Plugin?)PluginTabControl.SelectedItem;
-            set => PluginTabControl.SelectedItem = value;
+            iconString = "Kaxaml.Images.package.png";
+            myStream = asm?.GetManifestResourceStream(iconString);
         }
 
+        if (myStream != null)
+        {
+            var bitmapDecoder = new PngBitmapDecoder(myStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+            return bitmapDecoder.Frames[0];
+        }
+
+        return null;
+    }
+
+    public void OpenPlugin(Key key, ModifierKeys modifierkeys)
+    {
+        foreach (var p in Plugins)
+            if (modifierkeys == p.ModifierKeys && key == p.Key)
+                try
+                {
+                    var t = (TabItem)p.Root.Parent;
+                    t.IsSelected = true;
+                    t.Focus();
+
+                    UpdateLayout();
+
+                    if (t.Content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+                }
+                catch (Exception ex)
+                {
+                    if (ex.IsCriticalException()) throw;
+                }
+    }
+
+    internal Plugin? GetFindPlugin()
+    {
+        return _findPlugin;
     }
 }

@@ -1,15 +1,16 @@
-﻿namespace Kaxaml.Plugins.XamlScrubber.Properties {
-    
-    internal sealed partial class Settings {
+﻿using System.ComponentModel;
 
-        public Settings()
-        {
-            PropertyChanged += Settings_PropertyChanged;
-        }
+namespace Kaxaml.Plugins.XamlScrubber.Properties;
 
-        private void Settings_PropertyChanged(object? _, System.ComponentModel.PropertyChangedEventArgs __)
-        {
-            Default.Save();
-        }
+internal sealed partial class Settings
+{
+    public Settings()
+    {
+        PropertyChanged += Settings_PropertyChanged;
+    }
+
+    private void Settings_PropertyChanged(object? _, PropertyChangedEventArgs __)
+    {
+        Default.Save();
     }
 }

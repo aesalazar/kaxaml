@@ -1,15 +1,14 @@
-﻿namespace Kaxaml.Properties
-{
-    internal sealed partial class Settings
-    {
-        public Settings()
-        {
-            PropertyChanged += Settings_PropertyChanged;
-        }
+﻿namespace Kaxaml.Properties;
 
-        private void Settings_PropertyChanged(object? _, System.ComponentModel.PropertyChangedEventArgs __)
-        {
-            Default.Save();
-        }
+internal sealed partial class Settings
+{
+    public Settings()
+    {
+        PropertyChanged += Settings_PropertyChanged;
+    }
+
+    private void Settings_PropertyChanged(object? _, System.ComponentModel.PropertyChangedEventArgs __)
+    {
+        Default.Save();
     }
 }
