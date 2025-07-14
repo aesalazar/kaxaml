@@ -6,22 +6,52 @@ using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Threading;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Controls;
 using Kaxaml.Documents;
 using Kaxaml.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using TextChangedEventArgs = Kaxaml.Controls.TextChangedEventArgs;
 
 namespace Kaxaml.DocumentViews
 {
-    /// <summary>
-    /// Interaction logic for WPFDocumentView.xaml
-    /// </summary>
-
-    public partial class WpfDocumentView : UserControl, IXamlDocumentView
+    public partial class WpfDocumentView : IXamlDocumentView
     {
+        #region Constructors
+
+        public WpfDocumentView()
+        {
+            InitializeComponent();
+            _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<WpfDocumentView>>();
+
+            KaxamlInfo.Frame = ContentArea;
+            ContentArea.ContentRendered += ContentArea_ContentRendered;
+
+            Dispatcher.UnhandledException += Dispatcher_UnhandledException;
+
+            var schemaFile = Path.Combine(
+                Path.GetDirectoryName(App.StartupPath + "\\")
+                ?? throw new Exception("Could not determine Startup Path"),
+                Settings.Default.WPFSchema);
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                var ex = XmlCompletionDataProvider.LoadSchema(schemaFile);
+                if (ex is not null) _logger.LogError("Could not load Scheme File: {Ex}", ex);
+            });
+
+            _logger.LogInformation(
+                "Initialized WPF Document View with call to load Schema path: {SchemaFile}",
+                schemaFile);
+        }
+
+        #endregion Constructors
 
         #region Static Fields
 
@@ -30,12 +60,14 @@ namespace Kaxaml.DocumentViews
         //  Private Fields
         //
         //-------------------------------------------------------------------
+
         private static DispatcherTimer? _dispatcherTimer;
+
+        private readonly ILogger<WpfDocumentView> _logger;
 
         #endregion Static Fields
 
         #region Fields
-
 
         private bool _unhandledExceptionRaised;
 
@@ -43,29 +75,9 @@ namespace Kaxaml.DocumentViews
 
         #endregion Fields
 
-        #region Constructors
-
-        public WpfDocumentView()
-        {
-            InitializeComponent();
-
-            KaxamlInfo.Frame = ContentArea;
-            ContentArea.ContentRendered += ContentArea_ContentRendered;
-
-            Dispatcher.UnhandledException += Dispatcher_UnhandledException;
-
-            var schemaFile = Path.Combine(
-                Path.GetDirectoryName(App.StartupPath + "\\") 
-                ?? throw new Exception("Could not determine Startup Path"), 
-                Settings.Default.WPFSchema);
-            Dispatcher.InvokeAsync(() => XmlCompletionDataProvider.LoadSchema(schemaFile));
-        }
-
-        #endregion Constructors
-
         #region Event Handlers
 
-        private void ContentArea_ContentRendered(object? _, EventArgs __)
+        private static void ContentArea_ContentRendered(object? _, EventArgs __)
         {
             KaxamlInfo.RaiseContentLoaded();
         }
@@ -81,16 +93,17 @@ namespace Kaxaml.DocumentViews
                 _unhandledExceptionRaised = true;
                 ContentArea.Content = null;
                 ReportError(e.Exception);
-                e.Handled = true;
             }
             else
             {
                 Application.Current.Shutdown();
-                e.Handled = true;
             }
+
+            e.Handled = true;
         }
 
         #endregion Event Handlers
+
         //-------------------------------------------------------------------
         //
         //  Properties
@@ -104,14 +117,19 @@ namespace Kaxaml.DocumentViews
         /// description of IsValidXaml
         /// </summary>
         public bool IsValidXaml
-        { get => (bool)GetValue(IsValidXamlProperty); set => SetValue(IsValidXamlProperty, value);
+        {
+            get => (bool)GetValue(IsValidXamlProperty);
+            set => SetValue(IsValidXamlProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for IsValidXaml
         /// </summary>
-        public static readonly DependencyProperty IsValidXamlProperty =
-            DependencyProperty.Register(nameof(IsValidXaml), typeof(bool), typeof(WpfDocumentView), new FrameworkPropertyMetadata(true, IsValidXamlChanged));
+        public static readonly DependencyProperty IsValidXamlProperty = DependencyProperty.Register(
+            nameof(IsValidXaml),
+            typeof(bool),
+            typeof(WpfDocumentView),
+            new FrameworkPropertyMetadata(true, IsValidXamlChanged));
 
         /// <summary>
         /// PropertyChangedCallback for IsValidXaml
@@ -121,13 +139,9 @@ namespace Kaxaml.DocumentViews
             if (obj is WpfDocumentView owner)
             {
                 if ((bool)args.NewValue)
-                {
                     owner.HideErrorUi();
-                }
                 else
-                {
                     owner.ShowErrorUi();
-                }
             }
         }
 
@@ -139,7 +153,7 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorText
         /// </summary>
         public string? ErrorText
-        { 
+        {
             get => (string)GetValue(ErrorTextProperty);
             set => SetValue(ErrorTextProperty, value);
         }
@@ -148,21 +162,10 @@ namespace Kaxaml.DocumentViews
         /// DependencyProperty for ErrorText
         /// </summary>
         public static readonly DependencyProperty ErrorTextProperty = DependencyProperty.Register(
-            nameof(ErrorText), 
-            typeof(string), 
-            typeof(WpfDocumentView), 
-            new FrameworkPropertyMetadata(default(string?), ErrorTextChanged));
-
-        /// <summary>
-        /// PropertyChangedCallback for ErrorText
-        /// </summary>
-        private static void ErrorTextChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
-        {
-            if (obj is WpfDocumentView owner)
-            {
-                // handle changed event here
-            }
-        }
+            nameof(ErrorText),
+            typeof(string),
+            typeof(WpfDocumentView),
+            new PropertyMetadata(default(string?)));
 
         #endregion
 
@@ -172,25 +175,19 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorLineNumber
         /// </summary>
         public int ErrorLineNumber
-        { get => (int)GetValue(ErrorLineNumberProperty); set => SetValue(ErrorLineNumberProperty, value);
+        {
+            get => (int)GetValue(ErrorLineNumberProperty);
+            set => SetValue(ErrorLineNumberProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ErrorLineNumber
         /// </summary>
-        public static readonly DependencyProperty ErrorLineNumberProperty =
-            DependencyProperty.Register(nameof(ErrorLineNumber), typeof(int), typeof(WpfDocumentView), new FrameworkPropertyMetadata(default(int), ErrorLineNumberChanged));
-
-        /// <summary>
-        /// PropertyChangedCallback for ErrorLineNumber
-        /// </summary>
-        private static void ErrorLineNumberChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
-        {
-            if (obj is WpfDocumentView owner)
-            {
-                // handle changed event here
-            }
-        }
+        public static readonly DependencyProperty ErrorLineNumberProperty = DependencyProperty.Register(
+            nameof(ErrorLineNumber),
+            typeof(int),
+            typeof(WpfDocumentView),
+            new PropertyMetadata(default(int)));
 
         #endregion
 
@@ -200,21 +197,26 @@ namespace Kaxaml.DocumentViews
         /// description of ErrorLinePosition
         /// </summary>
         public int ErrorLinePosition
-        { get => (int)GetValue(ErrorLinePositionProperty); set => SetValue(ErrorLinePositionProperty, value);
+        {
+            get => (int)GetValue(ErrorLinePositionProperty);
+            set => SetValue(ErrorLinePositionProperty, value);
         }
 
         /// <summary>
         /// DependencyProperty for ErrorLinePosition
         /// </summary>
-        public static readonly DependencyProperty ErrorLinePositionProperty =
-            DependencyProperty.Register(nameof(ErrorLinePosition), typeof(int), typeof(WpfDocumentView), new FrameworkPropertyMetadata(default(int), ErrorLinePositionChanged));
+        public static readonly DependencyProperty ErrorLinePositionProperty = DependencyProperty.Register(
+            nameof(ErrorLinePosition),
+            typeof(int),
+            typeof(WpfDocumentView),
+            new FrameworkPropertyMetadata(default(int), ErrorLinePositionChanged));
 
         /// <summary>
         /// PropertyChangedCallback for ErrorLinePosition
         /// </summary>
         private static void ErrorLinePositionChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
         {
-            if (obj is WpfDocumentView owner)
+            if (obj is WpfDocumentView)
             {
                 // handle changed event here
             }
@@ -225,11 +227,18 @@ namespace Kaxaml.DocumentViews
         #region PreviewImage (DependencyProperty)
 
         public ImageSource PreviewImage
-        { get => (ImageSource)GetValue(PreviewImageProperty); private set => SetValue(PreviewImagePropertyKey, value);
+        {
+            get => (ImageSource)GetValue(PreviewImageProperty);
+            private
+            set => SetValue(PreviewImagePropertyKey, value);
         }
 
-        private static readonly DependencyPropertyKey PreviewImagePropertyKey =
-            DependencyProperty.RegisterReadOnly("PreviewImage", typeof(ImageSource), typeof(WpfDocumentView), new UIPropertyMetadata(default(ImageSource)));
+        private static readonly DependencyPropertyKey PreviewImagePropertyKey = DependencyProperty.RegisterReadOnly(
+            nameof(PreviewImage),
+            typeof(ImageSource),
+            typeof(WpfDocumentView),
+            new UIPropertyMetadata(default(ImageSource)));
+
         public static readonly DependencyProperty PreviewImageProperty = PreviewImagePropertyKey.DependencyProperty;
 
         #endregion
@@ -237,45 +246,38 @@ namespace Kaxaml.DocumentViews
         #region Scale (DependencyProperty)
 
         public double Scale
-        { get => (double)GetValue(ScaleProperty); set => SetValue(ScaleProperty, value);
+        {
+            get => (double)GetValue(ScaleProperty);
+            set => SetValue(ScaleProperty, value);
         }
-        public static readonly DependencyProperty ScaleProperty =
-            DependencyProperty.Register(nameof(Scale), typeof(double), typeof(WpfDocumentView), new FrameworkPropertyMetadata(1.0));
 
-        #endregion        //-------------------------------------------------------------------
+        public static readonly DependencyProperty ScaleProperty = DependencyProperty.Register(
+            nameof(Scale),
+            typeof(double),
+            typeof(WpfDocumentView),
+            new FrameworkPropertyMetadata(1.0));
+
+        #endregion
+
+        //-------------------------------------------------------------------
         //
         //  Event Handlers
         //
         //-------------------------------------------------------------------
 
-
         #region Event Handlers
 
-        private const int WmPrint = 0x0317;
-
-        private void SplitterDragStarted(object sender, RoutedEventArgs e)
+        private void EditorTextChanged(object sender, TextChangedEventArgs e)
         {
-
-        }
-
-        private void SplitterDragCompleted(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void EditorTextChanged(object sender, Controls.TextChangedEventArgs e)
-        {
-            if (XamlDocument != null)
+            if (XamlDocument == null) return;
+            if (_isInitializing)
             {
-                if (_isInitializing)
-                {
-                    _isInitializing = false;
-                }
-                else
-                {
-                    ClearDispatcherTimer();
-                    AttemptParse();
-                }
+                _isInitializing = false;
+            }
+            else
+            {
+                ClearDispatcherTimer();
+                AttemptParse();
             }
         }
 
@@ -291,17 +293,11 @@ namespace Kaxaml.DocumentViews
         {
             try
             {
-                if (IsValidXaml && XamlDocument is not null)
-                {
-                    XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(ContentArea, (int)ContentArea.ActualWidth, (int)ContentArea.ActualHeight, null);
-                }
+                if (IsValidXaml && XamlDocument is not null) XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(ContentArea, (int)ContentArea.ActualWidth, (int)ContentArea.ActualHeight, null);
             }
             catch (Exception ex)
             {
-                if (ex.IsCriticalException())
-                {
-                    throw;
-                }
+                if (ex.IsCriticalException()) throw;
             }
         }
 
@@ -313,12 +309,12 @@ namespace Kaxaml.DocumentViews
         }
 
         #endregion
+
         //-------------------------------------------------------------------
         //
         //  Private Methods
         //
         //-------------------------------------------------------------------
-
 
         #region Private Methods
 
@@ -358,7 +354,6 @@ namespace Kaxaml.DocumentViews
             ClearDispatcherTimer();
 
             if (XamlDocument != null && !CodeCompletionPopup.IsOpenSomewhere)
-            {
                 if (XamlDocument.SourceText != null)
                 {
                     // handle the in place preparsing (this actually updates the source in the editor)
@@ -371,13 +366,9 @@ namespace Kaxaml.DocumentViews
 
                     var str = XamlDocument.SourceText;
 
-                    // handle the in memory preparsing (this happens behind the scenes all in memory)
-                    str = DeSilverlight(str);
-
-
                     try
                     {
-                        object? content = null;
+                        object? content;
                         using (var ms = new MemoryStream(str.Length))
                         {
                             using (var sw = new StreamWriter(ms))
@@ -389,14 +380,12 @@ namespace Kaxaml.DocumentViews
 
                                 var pc = new ParserContext
                                 {
-                                    BaseUri = new Uri(XamlDocument.Folder != null
+                                    BaseUri = new Uri(XamlDocument?.Folder != null
                                         ? XamlDocument.Folder + "/"
                                         : Environment.CurrentDirectory + "/")
                                 };
-                                //pc.BaseUri = new Uri(XamlDocument.Folder + "/");
-                                //pc.BaseUri = new Uri(System.Environment.CurrentDirectory + "/");
 
-                                ContentArea.JournalOwnership = System.Windows.Navigation.JournalOwnership.UsesParentJournal;
+                                ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
                                 content = XamlReader.Load(ms, pc);
                             }
                         }
@@ -407,12 +396,12 @@ namespace Kaxaml.DocumentViews
 
                             if (!isExplicit)
                             {
-                                var bd = new Border()
+                                var bd = new Border
                                 {
                                     Background = _defaultBackgroundBrush
                                 };
 
-                                var tb = new TextBlock()
+                                var tb = new TextBlock
                                 {
                                     FontFamily = new FontFamily("Segoe, Segoe UI, Verdana"),
                                     TextAlignment = TextAlignment.Center,
@@ -445,51 +434,21 @@ namespace Kaxaml.DocumentViews
                         ErrorLinePosition = 0;
                         _unhandledExceptionRaised = false;
 
-                        if (Settings.Default.EnableAutoBackup)
-                        {
-                            XamlDocument.SaveBackup();
-                            //if (!Editor.Text.Equals(DefaultXaml))
-                            //{
-                            //    File.WriteAllText(XamlDocument.BackupPath, Editor.Text);
-                            //}
-                        }
+                        if (Settings.Default.EnableAutoBackup) XamlDocument?.SaveBackup();
                     }
 
                     catch (Exception ex)
                     {
-                        if (ex.IsCriticalException())
-                        {
-                            throw;
-                        }
-
+                        if (ex.IsCriticalException()) throw;
                         ReportError(ex);
                     }
                 }
-            }
-        }
-
-        private string DeSilverlight(string str)
-        {
-            if (Settings.Default.EnablePseudoSilverlight)
-            {
-                str = str.Replace("http://schemas.microsoft.com/client/2007", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-            }
-
-            return str;
         }
 
         private string PreParse(string str)
         {
-            while (str.Contains("?COLOR"))
-            {
-                str = ReplaceOnce(str, "?COLOR", GetRandomColor().ToString());
-            }
-
-            while (str.Contains("?NAMEDCOLOR"))
-            {
-                str = ReplaceOnce(str, "?NAMEDCOLOR", GetRandomColorName());
-            }
-
+            while (str.Contains("?COLOR")) str = ReplaceOnce(str, "?COLOR", GetRandomColor().ToString());
+            while (str.Contains("?NAMEDCOLOR")) str = ReplaceOnce(str, "?NAMEDCOLOR", GetRandomColorName());
             return str;
         }
 
@@ -517,7 +476,6 @@ namespace Kaxaml.DocumentViews
             return colors[_r.Next(0, colors.Length - 1)];
         }
 
-
         private void ReportError(Exception e)
         {
             IsValidXaml = false;
@@ -537,22 +495,24 @@ namespace Kaxaml.DocumentViews
 
             while (inner.InnerException != null) inner = inner.InnerException;
 
-            ErrorText = inner.Message;
-            ErrorText = ErrorText.Replace("\r", "");
-            ErrorText = ErrorText.Replace("\n", "");
-            ErrorText = ErrorText.Replace("\t", "");
+            var message = inner
+                .Message
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Replace("\t", "");
 
-            // get rid of everything after "Line" if it is in the last 30 characters 
-            var pos = ErrorText.LastIndexOf("Line");
-            if (pos > 0 && pos > ErrorText.Length - 50)
-            {
-                ErrorText = ErrorText.Substring(0, pos);
-            }
+            // get rid of everything after "Line" if it is in the last characters 
+            var pos = message.LastIndexOf("Line", StringComparison.InvariantCulture);
+            ErrorText = pos > 0 && pos > message.Length - 50 
+                ? message.Substring(0, pos)
+                : message;
+
+            _logger.LogDebug("Parse error reported: {Message}", message);
         }
 
         private void ShowErrorUi()
         {
-            if(XamlDocument is null) return;
+            if (XamlDocument is null) return;
             ImageSource? src;
 
             if (_isInitializing)
@@ -587,10 +547,7 @@ namespace Kaxaml.DocumentViews
         private void HideErrorUi()
         {
             var d = (DoubleAnimation)FindResource("HideErrorOverlay");
-            if (d != null)
-            {
-                ErrorOverlay.BeginAnimation(OpacityProperty, d);
-            }
+            if (d != null) ErrorOverlay.BeginAnimation(OpacityProperty, d);
         }
 
         #endregion
@@ -619,20 +576,7 @@ namespace Kaxaml.DocumentViews
             KaxamlInfo.Frame = ContentArea;
         }
 
-        public XamlDocument? XamlDocument
-        {
-            get
-            {
-                if (DataContext is WpfDocument document)
-                {
-                    return document;
-                }
-                else
-                {
-                    return null;
-                }
-            }
-        }
+        public XamlDocument? XamlDocument => DataContext as WpfDocument;
 
         public IKaxamlInfoTextEditor? TextEditor => Editor;
 

@@ -1,17 +1,13 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Threading;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Gui.CompletionWindow;
 using KaxamlPlugins.Utilities;
 
 namespace Kaxaml.CodeCompletion
 {
-    public class XmlCompletionDataProvider : ICompletionDataProvider
+    public sealed class XmlCompletionDataProvider : ICompletionDataProvider
     {
-
         #region Static Fields
 
         private static XmlSchemaCompletionData? _defaultSchemaCompletionData;
@@ -20,14 +16,11 @@ namespace Kaxaml.CodeCompletion
 
         #region Fields
 
-
-        protected string? preSelection;
         private readonly string _defaultNamespacePrefix = string.Empty;
 
         #endregion Fields
 
         #region Properties
-
 
         public static bool IsSchemaLoaded => _defaultSchemaCompletionData != null;
 
@@ -35,14 +28,11 @@ namespace Kaxaml.CodeCompletion
 
         #region Static Methods
 
-        public static void LoadSchema(string filename)
+        public static Exception? LoadSchema(string filename)
         {
             var ex = LoadSchemaFromFile(filename);
-            if (ex is not null)
-            {
-                MessageBox.Show("Failed to load schema");
-                Debug.WriteLine(ex);
-            }
+            if (ex is not null) MessageBox.Show(@"Failed to load schema");
+            return ex;
         }
 
         private static Exception? LoadSchemaFromFile(string filename)
@@ -54,10 +44,7 @@ namespace Kaxaml.CodeCompletion
             }
             catch (Exception ex)
             {
-                if (ex.IsCriticalException())
-                {
-                    throw;
-                }
+                if (ex.IsCriticalException()) throw;
 
                 return ex;
             }
@@ -86,10 +73,7 @@ namespace Kaxaml.CodeCompletion
                         return data;
                     }
 
-                    if (_defaultSchemaCompletionData != null)
-                    {
-                        return _defaultSchemaCompletionData.GetElementCompletionData(_defaultNamespacePrefix);
-                    }
+                    if (_defaultSchemaCompletionData != null) return _defaultSchemaCompletionData.GetElementCompletionData(_defaultNamespacePrefix);
                     break;
 
                 case ' ':
@@ -97,88 +81,67 @@ namespace Kaxaml.CodeCompletion
                     if (!XmlParser.IsInsideAttributeValue(text, text.Length))
                     {
                         var path = XmlParser.GetActiveElementStartPath(text, text.Length);
-                        if (path.Elements.Count > 0)
-                        {
-                            return GetAttributeCompletionData(path);
-                        }
+                        if (path.Elements.Count > 0) return GetAttributeCompletionData(path);
                     }
+
                     break;
 
                 case '\'':
                 case '\"':
 
                     // Attribute value intellisense.
-                    //if (XmlParser.IsAttributeValueChar(charTyped)) {
                     text = text.Substring(0, text.Length - 1);
                     var attributeName = XmlParser.GetAttributeName(text, text.Length);
                     if (attributeName.Length > 0)
                     {
                         var elementPath = XmlParser.GetActiveElementStartPath(text, text.Length);
-                        if (elementPath.Elements.Count > 0)
-                        {
-                            preSelection = charTyped.ToString();
-                            return GetAttributeValueCompletionData(elementPath, attributeName);
-                            //		}
-                        }
+                        if (elementPath.Elements.Count > 0) return GetAttributeValueCompletionData(elementPath, attributeName);
                     }
+
                     break;
             }
 
             return [];
         }
 
-
-        private ICompletionData[] GetChildElementCompletionData(XmlElementPath path)
+        private static ICompletionData[] GetChildElementCompletionData(XmlElementPath path)
         {
             ICompletionData[]? completionData = null;
 
             var schema = _defaultSchemaCompletionData;
-            if (schema != null)
-            {
-                completionData = schema.GetChildElementCompletionData(path);
-            }
+            if (schema != null) completionData = schema.GetChildElementCompletionData(path);
 
             return completionData ?? [];
         }
 
-        private ICompletionData[] GetAttributeCompletionData(XmlElementPath path)
+        private static ICompletionData[] GetAttributeCompletionData(XmlElementPath path)
         {
             ICompletionData[]? completionData = null;
 
             var schema = _defaultSchemaCompletionData;
-            if (schema != null)
-            {
-                completionData = schema.GetAttributeCompletionData(path);
-            }
+            if (schema != null) completionData = schema.GetAttributeCompletionData(path);
 
             return completionData ?? [];
         }
 
-        private ICompletionData[] GetAttributeValueCompletionData(XmlElementPath path, string name)
+        private static ICompletionData[] GetAttributeValueCompletionData(XmlElementPath path, string name)
         {
             ICompletionData[]? completionData = null;
 
             var schema = _defaultSchemaCompletionData;
-            if (schema != null)
-            {
-                completionData = schema.GetAttributeValueCompletionData(path, name);
-            }
+            if (schema != null) completionData = schema.GetAttributeValueCompletionData(path, name);
 
             return completionData ?? [];
         }
 
         private ImageList? _imageList;
+
         public ImageList ImageList
         {
             get
             {
-                if (_imageList == null)
-                {
-                    _imageList = new ImageList();
-                    //_ImageList.Images.Add(new System.Drawing.Bitmap(@"C:\element2.png"));
-
-                }
-
+                if (_imageList == null) _imageList = new ImageList();
+                //_ImageList.Images.Add(new System.Drawing.Bitmap(@"C:\element2.png"));
                 return _imageList;
             }
         }

@@ -22,7 +22,6 @@
       -->
 
       <c:NotConverter x:Key="NotConverter" />
-      <c:GreaterThanConverter x:Key="GreaterThanConverter" />
 
       <!--
       *************************************************************************
@@ -30,6 +29,7 @@
       *************************************************************************
       -->
 
+      <!-- ReSharper disable once Xaml.RedundantResource - Referenced in Code-->
       <DoubleAnimation 
         x:Key="ShowErrorOverlay" 
         Storyboard.TargetName="ErrorOverlay" 
@@ -37,6 +37,7 @@
         To="1"
         Duration="0:0:0.15" />
 
+      <!-- ReSharper disable once Xaml.RedundantResource - Referenced in Code-->
       <DoubleAnimation 
         x:Key="HideErrorOverlay"
         Storyboard.TargetName="ErrorOverlay" 
@@ -303,8 +304,6 @@
     <GridSplitter
       Grid.Row="2"
       Height="6" 
-      DragStarted="SplitterDragStarted" 
-      DragCompleted="SplitterDragCompleted" 
       ResizeDirection="Rows"
       ResizeBehavior="PreviousAndNext"
       SnapsToDevicePixels="True"
