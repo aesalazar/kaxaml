@@ -1,6 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -872,9 +875,43 @@ public partial class MainWindow
         return false;
     }
 
-    public void Close(XamlDocument document)
+    protected override void OnClosing(CancelEventArgs e)
     {
-        _logger.LogInformation("Closed '{Path}'.", document.FullPath);
+        base.OnClosing(e);
+
+        var dirty = XamlDocuments
+            .Where(d => d.NeedsSave)
+            .ToList();
+
+        if (!dirty.Any())
+        {
+            _logger.LogInformation("No dirty documents so processing with close...");
+            return;
+        }
+
+        var sb = new StringBuilder();
+        sb.Append(dirty.Count > 1
+            ? $"There are {dirty.Count} unsaved documents."
+            : $"Document '{dirty.First().Filename}' is unsaved.");
+        sb.Append("  Are you sure you wish to exit and lose all changes?");
+
+        var result = MessageBox.Show(
+            sb.ToString(),
+            "Confirm Closing",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (result == MessageBoxResult.No)
+        {
+            _logger.LogInformation("Close aborted at users request due to unsaved documents.");
+            e.Cancel = true;
+        }
+        else
+        {
+            _logger.LogInformation(
+                "User confirmed abandoning {Count} unsaved document(s) so processing with close...",
+                dirty.Count);
+        }
     }
 
     #endregion
