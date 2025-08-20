@@ -11,7 +11,7 @@ public interface IXamlDocumentView
     //
     //-------------------------------------------------------------------
 
-    IKaxamlInfoTextEditor? TextEditor { get; }
+    IKaxamlInfoTextEditor TextEditor { get; }
 
     XamlDocument? XamlDocument { get; }
 

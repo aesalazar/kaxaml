@@ -63,7 +63,7 @@ public partial class MainWindow
                     // create and insert the xaml
                     var xaml = Settings.Default.PasteImageXaml;
                     xaml = xaml.Replace("$source$", rfilename);
-                    DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(xaml);
+                    DocumentsView.SelectedView?.TextEditor.InsertStringAtCaret(xaml);
                 }
                 else
                 {
@@ -546,7 +546,7 @@ public partial class MainWindow
 
     private void Paste_Executed(object sender, ExecutedRoutedEventArgs args)
     {
-        if (Equals(sender, this)) DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(Clipboard.GetText());
+        if (Equals(sender, this)) DocumentsView.SelectedView?.TextEditor.InsertStringAtCaret(Clipboard.GetText());
     }
 
     private void Paste_CanExecute(object sender, CanExecuteRoutedEventArgs args)
@@ -622,7 +622,7 @@ public partial class MainWindow
                         // create and insert the xaml
                         var xaml = Settings.Default.PasteImageXaml;
                         xaml = xaml.Replace("$source$", rfilename);
-                        DocumentsView.SelectedView?.TextEditor?.InsertStringAtCaret(xaml);
+                        DocumentsView.SelectedView?.TextEditor.InsertStringAtCaret(xaml);
                     }
                     catch (Exception ex)
                     {
@@ -646,7 +646,7 @@ public partial class MainWindow
     {
         if (Equals(sender, this))
         {
-            var text = DocumentsView?.SelectedView?.TextEditor?.SelectedText;
+            var text = DocumentsView?.SelectedView?.TextEditor.SelectedText;
             if (text is not null) Clipboard.SetText(text);
         }
     }
@@ -654,7 +654,7 @@ public partial class MainWindow
     private void Copy_CanExecute(object sender, CanExecuteRoutedEventArgs args)
     {
         if (Equals(sender, this))
-            args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView?.TextEditor?.SelectedText);
+            args.CanExecute = !string.IsNullOrEmpty(DocumentsView.SelectedView?.TextEditor.SelectedText);
     }
 
     #endregion
@@ -667,9 +667,9 @@ public partial class MainWindow
     {
         if (Equals(sender, this))
         {
-            var text = DocumentsView?.SelectedView?.TextEditor?.SelectedText;
+            var text = DocumentsView?.SelectedView?.TextEditor.SelectedText;
             if (text is not null) Clipboard.SetText(text);
-            DocumentsView?.SelectedView?.TextEditor?.ReplaceSelectedText("");
+            DocumentsView?.SelectedView?.TextEditor.ReplaceSelectedText("");
         }
     }
 
@@ -677,7 +677,7 @@ public partial class MainWindow
     {
         if (Equals(sender, this))
         {
-            var text = DocumentsView?.SelectedView?.TextEditor?.SelectedText;
+            var text = DocumentsView?.SelectedView?.TextEditor.SelectedText;
             args.CanExecute = !string.IsNullOrEmpty(text);
         }
     }
@@ -690,13 +690,13 @@ public partial class MainWindow
 
     private void Delete_Executed(object sender, ExecutedRoutedEventArgs args)
     {
-        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.ReplaceSelectedText("");
+        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor.ReplaceSelectedText("");
     }
 
     private void Delete_CanExecute(object sender, CanExecuteRoutedEventArgs args)
     {
         if (Equals(sender, this))
-            args.CanExecute = !string.IsNullOrEmpty(DocumentsView?.SelectedView?.TextEditor?.SelectedText);
+            args.CanExecute = !string.IsNullOrEmpty(DocumentsView?.SelectedView?.TextEditor.SelectedText);
     }
 
     #endregion
@@ -707,7 +707,7 @@ public partial class MainWindow
 
     private void Redo_Executed(object sender, ExecutedRoutedEventArgs args)
     {
-        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.Redo();
+        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor.Redo();
     }
 
     private void Redo_CanExecute(object sender, CanExecuteRoutedEventArgs args)
@@ -723,7 +723,7 @@ public partial class MainWindow
 
     private void Undo_Executed(object sender, ExecutedRoutedEventArgs args)
     {
-        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor?.Undo();
+        if (Equals(sender, this)) DocumentsView?.SelectedView?.TextEditor.Undo();
     }
 
     private void Undo_CanExecute(object sender, CanExecuteRoutedEventArgs args)

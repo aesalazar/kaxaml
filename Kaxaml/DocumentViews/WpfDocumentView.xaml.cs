@@ -356,12 +356,9 @@ public partial class WpfDocumentView : IXamlDocumentView
             if (XamlDocument.SourceText != null)
             {
                 // handle the in place preparsing (this actually updates the source in the editor)
-                if (TextEditor is not null)
-                {
-                    var index = TextEditor.CaretIndex;
-                    XamlDocument.SourceText = PreParse(XamlDocument.SourceText);
-                    TextEditor.CaretIndex = index;
-                }
+                var index = TextEditor.CaretIndex;
+                XamlDocument.SourceText = PreParse(XamlDocument.SourceText);
+                TextEditor.CaretIndex = index;
 
                 var str = XamlDocument.SourceText;
 
@@ -575,9 +572,15 @@ public partial class WpfDocumentView : IXamlDocumentView
         KaxamlInfo.Frame = ContentArea;
     }
 
+    /// <summary>
+    /// WPF Document DataContext for this WPF Document View control.
+    /// </summary>
     public XamlDocument? XamlDocument => DataContext as WpfDocument;
 
-    public IKaxamlInfoTextEditor? TextEditor => Editor;
+    /// <summary>
+    /// Container for the XAML Text being edited by the user.
+    /// </summary>
+    public IKaxamlInfoTextEditor TextEditor => Editor;
 
     #endregion
 }
