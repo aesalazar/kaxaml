@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
@@ -23,7 +24,19 @@ namespace Kaxaml.DocumentViews;
 
 public partial class WpfDocumentView : IXamlDocumentView
 {
-    #region Constructors
+    #region Static Fields
+
+    //-------------------------------------------------------------------
+    //
+    //  Private Fields
+    //
+    //-------------------------------------------------------------------
+
+    private static DispatcherTimer? _dispatcherTimer;
+
+    #endregion Static Fields
+
+    #region Constructors
 
     public WpfDocumentView()
     {
@@ -51,31 +64,34 @@ public partial class WpfDocumentView : IXamlDocumentView
             schemaFile);
     }
 
-    #endregion Constructors
+    #endregion Constructors
 
-    #region Static Fields
-
-    //-------------------------------------------------------------------
-    //
-    //  Private Fields
-    //
-    //-------------------------------------------------------------------
-
-    private static DispatcherTimer? _dispatcherTimer;
+    #region Fields
 
     private readonly ILogger<WpfDocumentView> _logger;
-
-    #endregion Static Fields
-
-    #region Fields
 
     private bool _unhandledExceptionRaised;
 
     private readonly Brush _defaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40));
 
-    #endregion Fields
+    /// <summary>
+    /// Indicates if is currently <see cref="Documents.XamlDocument.SourceText"/> is being parsed and reapplied.
+    /// </summary>
+    private bool _isSettingSourceText;
 
-    #region Event Handlers
+    /// <summary>
+    /// Indicates if an undo event was triggered by the user.
+    /// </summary>
+    private bool _isInsideUndoTrigger;
+
+    /// <summary>
+    /// Indicates if a redo event was triggered by the user.
+    /// </summary>
+    private bool _isInsideRedoTrigger;
+
+    #endregion Fields
+
+    #region Event Handlers
 
     private static void ContentArea_ContentRendered(object? _, EventArgs __)
     {
@@ -102,7 +118,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         e.Handled = true;
     }
 
-    #endregion Event Handlers
+    #endregion Event Handlers
 
     //-------------------------------------------------------------------
     //
@@ -266,9 +282,9 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #region Event Handlers
 
-    private void EditorTextChanged(object sender, TextChangedEventArgs e)
+    private void EditorTextChanged(object _, TextChangedEventArgs __)
     {
-        if (XamlDocument == null) return;
+        if (XamlDocument == null || _isSettingSourceText) return;
         if (_isInitializing)
         {
             _isInitializing = false;
@@ -276,8 +292,19 @@ public partial class WpfDocumentView : IXamlDocumentView
         else
         {
             ClearDispatcherTimer();
-            AttemptParse();
+            AttemptTagMatchingParse();
+            DispatchParseAttempt();
         }
+    }
+
+    private void Editor_OnUndoTriggered(object? _, EventArgs __)
+    {
+        _isInsideUndoTrigger = true;
+    }
+
+    private void Editor_OnRedoTriggered(object? _, EventArgs __)
+    {
+        _isInsideRedoTrigger = true;
     }
 
     private void ErrorOverlayAnimationCompleted(object? _, EventArgs __)
@@ -326,21 +353,16 @@ public partial class WpfDocumentView : IXamlDocumentView
         }
     }
 
-    private void AttemptParse()
+    private void DispatchParseAttempt()
     {
-        if (Settings.Default.EnableAutoParse)
-        {
-            ClearDispatcherTimer();
+        if (Settings.Default.EnableAutoParse is false) return;
 
-            var timeout = new TimeSpan(0, 0, 0, Settings.Default.AutoParseTimeout);
-
-            _dispatcherTimer =
-                new DispatcherTimer(
-                    timeout,
-                    DispatcherPriority.ApplicationIdle,
-                    ParseCallback,
-                    Dispatcher.CurrentDispatcher);
-        }
+        ClearDispatcherTimer();
+        _dispatcherTimer = new DispatcherTimer(
+            TimeSpan.FromSeconds(Settings.Default.AutoParseTimeout),
+            DispatcherPriority.ApplicationIdle,
+            ParseCallback,
+            Dispatcher.CurrentDispatcher);
     }
 
     private void ParseCallback(object? _, EventArgs __)
@@ -448,7 +470,69 @@ public partial class WpfDocumentView : IXamlDocumentView
         return str;
     }
 
-    private string ReplaceOnce(string str, string oldValue, string newValue)
+    /// <summary>
+    /// See if a single unmatched XML pair is present and sync.
+    /// </summary>
+    /// <remarks>
+    /// This attempts to perform an XML brace match as the user is modifying a Tag that is not
+    /// self-closing.  To do this, it performs an audit on all XML tags and if there is one and
+    /// only one unmatched XML Tag set, it will replace the name of the other tag based on the
+    /// current cursor position.  Note that this method will abort if inside an undo/redo event
+    /// after clearing the <see cref="_isInsideUndoTrigger"/>/<see cref="_isInsideRedoTrigger"/>.
+    /// </remarks>
+    private void AttemptTagMatchingParse()
+    {
+        if (_isInsideUndoTrigger)
+        {
+            _isInsideUndoTrigger = false;
+            return;
+        }
+
+        if (_isInsideRedoTrigger)
+        {
+            _isInsideRedoTrigger = false;
+            return;
+        }
+
+        //Only attempt to match is the user is editing a single tag
+        var mismatches = XmlUtilities.AuditXmlTags(TextEditor.Text, 2);
+        if (mismatches.Count != 1) return;
+
+        var (openTag, closeTag) = mismatches.First();
+        if (openTag is null || closeTag is null) return;
+
+        //Determine tag to use based on current cursor position
+        string replaceName;
+        int replaceStartIndex;
+        int replaceLength;
+        var index = TextEditor.CaretIndex;
+        if (closeTag.NameStartIndex <= index && index <= closeTag.NameEndIndex)
+        {
+            //Within closed tag so replace open name
+            replaceName = closeTag.Name;
+            replaceStartIndex = openTag.NameStartIndex;
+            replaceLength = openTag.NameEndIndex - openTag.NameStartIndex;
+        }
+        else if (openTag.NameStartIndex <= index && index <= openTag.NameEndIndex)
+        {
+            //Within open tag so replace closed name
+            replaceName = openTag.Name;
+            replaceStartIndex = closeTag.NameStartIndex;
+            replaceLength = closeTag.NameEndIndex - closeTag.NameStartIndex;
+        }
+        else
+        {
+            //Likely a copy/paste so abort
+            return;
+        }
+
+        //Make sure the index is not beyond the length after any replaces
+        _isSettingSourceText = true;
+        TextEditor.ReplaceString(replaceStartIndex, replaceLength, replaceName);
+        _isSettingSourceText = false;
+    }
+
+    private static string ReplaceOnce(string str, string oldValue, string newValue)
     {
         var index = str.IndexOf(oldValue, StringComparison.Ordinal);
         var s = str;

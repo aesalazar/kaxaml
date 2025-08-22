@@ -329,6 +329,8 @@
       EnableXmlFolding="{Binding Source={x:Static settings:Settings.Default}, Path=EnableXmlFolding}" 
       IsCodeCompletionEnabled="{Binding Source={x:Static settings:Settings.Default}, Path=EnableCodeCompletion}" 
       Text="{Binding Path=SourceText, Mode=TwoWay}"
+      UndoTriggered="Editor_OnUndoTriggered"
+      RedoTriggered="Editor_OnRedoTriggered"
       TextChanged="EditorTextChanged" />
 
   </Grid>
