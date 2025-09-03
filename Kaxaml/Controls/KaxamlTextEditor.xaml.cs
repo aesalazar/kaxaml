@@ -21,12 +21,6 @@ namespace Kaxaml.Controls;
 
 public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 {
-    //-------------------------------------------------------------------
-    //
-    //  Properties
-    //
-    //-------------------------------------------------------------------
-
     #region Properties
 
     public int CaretIndex
@@ -37,24 +31,12 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Fields
-    //
-    //-------------------------------------------------------------------
-
     #region Fields
 
     private bool _setTextInternal;
     private bool _resetTextInternal;
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Constructors
-    //
-    //-------------------------------------------------------------------
 
     #region Constructors
 
@@ -86,8 +68,10 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         TextEditor.ActiveTextAreaControl.Caret.PositionChanged += Caret_PositionChanged;
 
         // listen for undo
-        TextEditor.UndoTriggered += TextEditor_OnUndoTriggered;
-        TextEditor.RedoTriggered += TextEditor_OnRedoTriggered;
+        TextEditor.UndoStarted += TextEditor_OnUndoStarted;
+        TextEditor.UndoCompleted += TextEditor_OnUndoCompleted;
+        TextEditor.RedoStarted += TextEditor_OnRedoStarted;
+        TextEditor.RedoCompleted += TextEditor_OnRedoCompleted;
 
         // register the ShowSnippets command
         var binding = new CommandBinding(ShowSnippetsCommand);
@@ -98,12 +82,6 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     }
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Dependency Properties
-    //
-    //-------------------------------------------------------------------
 
     #region LineNumber (DependencyProperty)
 
@@ -482,12 +460,6 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Commands
-    //
-    //-------------------------------------------------------------------
-
     #region Commands
 
     #region ShowSnippetsCommand
@@ -507,12 +479,6 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     #endregion
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Events
-    //
-    //-------------------------------------------------------------------
 
     #region TextChangedEvent
 
@@ -563,55 +529,93 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    #region UndoTriggeredEvent
+    #region UndoStartedEvent
 
-    public static readonly RoutedEvent UndoTriggeredEvent = EventManager.RegisterRoutedEvent(
-        nameof(UndoTriggered),
+    public static readonly RoutedEvent UndoStartedEvent = EventManager.RegisterRoutedEvent(
+        nameof(UndoStarted),
         RoutingStrategy.Bubble,
         typeof(EventHandler),
         typeof(KaxamlTextEditor));
 
-    public event EventHandler UndoTriggered
+    public event EventHandler UndoStarted
     {
-        add => AddHandler(UndoTriggeredEvent, value);
-        remove => RemoveHandler(UndoTriggeredEvent, value);
+        add => AddHandler(UndoStartedEvent, value);
+        remove => RemoveHandler(UndoStartedEvent, value);
     }
 
-    private void RaiseUndoTriggeredEvent()
+    private void RaiseUndoStartedEvent()
     {
-        var newEventArgs = new RoutedEventArgs(UndoTriggeredEvent, this);
+        var newEventArgs = new RoutedEventArgs(UndoStartedEvent, this);
         RaiseEvent(newEventArgs);
     }
 
     #endregion
 
-    #region RedoTriggeredEvent
+    #region UndoCompletedEvent
 
-    public static readonly RoutedEvent RedoTriggeredEvent = EventManager.RegisterRoutedEvent(
-        nameof(RedoTriggered),
+    public static readonly RoutedEvent UndoCompletedEvent = EventManager.RegisterRoutedEvent(
+        nameof(UndoCompleted),
         RoutingStrategy.Bubble,
         typeof(EventHandler),
         typeof(KaxamlTextEditor));
 
-    public event EventHandler RedoTriggered
+    public event EventHandler UndoCompleted
     {
-        add => AddHandler(RedoTriggeredEvent, value);
-        remove => RemoveHandler(RedoTriggeredEvent, value);
+        add => AddHandler(UndoCompletedEvent, value);
+        remove => RemoveHandler(UndoCompletedEvent, value);
     }
 
-    private void RaiseRedoTriggeredEvent()
+    private void RaiseUndoCompletedEvent()
     {
-        var newEventArgs = new RoutedEventArgs(RedoTriggeredEvent, this);
+        var newEventArgs = new RoutedEventArgs(UndoCompletedEvent, this);
         RaiseEvent(newEventArgs);
     }
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Event Handlers
-    //
-    //-------------------------------------------------------------------
+    #region RedoStartedEvent
+
+    public static readonly RoutedEvent RedoStartedEvent = EventManager.RegisterRoutedEvent(
+        nameof(RedoStarted),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler RedoStarted
+    {
+        add => AddHandler(RedoStartedEvent, value);
+        remove => RemoveHandler(RedoStartedEvent, value);
+    }
+
+    private void RaiseRedoStartedEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(RedoStartedEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
+
+    #region RedoCompleteEvent
+
+    public static readonly RoutedEvent RedoCompleteEvent = EventManager.RegisterRoutedEvent(
+        nameof(RedoComplete),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler RedoComplete
+    {
+        add => AddHandler(RedoCompleteEvent, value);
+        remove => RemoveHandler(RedoCompleteEvent, value);
+    }
+
+    private void RaiseRedoCompleteEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(RedoCompleteEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
 
     #region EventHandlers
 
@@ -633,29 +637,27 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         LinePosition = TextEditor.ActiveTextAreaControl.Caret.Position.X;
     }
 
-    private void TextEditor_OnUndoTriggered(object? _, EventArgs __)
+    private void TextEditor_OnUndoStarted(object? _, EventArgs __)
     {
-        RaiseUndoTriggeredEvent();
+        RaiseUndoStartedEvent();
     }
 
-    private void TextEditor_OnRedoTriggered(object? _, EventArgs __)
+    private void TextEditor_OnUndoCompleted(object? _, EventArgs __)
     {
-        RaiseRedoTriggeredEvent();
+        RaiseUndoCompletedEvent();
+    }
+
+    private void TextEditor_OnRedoStarted(object? _, EventArgs __)
+    {
+        RaiseRedoStartedEvent();
+    }
+
+    private void TextEditor_OnRedoCompleted(object? _, EventArgs __)
+    {
+        RaiseRedoCompleteEvent();
     }
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Public Methods
-    //
-    //-------------------------------------------------------------------
-
-    //-------------------------------------------------------------------
-    //
-    //  Private Methods
-    //
-    //-------------------------------------------------------------------
 
     #region Private Methods
 
@@ -736,16 +738,20 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
     }
 
-    public void ReplaceString(int beginIndex, int count, string s)
+    public string ReplaceString(int beginIndex, int count, string s)
     {
         if (beginIndex < 0 || beginIndex > Text.Length || beginIndex + count > Text.Length)
         {
             throw new Exception($"Cannot replace the passed string '{s}' at index {beginIndex} in text with length {Text.Length}");
         }
 
-        TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.BeginUpdate();
-        TextEditor.ActiveTextAreaControl.TextArea.Document.Replace(beginIndex, count, s);
-        TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
+        var area = TextEditor.ActiveTextAreaControl.TextArea;
+        var oldText = area.Document.GetText(beginIndex, count);
+
+        area.MotherTextEditorControl.BeginUpdate();
+        area.Document.Replace(beginIndex, count, s);
+        area.MotherTextEditorControl.EndUpdate();
+        return oldText;
     }
 
     public void RemoveString(int beginIndex, int count)

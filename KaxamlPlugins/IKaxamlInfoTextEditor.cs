@@ -20,7 +20,8 @@ public interface IKaxamlInfoTextEditor
     /// <param name="beginIndex">The starting character index in the document where the replacement begins.</param>
     /// <param name="count">The number of characters to remove starting from offset.</param>
     /// <param name="s">The new string to insert in place of the removed text.</param>
-    void ReplaceString(int beginIndex, int count, string s);
+    /// <returns>String that was replaced.</returns>
+    string? ReplaceString(int beginIndex, int count, string s);
 
     void RemoveString(int beginIndex, int count);
     void Find(string s);
