@@ -277,7 +277,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         }
         else
         {
-            _logger.LogDebug("Processing text: {Text}", e.Text);
+            _logger.LogDebug("Processing text with length {Length}...", e.Text.Length);
             ClearDispatcherTimer();
             AttemptTagMatchParse();
             DispatchParseAttempt();
@@ -486,6 +486,12 @@ public partial class WpfDocumentView : IXamlDocumentView
     /// </remarks>
     private void AttemptTagMatchParse()
     {
+        if (Settings.Default.EnableAutomaticTagNameMatching is false)
+        {
+            _logger.LogDebug("Aborting since tag matching is disabled.");
+            return;
+        }
+
         if (_undoTriggerCount is not 0)
         {
             _logger.LogInformation("Aborting with UNDO trigger count: {Count}", _undoTriggerCount);

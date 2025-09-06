@@ -313,5 +313,17 @@ namespace Kaxaml.Properties {
                 this["AgSchema"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool EnableAutomaticTagNameMatching {
+            get {
+                return ((bool)(this["EnableAutomaticTagNameMatching"]));
+            }
+            set {
+                this["EnableAutomaticTagNameMatching"] = value;
+            }
+        }
     }
 }

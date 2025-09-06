@@ -11,7 +11,8 @@
 
     <c:RemoveLineBreaksConverter x:Key="RemoveLineBreaksConverter" />
 
-    <Style x:Key="TextBoxOverlayStyle"  TargetType="{x:Type l:TextBoxOverlay}" >
+    <!-- ReSharper disable once Xaml.RedundantResource - Searched for by Key in code-behind -->
+    <Style x:Key="TextBoxOverlayStyle"  TargetType="{x:Type l:TextBoxOverlay}">
       <Setter Property="SnapsToDevicePixels" Value="True"/>
       <Setter Property="OverridesDefaultStyle" Value="True"/>
       <Setter Property="KeyboardNavigation.TabNavigation" Value="None"/>
@@ -53,10 +54,8 @@
           <RowDefinition Height="Auto" />
           <RowDefinition Height="12" />
           <RowDefinition Height="Auto" />
-          <!--<RowDefinition Height="12" />
-          <RowDefinition Height="Auto" />
           <RowDefinition Height="12" />
-          <RowDefinition Height="Auto" />-->
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Editor Font Settings -->
@@ -101,27 +100,22 @@
 
         <StackPanel Grid.Row="2">
           <Grid>
-            <TextBlock Foreground="#FFF" Grid.Row="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,30,0">Default WPF XAML:</TextBlock>
-            <TextBlock Foreground="#8FFF" Grid.Row="2" VerticalAlignment="Center" Opacity="0.5" TextTrimming="CharacterEllipsis" Margin="106,0,26,0" Text="{Binding Source={x:Static settings:Settings.Default}, Path=WPFDefaultXaml, Converter={StaticResource RemoveLineBreaksConverter}}" TextWrapping="NoWrap" />
+            <TextBlock Foreground="#FFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,30,0">Default WPF XAML:</TextBlock>
+            <TextBlock Foreground="#8FFF" VerticalAlignment="Center" Opacity="0.5" TextTrimming="CharacterEllipsis" Margin="106,0,26,0" Text="{Binding Source={x:Static settings:Settings.Default}, Path=WPFDefaultXaml, Converter={StaticResource RemoveLineBreaksConverter}}" TextWrapping="NoWrap" />
         
-            <Button Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditWpfDefaultXaml">
+            <Button VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditWpfDefaultXaml">
               <Image Width="12" Height="12" Source="\Images\pencil.png" />
             </Button>
-            
           </Grid>
 
-
-
           <Grid Margin="0,4,0,0">
-
-
-          <TextBlock Foreground="#FFF" Grid.Row="2" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,30,0">Default Silverlight XAML:</TextBlock>
-          <TextBlock Foreground="#8FFF" Grid.Row="2" VerticalAlignment="Center" Opacity="0.5" TextTrimming="CharacterEllipsis" Margin="134,0,26,0" Text="{Binding Source={x:Static settings:Settings.Default}, Path=AgDefaultXaml, Converter={StaticResource RemoveLineBreaksConverter}}" TextWrapping="NoWrap" />
+            <TextBlock Foreground="#FFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,30,0">Default Silverlight XAML:</TextBlock>
+            <TextBlock Foreground="#8FFF" VerticalAlignment="Center" Opacity="0.5" TextTrimming="CharacterEllipsis" Margin="134,0,26,0" Text="{Binding Source={x:Static settings:Settings.Default}, Path=AgDefaultXaml, Converter={StaticResource RemoveLineBreaksConverter}}" TextWrapping="NoWrap" />
         
-        <Button Grid.Row="2" VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditAgDefaultXaml">
-          <Image Width="12" Height="12" Source="\Images\pencil.png" />
-        </Button>
-            </Grid>
+            <Button VerticalAlignment="Center" HorizontalAlignment="Right" Width="20" MinWidth="0" Height="20" MinHeight="0" Click="EditAgDefaultXaml">
+              <Image Width="12" Height="12" Source="\Images\pencil.png" />
+            </Button>
+          </Grid>
 
         </StackPanel>
 
@@ -167,7 +161,17 @@
           </TextBlock>
         </CheckBox>
 
+        <!-- EnableAutomaticTagNameMatching -->
 
+        <CheckBox 
+          Foreground="#FFF" Grid.Row="14" VerticalAlignment="Center"
+          Content="Turn on automatic Tag match renaming"
+          ToolTip="When a Tag name is edited the other end will be automatically replaced to match."
+          IsChecked="{Binding 
+            Source={x:Static settings:Settings.Default},
+            Path=EnableAutomaticTagNameMatching,
+            Mode=TwoWay}"
+        />
       </Grid>
     </TabItem>
 
@@ -192,6 +196,7 @@
 
         <CheckBox Foreground="#FFF" Grid.Row="0" VerticalAlignment="Center" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=EnableAutoParse, Mode=TwoWay}">Automatic parsing after</CheckBox>
         <ComboBox
+          Grid.Column="0"
           Grid.ColumnSpan="2"
           SelectedValue="{Binding Source={x:Static settings:Settings.Default}, Path=AutoParseTimeout, Mode=TwoWay}"
           Grid.Row="0" Width="80" HorizontalAlignment="Right" VerticalAlignment="Center">
@@ -212,12 +217,20 @@
 
         <!-- Auto Backup -->
 
-        <CheckBox Foreground="#FFF" Grid.Row="2" Grid.ColumnSpan="2" VerticalAlignment="Center" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=EnableAutoBackup, Mode=TwoWay}">Automatic backup on succesful parse</CheckBox>
+        <CheckBox 
+          Foreground="#FFF" 
+          Grid.Column="0"
+          Grid.Row="2" 
+          Grid.ColumnSpan="2" 
+          VerticalAlignment="Center"
+          IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=EnableAutoBackup, Mode=TwoWay}"
+          Content="Automatic backup on successful parse"
+        />
 
         <!-- Basic Silverlight -->
 
-        <CheckBox Foreground="#FFF" Grid.Row="4" Grid.ColumnSpan="2" VerticalAlignment="Center" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=EnablePseudoSilverlight, Mode=TwoWay}">Enable "pseudo" Silverlight compatibility</CheckBox>
-        <TextBlock  Grid.Row="5" Grid.ColumnSpan="2" Margin="19,3,5,0" TextWrapping="Wrap" Foreground="#8FFF" Width="210">
+        <CheckBox Foreground="#FFF" Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="2" VerticalAlignment="Center" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=EnablePseudoSilverlight, Mode=TwoWay}">Enable "pseudo" Silverlight compatibility</CheckBox>
+        <TextBlock Grid.Column="0" Grid.Row="5" Grid.ColumnSpan="2" Margin="19,3,5,0" TextWrapping="Wrap" Foreground="#8FFF" Width="210">
           With "pseudo" Silverlight compatibility enabled, Kaxaml will replace the Silverlight namespace with the WPF namespace and parse the Silverlight XAML as WPF XAML.
         </TextBlock>
 
