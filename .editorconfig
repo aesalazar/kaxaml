@@ -1,0 +1,32 @@
+# Root EditorConfig file
+root = true
+
+# Applies to all XAML files
+[*.xaml]
+
+# Use 4 spaces for indentation
+indent_style = space
+indent_size = 4
+
+# ReSharper-specific settings
+resharper_xml_attribute_style = on_different_lines
+resharper_xml_wrap_attributes = wrap_if_multiple
+resharper_xml_pi_attribute_style = on_different_lines
+
+resharper_xml_allow_far_alignment = true
+resharper_xml_line_breaks_before_first_attribute = true
+resharper_xml_line_breaks_after_last_attribute = true
+resharper_xml_line_breaks_for_multiline_attributes = true
+resharper_xml_preserve_existing_line_breaks = false
+resharper_xml_place_binding_on_new_line = true
+resharper_xml_place_multibinding_on_new_line = true
+resharper_xml_place_converter_on_new_line = true
+resharper_xml_place_staticresource_on_new_line = true
+resharper_xml_place_closing_tag_on_new_line = true
+resharper_xml_attribute_indent = 4
+resharper_xml_tag_indent = 4
+resharper_xml_max_line_length = 1000
+resharper_xml_keep_blank_lines = false
+
+# Prevent accidental overrides from .DotSettings
+resharper_editorconfig_support = true
