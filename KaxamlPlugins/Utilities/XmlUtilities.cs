@@ -7,7 +7,7 @@ public static class XmlUtilities
     /// <summary>
     /// Match open to closings, ignoring self-closing XML.
     /// </summary>
-    private static readonly Regex TagPattern = new(@"<\s*(/?)([\w:.]+)([^>]*?)(/?)\s*>", RegexOptions.Singleline);
+    private static readonly Regex TagPattern = new(@"<\s*(/?)([\w:.]+)([^<>]*?)(/?)\s*>", RegexOptions.Singleline);
 
     /// <summary>
     /// Parses XML to look for problem Tag pairs based on their position within the string.
