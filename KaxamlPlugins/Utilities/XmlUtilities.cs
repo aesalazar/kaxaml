@@ -104,7 +104,10 @@ public static class XmlUtilities
     /// <param name="StartIndex">Absolute position of the opening carrot of the tag.</param>
     /// <param name="NameStartIndex">Absolute position of the first name string character.</param>
     /// <param name="NameEndIndex">Absolute position of the last name string character.</param>
-    /// <param name="Depth">Level within the XML Tag nesting.</param>
+    /// <param name="Depth">Level within the XML Tag nesting (Root is 0).</param>
+    /// <remarks>
+    /// Note that the <see cref="Depth"/> can go negative if more close tags than open.
+    /// </remarks>
     public record XmlTagInfo(
         string Name,
         bool IsOpening,
