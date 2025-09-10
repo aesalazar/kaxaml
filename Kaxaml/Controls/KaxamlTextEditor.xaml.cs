@@ -78,6 +78,7 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         binding.Executed += ShowSnippets_Executed;
         binding.CanExecute += ShowSnippets_CanExecute;
         InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Down, ModifierKeys.Alt)));
+        InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Space, ModifierKeys.Control)));
         CommandBindings.Add(binding);
     }
 

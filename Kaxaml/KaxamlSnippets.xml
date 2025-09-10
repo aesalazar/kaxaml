@@ -10,8 +10,8 @@ where you want it to be stored.  Once its stored, you can right click
 to edit the snippet.  While editing, you can also give it a shortcut.
 
 To use a snippet you can either drag it from the snippet list into the 
-editor or press Alt+DownArrow from within the editor to access a list 
-of all snippets with shortcuts assigned to them.
+editor or press Alt+DownArrow or Ctrl+Space from within the editor to
+access a list of all snippets with shortcuts assigned to them.
 -->]]></Snippet>
   </Category>
   <Category Name="Getting Started with XAML">
