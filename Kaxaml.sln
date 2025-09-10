@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaxaml", "Kaxaml\Kaxaml.csproj", "{1E1DCC50-B045-401A-A069-4CEBB411DCA0}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnapshotPlugin", "SnapshotPlugin\SnapshotPlugin.csproj", "{02D546B9-54EF-39FE-F108-A13C793CCDCD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XamlScrubberPlugin", "XamlScrubberPlugin\XamlScrubberPlugin.csproj", "{6B356D24-2364-7F99-2C9E-A9568165D30B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaxaml.Tests", "Kaxaml.Tests\Kaxaml.Tests.csproj", "{EF610876-A99C-47DA-8B7C-8E797B1533EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{6B356D24-2364-7F99-2C9E-A9568165D30B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B356D24-2364-7F99-2C9E-A9568165D30B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B356D24-2364-7F99-2C9E-A9568165D30B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF610876-A99C-47DA-8B7C-8E797B1533EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF610876-A99C-47DA-8B7C-8E797B1533EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF610876-A99C-47DA-8B7C-8E797B1533EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF610876-A99C-47DA-8B7C-8E797B1533EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

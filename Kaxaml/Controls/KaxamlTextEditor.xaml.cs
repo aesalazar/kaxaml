@@ -21,12 +21,6 @@ namespace Kaxaml.Controls;
 
 public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 {
-    //-------------------------------------------------------------------
-    //
-    //  Properties
-    //
-    //-------------------------------------------------------------------
-
     #region Properties
 
     public int CaretIndex
@@ -37,11 +31,12 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Constructors
-    //
-    //-------------------------------------------------------------------
+    #region Fields
+
+    private bool _setTextInternal;
+    private bool _resetTextInternal;
+
+    #endregion
 
     #region Constructors
 
@@ -72,30 +67,22 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         // register to get an event when the caret position changed
         TextEditor.ActiveTextAreaControl.Caret.PositionChanged += Caret_PositionChanged;
 
-        // register for an event when the WinFormsHost gets deactivated
-        //FormsHost.MessageHook += new System.Windows.Interop.HwndSourceHook(FormsHost_MessageHook);
+        // listen for undo
+        TextEditor.UndoStarted += TextEditor_OnUndoStarted;
+        TextEditor.UndoCompleted += TextEditor_OnUndoCompleted;
+        TextEditor.RedoStarted += TextEditor_OnRedoStarted;
+        TextEditor.RedoCompleted += TextEditor_OnRedoCompleted;
 
         // register the ShowSnippets command
         var binding = new CommandBinding(ShowSnippetsCommand);
         binding.Executed += ShowSnippets_Executed;
         binding.CanExecute += ShowSnippets_CanExecute;
         InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Down, ModifierKeys.Alt)));
+        InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.Space, ModifierKeys.Control)));
         CommandBindings.Add(binding);
     }
 
-    private void Caret_PositionChanged(object? _, EventArgs __)
-    {
-        LineNumber = TextEditor.ActiveTextAreaControl.Caret.Position.Y;
-        LinePosition = TextEditor.ActiveTextAreaControl.Caret.Position.X;
-    }
-
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Dependency Properties
-    //
-    //-------------------------------------------------------------------
 
     #region LineNumber (DependencyProperty)
 
@@ -474,12 +461,6 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Commands
-    //
-    //-------------------------------------------------------------------
-
     #region Commands
 
     #region ShowSnippetsCommand
@@ -499,12 +480,6 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     #endregion
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Events
-    //
-    //-------------------------------------------------------------------
 
     #region TextChangedEvent
 
@@ -555,16 +530,95 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Event Handlers
-    //
-    //-------------------------------------------------------------------
+    #region UndoStartedEvent
+
+    public static readonly RoutedEvent UndoStartedEvent = EventManager.RegisterRoutedEvent(
+        nameof(UndoStarted),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler UndoStarted
+    {
+        add => AddHandler(UndoStartedEvent, value);
+        remove => RemoveHandler(UndoStartedEvent, value);
+    }
+
+    private void RaiseUndoStartedEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(UndoStartedEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
+
+    #region UndoCompletedEvent
+
+    public static readonly RoutedEvent UndoCompletedEvent = EventManager.RegisterRoutedEvent(
+        nameof(UndoCompleted),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler UndoCompleted
+    {
+        add => AddHandler(UndoCompletedEvent, value);
+        remove => RemoveHandler(UndoCompletedEvent, value);
+    }
+
+    private void RaiseUndoCompletedEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(UndoCompletedEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
+
+    #region RedoStartedEvent
+
+    public static readonly RoutedEvent RedoStartedEvent = EventManager.RegisterRoutedEvent(
+        nameof(RedoStarted),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler RedoStarted
+    {
+        add => AddHandler(RedoStartedEvent, value);
+        remove => RemoveHandler(RedoStartedEvent, value);
+    }
+
+    private void RaiseRedoStartedEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(RedoStartedEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
+
+    #region RedoCompleteEvent
+
+    public static readonly RoutedEvent RedoCompleteEvent = EventManager.RegisterRoutedEvent(
+        nameof(RedoComplete),
+        RoutingStrategy.Bubble,
+        typeof(EventHandler),
+        typeof(KaxamlTextEditor));
+
+    public event EventHandler RedoComplete
+    {
+        add => AddHandler(RedoCompleteEvent, value);
+        remove => RemoveHandler(RedoCompleteEvent, value);
+    }
+
+    private void RaiseRedoCompleteEvent()
+    {
+        var newEventArgs = new RoutedEventArgs(RedoCompleteEvent, this);
+        RaiseEvent(newEventArgs);
+    }
+
+    #endregion
 
     #region EventHandlers
-
-    private bool _setTextInternal;
-    private bool _resetTextInternal;
 
     private void TextEditorDocumentChanged(object sender, DocumentEventArgs e)
     {
@@ -578,19 +632,33 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         UpdateFolding();
     }
 
+    private void Caret_PositionChanged(object? _, EventArgs __)
+    {
+        LineNumber = TextEditor.ActiveTextAreaControl.Caret.Position.Y;
+        LinePosition = TextEditor.ActiveTextAreaControl.Caret.Position.X;
+    }
+
+    private void TextEditor_OnUndoStarted(object? _, EventArgs __)
+    {
+        RaiseUndoStartedEvent();
+    }
+
+    private void TextEditor_OnUndoCompleted(object? _, EventArgs __)
+    {
+        RaiseUndoCompletedEvent();
+    }
+
+    private void TextEditor_OnRedoStarted(object? _, EventArgs __)
+    {
+        RaiseRedoStartedEvent();
+    }
+
+    private void TextEditor_OnRedoCompleted(object? _, EventArgs __)
+    {
+        RaiseRedoCompleteEvent();
+    }
+
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Public Methods
-    //
-    //-------------------------------------------------------------------
-
-    //-------------------------------------------------------------------
-    //
-    //  Private Methods
-    //
-    //-------------------------------------------------------------------
 
     #region Private Methods
 
@@ -604,26 +672,26 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     /// <summary>
     /// Checks whether the caret is inside a set of quotes (" or ').
     /// </summary>
-    private bool IsInsideQuotes(TextArea textArea)
+    private static bool IsInsideQuotes(TextArea textArea)
     {
         var inside = false;
+        var line = textArea
+            .Document
+            .GetLineSegment(textArea.Document.GetLineNumberForOffset(textArea.Caret.Offset));
 
-        var line = textArea.Document.GetLineSegment(textArea.Document.GetLineNumberForOffset(textArea.Caret.Offset));
-        if (line != null)
-            if (line.Offset + line.Length > textArea.Caret.Offset &&
-                line.Offset < textArea.Caret.Offset)
-            {
-                var charAfter = textArea.Document.GetCharAt(textArea.Caret.Offset);
-                var charBefore = textArea.Document.GetCharAt(textArea.Caret.Offset - 1);
+        if (line.Offset + line.Length > textArea.Caret.Offset &&
+            line.Offset < textArea.Caret.Offset)
+        {
+            var charAfter = textArea.Document.GetCharAt(textArea.Caret.Offset);
+            var charBefore = textArea.Document.GetCharAt(textArea.Caret.Offset - 1);
 
-                if ((charBefore == '\'' && charAfter == '\'') ||
-                    (charBefore == '\"' && charAfter == '\"'))
-                    inside = true;
-            }
+            if ((charBefore == '\'' && charAfter == '\'') ||
+                (charBefore == '\"' && charAfter == '\"'))
+                inside = true;
+        }
 
         return inside;
     }
-
 
     public void InsertCharacter(char ch)
     {
@@ -669,6 +737,22 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         TextEditor.ActiveTextAreaControl.TextArea.Document.Insert(offset, s);
 
         TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
+    }
+
+    public string ReplaceString(int beginIndex, int count, string s)
+    {
+        if (beginIndex < 0 || beginIndex > Text.Length || beginIndex + count > Text.Length)
+        {
+            throw new Exception($"Cannot replace the passed string '{s}' at index {beginIndex} in text with length {Text.Length}");
+        }
+
+        var area = TextEditor.ActiveTextAreaControl.TextArea;
+        var oldText = area.Document.GetText(beginIndex, count);
+
+        area.MotherTextEditorControl.BeginUpdate();
+        area.Document.Replace(beginIndex, count, s);
+        area.MotherTextEditorControl.EndUpdate();
+        return oldText;
     }
 
     public void RemoveString(int beginIndex, int count)
@@ -937,15 +1021,13 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         _spaceIsValid = false;
         if (param is ArrayList items)
         {
-            var mainWindow = System.Windows.Application.Current.MainWindow;
-
-            double borderX = 0; // mainWindow.ActualWidth - (mainWindow.Content as FrameworkElement).ActualWidth;
-            var borderY = mainWindow.ActualHeight - ((FrameworkElement)mainWindow.Content).ActualHeight;
-
+            double borderX = 0;
             var editorPoint = TextEditor.PointToScreen(new Point(0, 0));
             var caretPoint = TextEditor.ActiveTextAreaControl.Caret.ScreenPosition;
 
-            _popup = CodeCompletionPopup.Show(items, new System.Windows.Point(editorPoint.X + caretPoint.X + borderX, editorPoint.Y + caretPoint.Y + FontSize * 1.3 + 3));
+            _popup = CodeCompletionPopup.Show(items, new System.Windows.Point(
+                editorPoint.X + caretPoint.X + borderX,
+                editorPoint.Y + caretPoint.Y + FontSize * 1.3 + 3));
             _popup.ResultProvided += w_ResultProvided;
         }
     }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
@@ -23,7 +24,13 @@ namespace Kaxaml.DocumentViews;
 
 public partial class WpfDocumentView : IXamlDocumentView
 {
-    #region Constructors
+    #region Static Fields
+
+    private static DispatcherTimer? _dispatcherTimer;
+
+    #endregion Static Fields
+
+    #region Constructors
 
     public WpfDocumentView()
     {
@@ -47,35 +54,42 @@ public partial class WpfDocumentView : IXamlDocumentView
         });
 
         _logger.LogInformation(
-            "Initialized WPF Document View with call to load Schema path: {SchemaFile}",
+            "Constructed with call to load Schema path: {SchemaFile}",
             schemaFile);
     }
 
-    #endregion Constructors
+    #endregion Constructors
 
-    #region Static Fields
+    #region Fields
 
-    //-------------------------------------------------------------------
-    //
-    //  Private Fields
-    //
-    //-------------------------------------------------------------------
-
-    private static DispatcherTimer? _dispatcherTimer;
-
-    private readonly ILogger<WpfDocumentView> _logger;
-
-    #endregion Static Fields
-
-    #region Fields
+    private readonly ILogger _logger;
 
     private bool _unhandledExceptionRaised;
 
     private readonly Brush _defaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40));
 
-    #endregion Fields
+    private readonly Random _r = new();
 
-    #region Event Handlers
+    private bool _isInitializing;
+
+    /// <summary>
+    /// Indicates if is currently <see cref="Documents.XamlDocument.SourceText"/> is being parsed and reapplied.
+    /// </summary>
+    private bool _isSettingSourceText;
+
+    /// <summary>
+    /// Count of unprocessed UNDO events triggered by the user.
+    /// </summary>
+    private int _undoTriggerCount;
+
+    /// <summary>
+    /// Count of unprocessed REDO events triggered by the user.
+    /// </summary>
+    private int _redoTriggerCount;
+
+    #endregion Fields
+
+    #region Event Handlers
 
     private static void ContentArea_ContentRendered(object? _, EventArgs __)
     {
@@ -102,14 +116,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         e.Handled = true;
     }
 
-    #endregion Event Handlers
-
-    //-------------------------------------------------------------------
-    //
-    //  Properties
-    //
-    //-------------------------------------------------------------------
-
+    #endregion Event Handlers
 
     #region IsValidXaml (DependencyProperty)
 
@@ -258,26 +265,47 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Event Handlers
-    //
-    //-------------------------------------------------------------------
-
     #region Event Handlers
 
-    private void EditorTextChanged(object sender, TextChangedEventArgs e)
+    private void Editor_OnTextChanged(object _, TextChangedEventArgs e)
     {
-        if (XamlDocument == null) return;
+        if (XamlDocument == null || _isSettingSourceText) return;
         if (_isInitializing)
         {
             _isInitializing = false;
+            _logger.LogInformation("Marked document as initialized.");
         }
         else
         {
+            _logger.LogDebug("Processing text with length {Length}...", e.Text.Length);
             ClearDispatcherTimer();
-            AttemptParse();
+            AttemptTagMatchParse();
+            DispatchParseAttempt();
         }
+    }
+
+    private void Editor_OnUndoStarted(object? _, EventArgs __)
+    {
+        _undoTriggerCount++;
+        _logger.LogDebug("Increment UNDO flag to: {Count}", _undoTriggerCount);
+    }
+
+    private void Editor_OnUndoCompleted(object? _, EventArgs __)
+    {
+        _undoTriggerCount--;
+        _logger.LogDebug("Decrement UNDO flag to: {Count}", _undoTriggerCount);
+    }
+
+    private void Editor_OnRedoStarted(object? _, EventArgs __)
+    {
+        _redoTriggerCount++;
+        _logger.LogDebug("Increment REDO flag to: {Count}", _redoTriggerCount);
+    }
+
+    private void Editor_OnRedoCompleted(object? _, EventArgs __)
+    {
+        _redoTriggerCount--;
+        _logger.LogDebug("Decrement REDO flag to: {Count}", _redoTriggerCount);
     }
 
     private void ErrorOverlayAnimationCompleted(object? _, EventArgs __)
@@ -296,6 +324,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         }
         catch (Exception ex)
         {
+            _logger.LogError("Exception: {Ex}", ex);
             if (ex.IsCriticalException()) throw;
         }
     }
@@ -309,38 +338,28 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Private Methods
-    //
-    //-------------------------------------------------------------------
-
     #region Private Methods
 
-    private static void ClearDispatcherTimer()
+    private void ClearDispatcherTimer()
     {
-        if (_dispatcherTimer != null)
-        {
-            _dispatcherTimer.Stop();
-            _dispatcherTimer = null;
-        }
+        if (_dispatcherTimer == null) return;
+        _dispatcherTimer.Stop();
+        _dispatcherTimer = null;
+        _logger.LogDebug("Cleared Dispatcher Timer");
     }
 
-    private void AttemptParse()
+    private void DispatchParseAttempt()
     {
-        if (Settings.Default.EnableAutoParse)
-        {
-            ClearDispatcherTimer();
+        if (Settings.Default.EnableAutoParse is false) return;
 
-            var timeout = new TimeSpan(0, 0, 0, Settings.Default.AutoParseTimeout);
+        ClearDispatcherTimer();
+        _dispatcherTimer = new DispatcherTimer(
+            TimeSpan.FromSeconds(Settings.Default.AutoParseTimeout),
+            DispatcherPriority.ApplicationIdle,
+            ParseCallback,
+            Dispatcher.CurrentDispatcher);
 
-            _dispatcherTimer =
-                new DispatcherTimer(
-                    timeout,
-                    DispatcherPriority.ApplicationIdle,
-                    ParseCallback,
-                    Dispatcher.CurrentDispatcher);
-        }
+        _logger.LogInformation("Started new Dispatcher Timer");
     }
 
     private void ParseCallback(object? _, EventArgs __)
@@ -350,98 +369,102 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     private void Parse(bool isExplicit)
     {
+        _logger.LogInformation("Parse attempt as explicit = {Explicit} started...", isExplicit);
+
         ClearDispatcherTimer();
+        if (XamlDocument?.SourceText == null || CodeCompletionPopup.IsOpenSomewhere)
+        {
+            _logger.LogDebug("Aborting with is null source text = {IsNull} and is open = {IsOpen}...",
+                XamlDocument?.SourceText == null,
+                CodeCompletionPopup.IsOpenSomewhere);
+            return;
+        }
 
-        if (XamlDocument != null && !CodeCompletionPopup.IsOpenSomewhere)
-            if (XamlDocument.SourceText != null)
+        // handle the in place preparsing (this actually updates the source in the editor)
+        var index = TextEditor.CaretIndex;
+        XamlDocument.SourceText = PreParse(XamlDocument.SourceText);
+        TextEditor.CaretIndex = index;
+
+        var str = XamlDocument.SourceText;
+
+        try
+        {
+            object? content;
+            using (var ms = new MemoryStream(str.Length))
             {
-                // handle the in place preparsing (this actually updates the source in the editor)
-                if (TextEditor is not null)
+                using (var sw = new StreamWriter(ms))
                 {
-                    var index = TextEditor.CaretIndex;
-                    XamlDocument.SourceText = PreParse(XamlDocument.SourceText);
-                    TextEditor.CaretIndex = index;
-                }
+                    sw.Write(str);
+                    sw.Flush();
 
-                var str = XamlDocument.SourceText;
+                    ms.Seek(0, SeekOrigin.Begin);
 
-                try
-                {
-                    object? content;
-                    using (var ms = new MemoryStream(str.Length))
+                    var pc = new ParserContext
                     {
-                        using (var sw = new StreamWriter(ms))
-                        {
-                            sw.Write(str);
-                            sw.Flush();
+                        BaseUri = new Uri(XamlDocument?.Folder != null
+                            ? XamlDocument.Folder + "/"
+                            : Environment.CurrentDirectory + "/")
+                    };
 
-                            ms.Seek(0, SeekOrigin.Begin);
-
-                            var pc = new ParserContext
-                            {
-                                BaseUri = new Uri(XamlDocument?.Folder != null
-                                    ? XamlDocument.Folder + "/"
-                                    : Environment.CurrentDirectory + "/")
-                            };
-
-                            ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
-                            content = XamlReader.Load(ms, pc);
-                        }
-                    }
-
-                    if (content is Window window)
-                    {
-                        window.Owner = Application.Current.MainWindow;
-
-                        if (!isExplicit)
-                        {
-                            var bd = new Border
-                            {
-                                Background = _defaultBackgroundBrush
-                            };
-
-                            var tb = new TextBlock
-                            {
-                                FontFamily = new FontFamily("Segoe, Segoe UI, Verdana"),
-                                TextAlignment = TextAlignment.Center,
-                                TextWrapping = TextWrapping.Wrap,
-                                FontSize = 14,
-                                Foreground = Brushes.White,
-                                MaxWidth = 320,
-                                Margin = new Thickness(50),
-                                VerticalAlignment = VerticalAlignment.Center,
-                                HorizontalAlignment = HorizontalAlignment.Center,
-                                Text = "The root element of this content is of type Window.  Press F5 to show the content in a new window."
-                            };
-
-                            bd.Child = tb;
-                            ContentArea.Content = bd;
-                        }
-                        else
-                        {
-                            window.Show();
-                        }
-                    }
-                    else
-                    {
-                        ContentArea.Content = content;
-                    }
-
-                    IsValidXaml = true;
-                    ErrorText = null;
-                    ErrorLineNumber = 0;
-                    ErrorLinePosition = 0;
-                    _unhandledExceptionRaised = false;
-
-                    if (Settings.Default.EnableAutoBackup) XamlDocument?.SaveBackup();
-                }
-
-                catch (Exception ex)
-                {
-                    if (ex.IsCriticalException()) throw;
-                    ReportError(ex);
+                    ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
+                    content = XamlReader.Load(ms, pc);
                 }
             }
+
+            if (content is Window window)
+            {
+                window.Owner = Application.Current.MainWindow;
+
+                if (!isExplicit)
+                {
+                    var bd = new Border
+                    {
+                        Background = _defaultBackgroundBrush
+                    };
+
+                    var tb = new TextBlock
+                    {
+                        FontFamily = new FontFamily("Segoe, Segoe UI, Verdana"),
+                        TextAlignment = TextAlignment.Center,
+                        TextWrapping = TextWrapping.Wrap,
+                        FontSize = 14,
+                        Foreground = Brushes.White,
+                        MaxWidth = 320,
+                        Margin = new Thickness(50),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Text = "The root element of this content is of type Window.  Press F5 to show the content in a new window."
+                    };
+
+                    bd.Child = tb;
+                    ContentArea.Content = bd;
+                }
+                else
+                {
+                    window.Show();
+                }
+            }
+            else
+            {
+                ContentArea.Content = content;
+            }
+
+            IsValidXaml = true;
+            ErrorText = null;
+            ErrorLineNumber = 0;
+            ErrorLinePosition = 0;
+            _unhandledExceptionRaised = false;
+
+            if (Settings.Default.EnableAutoBackup) XamlDocument?.SaveBackup();
+        }
+
+        catch (Exception ex)
+        {
+            if (ex.IsCriticalException()) throw;
+            ReportError(ex);
+        }
+
+        _logger.LogInformation("Parse attempt as explicit = {Explicit} complete.", isExplicit);
     }
 
     private string PreParse(string str)
@@ -451,7 +474,92 @@ public partial class WpfDocumentView : IXamlDocumentView
         return str;
     }
 
-    private string ReplaceOnce(string str, string oldValue, string newValue)
+    /// <summary>
+    /// See if a single unmatched XML pair is present and sync.
+    /// </summary>
+    /// <remarks>
+    /// This attempts to perform an XML brace match as the user is modifying a Tag that is not
+    /// self-closing.  To do this, it performs an audit on all XML tags and if there is one and
+    /// only one unmatched XML Tag set, it will replace the name of the other tag based on the
+    /// current cursor position.  Note that this method will abort if inside an undo/redo event
+    /// after clearing the <see cref="_undoTriggerCount"/>/<see cref="_redoTriggerCount"/>.
+    /// </remarks>
+    private void AttemptTagMatchParse()
+    {
+        if (Settings.Default.EnableAutomaticTagNameMatching is false)
+        {
+            _logger.LogDebug("Aborting since tag matching is disabled.");
+            return;
+        }
+
+        if (_undoTriggerCount is not 0)
+        {
+            _logger.LogInformation("Aborting with UNDO trigger count: {Count}", _undoTriggerCount);
+            return;
+        }
+
+        if (_redoTriggerCount is not 0)
+        {
+            _logger.LogDebug("Aborting with REDO trigger count: {Count}", _redoTriggerCount);
+            return;
+        }
+
+        _logger.LogDebug("Looking for mismatched tags...");
+
+        //Only attempt to match is the user is editing a single tag
+        var mismatches = XmlUtilities.AuditXmlTags(TextEditor.Text, 2);
+        if (mismatches.Count is not 1)
+        {
+            _logger.LogDebug("Aborting with mismatched tag count of: {Count}", mismatches.Count);
+            return;
+        }
+
+        var (openTag, closeTag) = mismatches.First();
+        if (openTag is null || closeTag is null)
+        {
+            _logger.LogDebug("Aborting due to null tag in set: {Open}, {Close}", openTag, closeTag);
+            return;
+        }
+
+        _logger.LogDebug("Processing single mismatched XAML tags: {Open}, {Close}", openTag, closeTag);
+
+        //Determine tag to use based on current cursor position
+        string replaceName;
+        int replaceStartIndex;
+        int replaceLength;
+        var index = TextEditor.CaretIndex;
+        var isCloseEdit = closeTag.NameStartIndex <= index && index <= closeTag.NameEndIndex;
+        if (isCloseEdit)
+        {
+            //Within closed tag so replace open name
+            replaceName = closeTag.Name;
+            replaceStartIndex = openTag.NameStartIndex;
+            replaceLength = openTag.NameEndIndex - openTag.NameStartIndex;
+        }
+        else if (openTag.NameStartIndex <= index && index <= openTag.NameEndIndex)
+        {
+            //Within open tag so replace closed name
+            replaceName = openTag.Name;
+            replaceStartIndex = closeTag.NameStartIndex;
+            replaceLength = closeTag.NameEndIndex - closeTag.NameStartIndex;
+        }
+        else
+        {
+            //Likely a copy/paste so abort
+            return;
+        }
+
+        //Make sure the index is not beyond the length after any replaces
+        _isSettingSourceText = true;
+        var old = TextEditor.ReplaceString(replaceStartIndex, replaceLength, replaceName);
+        _isSettingSourceText = false;
+
+        _logger.LogInformation("Replaced {TagEnd} XAML Tag '{Orig}' with '{New}' at index {Index} for {Length} chars",
+            isCloseEdit ? "opened" : "closed",
+            old, replaceName, replaceStartIndex, replaceLength);
+    }
+
+    private static string ReplaceOnce(string str, string oldValue, string newValue)
     {
         var index = str.IndexOf(oldValue, StringComparison.Ordinal);
         var s = str;
@@ -461,8 +569,6 @@ public partial class WpfDocumentView : IXamlDocumentView
 
         return s;
     }
-
-    private readonly Random _r = new();
 
     private Color GetRandomColor()
     {
@@ -559,8 +665,6 @@ public partial class WpfDocumentView : IXamlDocumentView
         Parse(true);
     }
 
-    private bool _isInitializing;
-
     public void Initialize()
     {
         IsValidXaml = true;
@@ -575,9 +679,15 @@ public partial class WpfDocumentView : IXamlDocumentView
         KaxamlInfo.Frame = ContentArea;
     }
 
+    /// <summary>
+    /// WPF Document DataContext for this WPF Document View control.
+    /// </summary>
     public XamlDocument? XamlDocument => DataContext as WpfDocument;
 
-    public IKaxamlInfoTextEditor? TextEditor => Editor;
+    /// <summary>
+    /// Container for the XAML Text being edited by the user.
+    /// </summary>
+    public IKaxamlInfoTextEditor TextEditor => Editor;
 
     #endregion
 }

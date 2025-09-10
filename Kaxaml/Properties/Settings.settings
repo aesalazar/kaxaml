@@ -81,5 +81,8 @@
     <Setting Name="AgSchema" Type="System.String" Scope="User">
       <Value Profile="(Default)">Schemas\wpfe.xsd</Value>
     </Setting>
+    <Setting Name="EnableAutomaticTagNameMatching" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
