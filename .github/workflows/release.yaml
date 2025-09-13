@@ -43,6 +43,7 @@ jobs:
           }
 
           $fullTitle = "${version}: $titleLine"
+          Write-Host "Release title: $fullTitle"
 
           echo "VERSION=$version" >> $env:GITHUB_ENV
           echo "RELEASE_TITLE=$fullTitle" >> $env:GITHUB_ENV
@@ -50,6 +51,9 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore Kaxaml.sln
+        
+      - name: Run unit tests
+        run: dotnet test Kaxaml.Tests/Kaxaml.Tests.csproj --no-build --verbosity normal
 
       - name: Clean publish folder
         run: Remove-Item -Recurse -Force "${{ github.workspace }}\publish" -ErrorAction SilentlyContinue
