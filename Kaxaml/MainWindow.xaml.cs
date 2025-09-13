@@ -84,12 +84,6 @@ public partial class MainWindow
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Constructors
-    //
-    //-------------------------------------------------------------------
-
     #region Constructors
 
     public MainWindow(ILogger<MainWindow> logger)
@@ -272,12 +266,6 @@ public partial class MainWindow
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Dependency Properties
-    //
-    //-------------------------------------------------------------------
-
     #region XamlDocuments (DependencyProperty)
 
     /// <summary>
@@ -310,12 +298,6 @@ public partial class MainWindow
     }
 
     #endregion
-
-    //-------------------------------------------------------------------
-    //
-    //  Commands
-    //
-    //-------------------------------------------------------------------
 
     #region ParseCommand
 
@@ -796,12 +778,6 @@ public partial class MainWindow
 
     #endregion
 
-    //-------------------------------------------------------------------
-    //
-    //  Methods
-    //
-    //-------------------------------------------------------------------
-
     #region Public Methods
 
     private OpenFileDialog? _openDialog;
@@ -905,10 +881,10 @@ public partial class MainWindow
         var result = MessageBox.Show(
             sb.ToString(),
             "Confirm Closing",
-            MessageBoxButton.YesNo,
+            MessageBoxButton.OKCancel,
             MessageBoxImage.Warning);
 
-        if (result == MessageBoxResult.No)
+        if (result is MessageBoxResult.Cancel)
         {
             _logger.LogInformation("Close aborted at users request due to unsaved documents.");
             e.Cancel = true;
