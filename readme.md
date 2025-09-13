@@ -33,7 +33,7 @@ This is a fantasic project - kudos to the original devs.  I have taken the liber
 - Added “Star Trek” snippet
 - Bound `CTRL+SPACE` to activate code completion window
 
-![Demo of tab closing behavior](assets/AutoTagMatchEditing.gif)
+![Demo of Tag Edit Auto Match](Assets/AutoTagMatchEditing.gif)
 
 ## 9.2.1 – Namespace Cleanup & Logging
 - Added button in **About** screen to open log folder
