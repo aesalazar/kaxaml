@@ -58,15 +58,24 @@ public partial class About
         }
     }
 
-    private void LogFilesButton_Click(object sender, RoutedEventArgs e)
+    private void TempFolderButton_Click(object _, RoutedEventArgs __)
     {
-        var folder = ApplicationDiServiceProvider.LogDirectory;
+        OpenFolder(ApplicationDiServiceProvider.TempDirectory);
+    }
+
+    private void LogFilesButton_Click(object _, RoutedEventArgs __)
+    {
+        OpenFolder(ApplicationDiServiceProvider.LogDirectory);
+    }
+
+    private void OpenFolder(string folder)
+    {
         if (!Directory.Exists(folder))
         {
-            _logger.LogWarning("Missing log folder: {Folder}", folder);
+            _logger.LogWarning("Missing folder: {Folder}", folder);
             MessageBox.Show(
                 $"The folder \"{folder}\" does not exist.",
-                "Missing Log Folder",
+                "Missing Folder",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }

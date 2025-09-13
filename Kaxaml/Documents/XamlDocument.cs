@@ -2,16 +2,26 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Media;
+using KaxamlPlugins.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kaxaml.Documents;
 
 public class XamlDocument : INotifyPropertyChanged
 {
+    private readonly ILogger _logger;
+
     #region Constructors
 
     public XamlDocument(string folder)
     {
+        _logger = ApplicationDiServiceProvider
+            .Services
+            .GetRequiredService<ILogger<XamlDocument>>();
+
         _folder = folder;
+        _logger.LogInformation("Created XAML Document at: {Folder}", _folder);
     }
 
     #endregion
@@ -141,12 +151,7 @@ public class XamlDocument : INotifyPropertyChanged
 
     public string FullPath
     {
-        get
-        {
-            if (string.IsNullOrEmpty(Filename)) return Path.Combine(Folder, TemporaryFilename);
-
-            return Path.Combine(Folder, Filename);
-        }
+        get => Path.Combine(Folder, string.IsNullOrEmpty(Filename) ? TemporaryFilename : Filename);
         set
         {
             Folder = Path.GetDirectoryName(value) ?? string.Empty;
@@ -195,6 +200,7 @@ public class XamlDocument : INotifyPropertyChanged
 
     private bool SaveFile(string fullPath)
     {
+        _logger.LogDebug("Writing text to file: {Path}", fullPath);
         File.WriteAllText(fullPath, SourceText);
         return true;
     }
@@ -205,30 +211,51 @@ public class XamlDocument : INotifyPropertyChanged
 
     public bool SaveAs(string fullPath)
     {
-        if (SaveFile(fullPath))
+        var success = SaveFile(fullPath);
+
+        if (success)
         {
             NeedsSave = false;
             FullPath = fullPath;
-            return true;
+            _logger.LogDebug("File saved to: {Path}", fullPath);
+        }
+        else
+        {
+            _logger.LogError("Could not save file to: {Path}", fullPath);
         }
 
-        return false;
+        return success;
     }
 
     public bool Save()
     {
-        if (SaveFile(FullPath))
+        var path = FullPath;
+        var success = SaveFile(path);
+
+        if (success)
         {
             NeedsSave = false;
-            return true;
+            _logger.LogDebug("File saved to: {Path}", path);
+        }
+        else
+        {
+            _logger.LogError("Could not save file to: {Path}", path);
         }
 
-        return false;
+        return success;
     }
 
     public bool SaveBackup()
     {
-        return SaveFile(BackupPath);
+        var path = BackupPath;
+        var success = SaveFile(path);
+
+        if (success)
+            _logger.LogDebug("Backup saved to: {Path}", path);
+        else
+            _logger.LogError("Could not save backup to: {Path}", path);
+
+        return success;
     }
 
     #endregion
@@ -243,10 +270,4 @@ public class XamlDocument : INotifyPropertyChanged
     }
 
     #endregion
-}
-
-public enum XamlDocumentType
-{
-    WpfDocument,
-    AgDocument
 }

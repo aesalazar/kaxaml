@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Configuration;
+using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,14 +18,25 @@ namespace KaxamlPlugins.DependencyInjection;
 /// </remarks>
 public static class ApplicationDiServiceProvider
 {
+    private const string ConfigurationKeyLogFolder = "Folder.AppData.Logs";
+    private const string ConfigurationKeyTempFolder = "Folder.AppData.Temp";
     private static IHost? _host;
 
     /// <summary>
-    /// Logging folder for the application.
+    /// Full path to the Temp folder for the application.
+    /// </summary>
+    public static string TempDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        ConfigurationManager.AppSettings[ConfigurationKeyTempFolder]
+        ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeyTempFolder}"));
+
+    /// <summary>
+    /// Full path to the Logging folder for the application.
     /// </summary>
     public static string LogDirectory { get; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Kaxaml", "Logs");
+        ConfigurationManager.AppSettings[ConfigurationKeyLogFolder]
+        ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeyLogFolder}"));
 
     /// <summary>
     /// Allows reference to DI container from UI Controls.

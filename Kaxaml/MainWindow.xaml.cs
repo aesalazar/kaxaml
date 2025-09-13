@@ -12,6 +12,7 @@ using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using Kaxaml.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
@@ -250,7 +251,7 @@ public partial class MainWindow
 
         if (XamlDocuments.Count == 0)
         {
-            var doc = new WpfDocument(Directory.GetCurrentDirectory());
+            var doc = new WpfDocument(ApplicationDiServiceProvider.TempDirectory);
             XamlDocuments.Add(doc);
             _logger.LogInformation("Created new WPF document: {Path}", doc.FullPath);
         }
