@@ -120,6 +120,12 @@ public partial class MainWindow
         InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.W, ModifierKeys.Control, "Ctrl+W")));
         CommandBindings.Add(binding);
 
+        binding = new CommandBinding(CloseTabCommand);
+        binding.Executed += CloseTab_Executed;
+        binding.CanExecute += CloseTab_CanExecute;
+        InputBindings.Add(new InputBinding(binding.Command, new KeyGesture(Key.F4, ModifierKeys.Control, "Ctrl+F4")));
+        CommandBindings.Add(binding);
+
         binding = new CommandBinding(SaveCommand);
         binding.Executed += Save_Executed;
         binding.CanExecute += Save_CanExecute;
