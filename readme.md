@@ -6,9 +6,9 @@ Kaxaml is designed to be "notepad for XAML." It's supposed to be simple and ligh
 
 # This Fork
 
-This is a fork of the orginal project that is upgraded to .net 9.  Seems the original project has gone quite so I am maintaining this here.  Note this no longer supports Silverlight so if that is something you need, stick with the original.
+This is a fork of the orginal project that has been upgraded to .net 9.  It seems the original project has gone quiet so I am maintaining this here.  Note that this no longer supports Silverlight so if that is something you need, stick with the original.
 
-This is a fantasic project - kudos to the original devs.  I have taken the liberty of performing significant code cleanup and modernization as well as adding feature I have always wanted.  No real roadmap to speak of, just fixing and adding things as they come up.  I welcome any feedback.
+This is a fantasic project that are find very useful for my XAML work - kudos to the original devs.  I have taken the liberty of performing significant code cleanup and modernization as well as adding features I have always wished for.  No real roadmap to speak of, just fixing and adding things as they come up.  I welcome any feedback.
 
 # Changelog
 
