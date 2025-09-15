@@ -6,6 +6,10 @@ Kaxaml is designed to be "notepad for XAML." It's supposed to be simple and ligh
 
 # This Fork
 
+| ![Demo of Tag Edit Auto Match](Assets/AutoTagMatchEditing.gif) | 
+|:--:|
+| *Tag Edit Auto Matching Feature added in this Fork* |
+
 This is a fork of the orginal project that has been upgraded to .net 9.  It seems the original project has gone quiet so I am maintaining this here.  Note that this no longer supports Silverlight so if that is something you need, stick with the original.
 
 This is a fantasic project that are find very useful for my XAML work - kudos to the original devs.  I have taken the liberty of performing significant code cleanup and modernization as well as adding features I have always wished for.  No real roadmap to speak of, just fixing and adding things as they come up.  I welcome any feedback.
@@ -32,8 +36,6 @@ This is a fantasic project that are find very useful for my XAML work - kudos to
 - Added `Kaxaml.Tests` project
 - Added “Star Trek” snippet
 - Bound `CTRL+SPACE` to activate code completion window
-
-![Demo of Tag Edit Auto Match](Assets/AutoTagMatchEditing.gif)
 
 ## 9.2.1 – Namespace Cleanup & Logging
 - Added button in **About** screen to open log folder
