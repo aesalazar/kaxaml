@@ -78,7 +78,11 @@ public partial class App
             .Services
             .GetRequiredService<ILogger<App>>();
 
-        _logger.LogInformation("Application is starting with Main Window...");
+        _logger.LogInformation("***** STARTUP  *****");
+        _logger.LogInformation(
+            "Application is starting with Main Window at {Stamp}...",
+            DateTime.Now);
+
         ApplicationDiServiceProvider
             .Services
             .GetRequiredService<MainWindow>()
@@ -90,6 +94,10 @@ public partial class App
         _logger.LogInformation("Application shutdown started...");
         ApplicationDiServiceProvider.Shutdown().GetAwaiter().GetResult();
         base.OnExit(e);
-        _logger.LogInformation("Application shutdown complete.");
+
+        _logger.LogInformation(
+            "Application shutdown complete at {Stamp}.",
+            DateTime.Now);
+        _logger.LogInformation("***** SHUTDOWN  *****");
     }
 }

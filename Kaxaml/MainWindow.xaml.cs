@@ -323,7 +323,7 @@ public partial class MainWindow
     {
         if (Equals(sender, this))
         {
-            var doc = new WpfDocument(Directory.GetCurrentDirectory());
+            var doc = new WpfDocument(ApplicationDiServiceProvider.TempDirectory);
             XamlDocuments.Add(doc);
             DocumentsView.SelectedDocument = doc;
         }
