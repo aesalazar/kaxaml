@@ -43,7 +43,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         Dispatcher.UnhandledException += Dispatcher_UnhandledException;
 
         var schemaFile = Path.Combine(
-            Path.GetDirectoryName(App.StartupPath + "\\")
+            Path.GetDirectoryName(ApplicationDiServiceProvider.StartupPath + "\\")
             ?? throw new Exception("Could not determine Startup Path"),
             Settings.Default.WPFSchema);
 

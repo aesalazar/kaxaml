@@ -84,7 +84,7 @@ public partial class PluginView
 
         Plugins.Add(find);
         _findPlugin = find;
-        var pluginDir = App.StartupPath + PluginSubDir;
+        var pluginDir = ApplicationDiServiceProvider.StartupPath + PluginSubDir;
 
         // if the plugin directory doesn't exist, then we're done
         _logger.LogInformation("Loading plugin folder: {Folder}", pluginDir);

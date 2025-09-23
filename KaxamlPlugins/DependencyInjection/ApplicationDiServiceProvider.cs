@@ -1,5 +1,6 @@
 ﻿using System.Configuration;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,12 @@ public static class ApplicationDiServiceProvider
     private const string ConfigurationKeyLogFolder = "Folder.AppData.Logs";
     private const string ConfigurationKeyTempFolder = "Folder.AppData.Temp";
     private static IHost? _host;
+
+    /// <summary>
+    /// Full path to where the application executable was launched from.
+    /// </summary>
+    public static string? StartupPath { get; } = Path.GetDirectoryName(
+        Assembly.GetExecutingAssembly().Location);
 
     /// <summary>
     /// Full path to the Temp folder for the application.
