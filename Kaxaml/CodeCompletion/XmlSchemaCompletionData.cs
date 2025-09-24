@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml;
 using System.Xml.Schema;
@@ -22,7 +24,7 @@ public class XmlSchemaCompletionData
     /// Stores attributes that have been prohibited whilst the code
     /// generates the attribute completion data.
     /// </summary>
-    private readonly XmlSchemaObjectCollection _prohibitedAttributes = new();
+    private readonly List<XmlSchemaAttribute> _prohibitedAttributes = [];
 
     public XmlSchemaCompletionData()
     {
@@ -61,11 +63,9 @@ public class XmlSchemaCompletionData
     /// </summary>
     public XmlSchemaCompletionData(string baseUri, string fileName)
     {
-        using (var reader = new StreamReader(fileName, true))
-        {
-            ReadSchema(baseUri, reader);
-            FileName = fileName;
-        }
+        using var reader = new StreamReader(fileName, true);
+        ReadSchema(baseUri, reader);
+        FileName = fileName;
     }
 
     /// <summary>
@@ -104,10 +104,7 @@ public class XmlSchemaCompletionData
     /// <summary>
     /// Gets the possible root elements for an xml document using this schema.
     /// </summary>
-    public ICompletionData[] GetElementCompletionData()
-    {
-        return GetElementCompletionData(string.Empty);
-    }
+    public ICompletionData[] GetElementCompletionData() => GetElementCompletionData(string.Empty);
 
     /// <summary>
     /// Gets the possible root elements for an xml document using this schema.
@@ -192,17 +189,13 @@ public class XmlSchemaCompletionData
         for (var i = 0; i < path.Elements.Count; ++i)
         {
             var name = path.Elements[i];
-            if (i == 0)
-            {
-                // Look for root element.
-                element = FindElement(name);
-                if (element == null) break;
-            }
-            else
-            {
-                element = FindChildElement(element!, name);
-                if (element == null) break;
-            }
+
+            // Look for root element.
+            element = i == 0
+                ? FindElement(name)
+                : FindChildElement(element!, name);
+
+            if (element == null) break;
         }
 
         return element;
@@ -219,13 +212,11 @@ public class XmlSchemaCompletionData
     public XmlSchemaElement? FindElement(QualifiedName name)
     {
         if (Schema is null) throw new Exception("Schema expected");
-        foreach (XmlSchemaElement element in Schema.Elements.Values)
-            // ReSharper disable once SuspiciousTypeConversion.Global
-            // TODO: Should look into an implicit cast
-            if (name.Equals(element.QualifiedName))
-                return element;
-
-        return null;
+        return Schema
+            .Elements
+            .Values
+            .Cast<XmlSchemaElement>()
+            .FirstOrDefault(element => name.Equals(element.QualifiedName));
     }
 
     /// <summary>
@@ -256,11 +247,10 @@ public class XmlSchemaCompletionData
     /// <summary>
     /// Finds the attribute group with the specified name.
     /// </summary>
-    public XmlSchemaAttributeGroup? FindAttributeGroup(string name)
-    {
-        if (Schema is null) throw new Exception("Schema expected");
-        return FindAttributeGroup(Schema, name);
-    }
+    public XmlSchemaAttributeGroup? FindAttributeGroup(string name) =>
+        Schema is not null
+            ? FindAttributeGroup(Schema, name)
+            : throw new Exception("Schema expected");
 
     /// <summary>
     /// Finds the simple type with the specified name.
@@ -278,11 +268,11 @@ public class XmlSchemaCompletionData
     public XmlSchemaAttribute? FindAttribute(string name)
     {
         if (Schema is null) throw new Exception("Schema expected");
-        foreach (XmlSchemaAttribute attribute in Schema.Attributes.Values)
-            if (attribute.Name == name)
-                return attribute;
-
-        return null;
+        return Schema
+            .Attributes
+            .Values
+            .Cast<XmlSchemaAttribute>()
+            .FirstOrDefault(attribute => attribute.Name == name);
     }
 
     /// <summary>
@@ -291,11 +281,11 @@ public class XmlSchemaCompletionData
     public XmlSchemaGroup? FindGroup(string? name)
     {
         if (Schema is null) throw new Exception("Schema expected");
-        if (name != null)
-            foreach (XmlSchemaObject schemaObject in Schema.Groups.Values)
-                if (schemaObject is XmlSchemaGroup group)
-                    if (group.Name == name)
-                        return group;
+        if (name == null) return null;
+        foreach (XmlSchemaObject schemaObject in Schema.Groups.Values)
+            if (schemaObject is XmlSchemaGroup group)
+                if (group.Name == name)
+                    return group;
 
         return null;
     }
@@ -310,15 +300,14 @@ public class XmlSchemaCompletionData
     public QualifiedName CreateQualifiedName(string name)
     {
         var index = name.IndexOf(":", StringComparison.Ordinal);
-        if (index >= 0)
-        {
-            if (Schema is null) throw new Exception("Schema expected");
-            var prefix = name.Substring(0, index);
-            name = name.Substring(index + 1);
-            foreach (var xmlQualifiedName in Schema.Namespaces.ToArray())
-                if (xmlQualifiedName.Name == prefix)
-                    return new QualifiedName(name, xmlQualifiedName.Namespace, prefix);
-        }
+        if (index < 0) return new QualifiedName(name, NamespaceUri);
+        if (Schema is null) throw new Exception("Schema expected");
+
+        var prefix = name.Substring(0, index);
+        name = name.Substring(index + 1);
+        foreach (var xmlQualifiedName in Schema.Namespaces.ToArray())
+            if (xmlQualifiedName.Name == prefix)
+                return new QualifiedName(name, xmlQualifiedName.Namespace, prefix);
 
         // Default behaviour just return the name with the namespace uri.
         return new QualifiedName(name, NamespaceUri);
@@ -630,9 +619,7 @@ public class XmlSchemaCompletionData
 
     private XmlCompletionDataCollection GetAttributeCompletionData(XmlSchemaComplexType complexType)
     {
-        var data = new XmlCompletionDataCollection();
-
-        data = GetAttributeCompletionData(complexType.Attributes);
+        var data = GetAttributeCompletionData(complexType.Attributes);
 
         // Add any complex content attributes.
         if (complexType.ContentModel is XmlSchemaComplexContent complexContent)
@@ -709,7 +696,7 @@ public class XmlSchemaCompletionData
         if (attribute.Use == XmlSchemaUse.Prohibited)
             prohibited = true;
         else
-            foreach (XmlSchemaAttribute prohibitedAttribute in _prohibitedAttributes)
+            foreach (var prohibitedAttribute in _prohibitedAttributes)
                 if (prohibitedAttribute.QualifiedName == attribute.QualifiedName)
                 {
                     prohibited = true;
@@ -1026,7 +1013,7 @@ public class XmlSchemaCompletionData
         {
             data.AddRange(GetAttributeValueCompletionData(list.ItemType));
         }
-        else if (list.ItemTypeName != null)
+        else
         {
             var simpleType = FindSimpleType(list.ItemTypeName);
             if (simpleType != null) data.AddRange(GetAttributeValueCompletionData(simpleType));
@@ -1052,9 +1039,7 @@ public class XmlSchemaCompletionData
 
     private XmlSchemaAttribute? FindAttribute(XmlSchemaComplexType complexType, string name)
     {
-        XmlSchemaAttribute? matchedAttribute = null;
-
-        matchedAttribute = FindAttribute(complexType.Attributes, name);
+        var matchedAttribute = FindAttribute(complexType.Attributes, name);
 
         if (matchedAttribute == null)
             if (complexType.ContentModel is XmlSchemaComplexContent complexContent)
@@ -1107,10 +1092,7 @@ public class XmlSchemaCompletionData
         return matchedAttribute;
     }
 
-    private XmlSchemaAttribute? FindAttribute(XmlSchemaComplexContentExtension extension, string name)
-    {
-        return FindAttribute(extension.Attributes, name);
-    }
+    private XmlSchemaAttribute? FindAttribute(XmlSchemaComplexContentExtension extension, string name) => FindAttribute(extension.Attributes, name);
 
     private XmlSchemaAttribute? FindAttribute(XmlSchemaComplexContentRestriction restriction, string name)
     {

@@ -1,5 +1,3 @@
-using System;
-using System.Collections;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -27,39 +25,11 @@ public static class XmlParser
     /// </summary>
     private class NamespaceUri
     {
-        #region Fields
-
-        private string _prefix = string.Empty;
-
-        #endregion Fields
-
-        #region Constructors
-
-        public NamespaceUri(string namespaceUri, string prefix)
-        {
-            Namespace = namespaceUri;
-            _prefix = prefix;
-        }
-
-        public NamespaceUri()
-        {
-        }
-
-        #endregion Constructors
-
         #region Properties
 
         public string Namespace { get; set; } = string.Empty;
 
-        public string Prefix
-        {
-            get => _prefix;
-            set
-            {
-                _prefix = value;
-                if (_prefix == null) _prefix = string.Empty;
-            }
-        }
+        public string Prefix { get; set; } = string.Empty;
 
         #endregion Properties
     }
@@ -266,7 +236,7 @@ public static class XmlParser
             }
             else if (char.IsWhiteSpace(currentChar))
             {
-                if (ignoreWhitespace == false)
+                if (!ignoreWhitespace)
                 {
                     // Reached the start of the attribute name.
                     invalidString = false;
@@ -438,28 +408,20 @@ public static class XmlParser
     /// element we are interested in.</param>
     private static QualifiedName GetElementName(string xml)
     {
-        var name = string.Empty;
-
         // Find the end of the element name.
         xml = xml.Replace("\r\n", " ");
         var index = xml.IndexOf(' ');
-        if (index > 0)
-            name = xml.Substring(1, index - 1);
-        else
-            name = xml.Substring(1);
-
-        var qualifiedName = new QualifiedName();
+        var name = index > 0
+            ? xml.Substring(1, index - 1)
+            : xml.Substring(1);
 
         var prefixIndex = name.IndexOf(':');
-        if (prefixIndex > 0)
-        {
-            qualifiedName.Prefix = name.Substring(0, prefixIndex);
-            qualifiedName.Name = name.Substring(prefixIndex + 1);
-        }
-        else
-        {
-            qualifiedName.Name = name;
-        }
+        var qualifiedName = prefixIndex > 0
+            ? new QualifiedName(
+                name.Substring(prefixIndex + 1),
+                string.Empty,
+                name.Substring(0, prefixIndex))
+            : new QualifiedName(name, string.Empty);
 
         return qualifiedName;
     }
@@ -655,7 +617,7 @@ public static class XmlParser
 
             if (char.IsWhiteSpace(currentChar))
             {
-                if (ignoreWhitespace == false)
+                if (!ignoreWhitespace)
                     // Reached the start of the attribute name.
                     break;
             }
@@ -674,10 +636,9 @@ public static class XmlParser
         }
 
         // Did we get a namespace?
-
-        var isNamespace = false;
-
-        if (reversedAttributeName.ToString() == "snlmx" || reversedAttributeName.ToString().EndsWith(":snlmx")) isNamespace = true;
+        var isNamespace =
+            reversedAttributeName.ToString() == "snlmx"
+            || reversedAttributeName.ToString().EndsWith(":snlmx");
 
         return isNamespace;
     }
@@ -713,515 +674,4 @@ public static class XmlParser
     }
 
     #endregion Static Methods
-}
-
-/////////////////////////////////////////////////////
-
-/// <summary>
-/// Represents the path to an xml element starting from the root of the
-/// document.
-/// </summary>
-public class XmlElementPath
-{
-    #region Constructors
-
-    #endregion Constructors
-
-    #region Properties
-
-    /// <summary>
-    /// Gets the elements specifying the path.
-    /// </summary>
-    /// <remarks>The order of the elements determines the path.</remarks>
-    public QualifiedNameCollection Elements { get; } = new();
-
-    #endregion Properties
-
-    #region Public Methods
-
-    /// <summary>
-    /// Compacts the path so it only contains the elements that are from 
-    /// the namespace of the last element in the path. 
-    /// </summary>
-    /// <remarks>This method is used when we need to know the path for a
-    /// particular namespace and do not care about the complete path.
-    /// </remarks>
-    public void Compact()
-    {
-        if (Elements.Count > 0)
-        {
-            var lastName = Elements[Elements.Count - 1];
-            if (lastName is not null)
-            {
-                var index = FindNonMatchingParentElement(lastName.Namespace);
-                if (index != -1) RemoveParentElements(index);
-            }
-        }
-    }
-
-    #endregion Public Methods
-
-    #region Overridden Methods
-
-    /// <summary>
-    /// An xml element path is considered to be equal if 
-    /// each path item has the same name and namespace.
-    /// </summary>
-    public override bool Equals(object? obj)
-    {
-        if (obj is not XmlElementPath rhs) return false;
-        if (this == rhs) return true;
-
-        if (Elements.Count == rhs.Elements.Count)
-        {
-            for (var i = 0; i < Elements.Count; ++i)
-                if (!Elements[i].Equals(rhs.Elements[i]))
-                    return false;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public override int GetHashCode()
-    {
-        return Elements.GetHashCode();
-    }
-
-    #endregion Overridden Methods
-
-    #region Private Methods
-
-    /// <summary>
-    /// Finds the first parent that does belong in the specified
-    /// namespace.
-    /// </summary>
-    private int FindNonMatchingParentElement(string namespaceUri)
-    {
-        var index = -1;
-
-        if (Elements.Count > 1)
-            // Start the check from the the last but one item.
-            for (var i = Elements.Count - 2; i >= 0; --i)
-            {
-                var name = Elements[i];
-                if (name.Namespace != namespaceUri)
-                {
-                    index = i;
-                    break;
-                }
-            }
-
-        return index;
-    }
-
-    /// <summary>
-    /// Removes elements up to and including the specified index.
-    /// </summary>
-    private void RemoveParentElements(int index)
-    {
-        while (index >= 0)
-        {
-            --index;
-            Elements.RemoveFirst();
-        }
-    }
-
-    #endregion Private Methods
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-
-/// <summary>
-/// An <see cref="XmlQualifiedName"/> with the namespace prefix.
-/// </summary>
-/// <remarks>
-/// The namespace prefix active for a namespace is 
-/// needed when an element is inserted via autocompletion. This
-/// class just adds this extra information alongside the 
-/// <see cref="XmlQualifiedName"/>.
-/// </remarks>
-public class QualifiedName
-{
-    #region Fields
-
-    private XmlQualifiedName _xmlQualifiedName = XmlQualifiedName.Empty;
-
-    #endregion Fields
-
-    #region Constructors
-
-    public QualifiedName(string name, string namespaceUri, string prefix)
-    {
-        _xmlQualifiedName = new XmlQualifiedName(name, namespaceUri);
-        Prefix = prefix;
-    }
-
-    public QualifiedName(string name, string namespaceUri)
-        : this(name, namespaceUri, string.Empty)
-    {
-    }
-
-    public QualifiedName()
-    {
-    }
-
-    #endregion Constructors
-
-    #region Properties
-
-    /// <summary>
-    /// Gets the namespace of the qualified name.
-    /// </summary>
-    public string Namespace
-    {
-        get => _xmlQualifiedName.Namespace;
-        set => _xmlQualifiedName = new XmlQualifiedName(_xmlQualifiedName.Name, value);
-    }
-
-    /// <summary>
-    /// Gets the name of the element.
-    /// </summary>
-    public string Name
-    {
-        get => _xmlQualifiedName.Name;
-        set => _xmlQualifiedName = new XmlQualifiedName(value, _xmlQualifiedName.Namespace);
-    }
-
-    /// <summary>
-    /// Gets the namespace prefix used.
-    /// </summary>
-    public string Prefix { get; set; } = string.Empty;
-
-    #endregion Properties
-
-    #region Static Methods
-
-    public static bool operator !=(QualifiedName lhs, QualifiedName rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    public static bool operator ==(QualifiedName lhs, QualifiedName rhs)
-    {
-        var equals = false;
-
-        if ((object?)lhs != null && (object?)rhs != null)
-            equals = lhs.Equals(rhs);
-        else if ((object?)lhs == null && (object?)rhs == null) equals = true;
-
-        return equals;
-    }
-
-    #endregion Static Methods
-
-    #region Overridden Methods
-
-    /// <summary>
-    /// A qualified name is considered equal if the namespace and 
-    /// name are the same.  The prefix is ignored.
-    /// </summary>
-    public override bool Equals(object? obj)
-    {
-        var equals = false;
-
-        if (obj is QualifiedName qualifiedName)
-        {
-            equals = _xmlQualifiedName.Equals(qualifiedName._xmlQualifiedName);
-        }
-        else
-        {
-            var name = obj as XmlQualifiedName;
-            if (name != null) equals = _xmlQualifiedName.Equals(name);
-        }
-
-        return equals;
-    }
-
-    public override int GetHashCode()
-    {
-        return _xmlQualifiedName.GetHashCode();
-    }
-
-    #endregion Overridden Methods
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
-/// <summary>
-///   A collection that stores <see cref='QualifiedName'/> objects.
-/// </summary>
-[Serializable]
-public class QualifiedNameCollection : CollectionBase
-{
-    #region Nested Classes
-
-    /// <summary>
-    ///   Enumerator that can iterate through a QualifiedNameCollection.
-    /// </summary>
-    /// <seealso cref='IEnumerator'/>
-    /// <seealso cref='QualifiedNameCollection'/>
-    /// <seealso cref='QualifiedName'/>
-    public class QualifiedNameEnumerator : IEnumerator
-    {
-        #region Constructors
-
-        /// <summary>
-        ///   Initializes a new instance of <see cref='QualifiedNameEnumerator'/>.
-        /// </summary>
-        public QualifiedNameEnumerator(QualifiedNameCollection mappings)
-        {
-            _temp = mappings;
-            _baseEnumerator = _temp.GetEnumerator();
-        }
-
-        #endregion Constructors
-
-        #region Fields
-
-        private readonly IEnumerable _temp;
-        private readonly IEnumerator _baseEnumerator;
-
-        #endregion Fields
-
-        #region Properties
-
-        object IEnumerator.Current => _baseEnumerator.Current;
-
-        /// <summary>
-        ///   Gets the current <see cref='QualifiedName'/> in the <seealso cref='QualifiedNameCollection'/>.
-        /// </summary>
-        public QualifiedName Current => (QualifiedName)_baseEnumerator.Current;
-
-        #endregion Properties
-
-        #region Public Methods
-
-        /// <summary>
-        ///   Advances the enumerator to the next <see cref='QualifiedName'/> of the <see cref='QualifiedNameCollection'/>.
-        /// </summary>
-        public bool MoveNext()
-        {
-            return _baseEnumerator.MoveNext();
-        }
-
-        /// <summary>
-        ///   Sets the enumerator to its initial position, which is before the first element in the <see cref='QualifiedNameCollection'/>.
-        /// </summary>
-        public void Reset()
-        {
-            _baseEnumerator.Reset();
-        }
-
-        #endregion Public Methods
-    }
-
-    #endregion Nested Classes
-
-    #region Constructors
-
-    /// <summary>
-    ///   Initializes a new instance of <see cref='QualifiedNameCollection'/> based on another <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <param name='val'>
-    ///   A <see cref='QualifiedNameCollection'/> from which the contents are copied
-    /// </param>
-    public QualifiedNameCollection(QualifiedNameCollection val)
-    {
-        AddRange(val);
-    }
-
-    /// <summary>
-    ///   Initializes a new instance of <see cref='QualifiedNameCollection'/> containing any array of <see cref='QualifiedName'/> objects.
-    /// </summary>
-    /// <param name='val'>
-    ///       A array of <see cref='QualifiedName'/> objects with which to intialize the collection
-    /// </param>
-    public QualifiedNameCollection(QualifiedName[] val)
-    {
-        AddRange(val);
-    }
-
-    /// <summary>
-    ///   Initializes a new instance of <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    public QualifiedNameCollection()
-    {
-    }
-
-    #endregion Constructors
-
-    #region Properties
-
-    /// <summary>
-    /// Gets the namespace prefix of the last item.
-    /// </summary>
-    public string LastPrefix
-    {
-        get
-        {
-            var prefix = string.Empty;
-
-            if (Count > 0)
-            {
-                var name = this[Count - 1];
-                prefix = name.Prefix;
-            }
-
-            return prefix;
-        }
-    }
-
-
-    /// <summary>
-    ///   Represents the entry at the specified index of the <see cref='QualifiedName'/>.
-    /// </summary>
-    /// <param name='index'>The zero-based index of the entry to locate in the collection.</param>
-    /// <value>The entry at the specified index of the collection.</value>
-    /// <exception cref='ArgumentOutOfRangeException'><paramref name='index'/> is outside the valid range of indexes for the collection.</exception>
-    public QualifiedName this[int index]
-    {
-        get => (QualifiedName?)List[index] ?? throw new InvalidOperationException($"Item at index {index} is null but should not be.");
-        set => List[index] = value;
-    }
-
-    #endregion Properties
-
-    #region Public Methods
-
-    /// <summary>
-    ///   Adds a <see cref='QualifiedName'/> with the specified value to the 
-    ///   <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <param name='val'>The <see cref='QualifiedName'/> to add.</param>
-    /// <returns>The index at which the new element was inserted.</returns>
-    /// <seealso cref='QualifiedNameCollection.AddRange'/>
-    public int Add(QualifiedName val)
-    {
-        return List.Add(val);
-    }
-
-    /// <summary>
-    ///   Copies the elements of an array to the end of the <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <param name='val'>
-    ///    An array of type <see cref='QualifiedName'/> containing the objects to add to the collection.
-    /// </param>
-    /// <seealso cref='Add'/>
-    public void AddRange(QualifiedName[] val)
-    {
-        for (var i = 0; i < val.Length; i++) Add(val[i]);
-    }
-
-    /// <summary>
-    ///   Adds the contents of another <see cref='QualifiedNameCollection'/> to the end of the collection.
-    /// </summary>
-    /// <param name='val'>
-    ///    A <see cref='QualifiedNameCollection'/> containing the objects to add to the collection.
-    /// </param>
-    /// <seealso cref='Add'/>
-    public void AddRange(QualifiedNameCollection val)
-    {
-        for (var i = 0; i < val.Count; i++) Add(val[i]);
-    }
-
-    /// <summary>
-    ///   Gets a value indicating whether the 
-    ///    <see cref='QualifiedNameCollection'/> contains the specified <see cref='QualifiedName'/>.
-    /// </summary>
-    /// <param name='val'>The <see cref='QualifiedName'/> to locate.</param>
-    /// <returns>
-    /// <see langword='true'/> if the <see cref='QualifiedName'/> is contained in the collection; 
-    ///   otherwise, <see langword='false'/>.
-    /// </returns>
-    /// <seealso cref='IndexOf'/>
-    public bool Contains(QualifiedName val)
-    {
-        return List.Contains(val);
-    }
-
-    /// <summary>
-    ///   Copies the <see cref='QualifiedNameCollection'/> values to a one-dimensional <see cref='Array'/> instance at the 
-    ///    specified index.
-    /// </summary>
-    /// <param name='array'>The one-dimensional <see cref='Array'/> that is the destination of the values copied from <see cref='QualifiedNameCollection'/>.</param>
-    /// <param name='index'>The index in <paramref name='array'/> where copying begins.</param>
-    /// <exception cref='ArgumentException'>
-    ///   <para><paramref name='array'/> is multidimensional.</para>
-    ///   <para>-or-</para>
-    ///   <para>The number of elements in the <see cref='QualifiedNameCollection'/> is greater than
-    ///         the available space between <paramref name='arrayIndex'/> and the end of
-    ///         <paramref name='array'/>.</para>
-    /// </exception>
-    /// <exception cref='ArgumentNullException'><paramref name='array'/> is <see langword='null'/>. </exception>
-    /// <exception cref='ArgumentOutOfRangeException'><paramref name='arrayIndex'/> is less than <paramref name='array'/>'s lowbound. </exception>
-    /// <seealso cref='Array'/>
-    public void CopyTo(QualifiedName[] array, int index)
-    {
-        List.CopyTo(array, index);
-    }
-
-    /// <summary>
-    ///  Returns an enumerator that can iterate through the <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <seealso cref='IEnumerator'/>
-    public new QualifiedNameEnumerator GetEnumerator()
-    {
-        return new QualifiedNameEnumerator(this);
-    }
-
-    /// <summary>
-    ///    Returns the index of a <see cref='QualifiedName'/> in 
-    ///       the <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <param name='val'>The <see cref='QualifiedName'/> to locate.</param>
-    /// <returns>
-    ///   The index of the <see cref='QualifiedName'/> of <paramref name='val'/> in the 
-    ///   <see cref='QualifiedNameCollection'/>, if found; otherwise, -1.
-    /// </returns>
-    /// <seealso cref='Contains'/>
-    public int IndexOf(QualifiedName val)
-    {
-        return List.IndexOf(val);
-    }
-
-    /// <summary>
-    ///   Inserts a <see cref='QualifiedName'/> into the <see cref='QualifiedNameCollection'/> at the specified index.
-    /// </summary>
-    /// <param name='index'>The zero-based index where <paramref name='val'/> should be inserted.</param>
-    /// <param name='val'>The <see cref='QualifiedName'/> to insert.</param>
-    /// <seealso cref='Add'/>
-    public void Insert(int index, QualifiedName val)
-    {
-        List.Insert(index, val);
-    }
-
-    /// <summary>
-    ///   Removes a specific <see cref='QualifiedName'/> from the <see cref='QualifiedNameCollection'/>.
-    /// </summary>
-    /// <param name='val'>The <see cref='QualifiedName'/> to remove from the <see cref='QualifiedNameCollection'/>.</param>
-    /// <exception cref='ArgumentException'><paramref name='val'/> is not found in the Collection.</exception>
-    public void Remove(QualifiedName val)
-    {
-        List.Remove(val);
-    }
-
-    /// <summary>
-    /// Removes the first item in the collection.
-    /// </summary>
-    public void RemoveFirst()
-    {
-        if (Count > 0) RemoveAt(0);
-    }
-
-    /// <summary>
-    /// Removes the last item in this collection.
-    /// </summary>
-    public void RemoveLast()
-    {
-        if (Count > 0) RemoveAt(Count - 1);
-    }
-
-    #endregion Public Methods
 }
