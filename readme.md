@@ -10,11 +10,20 @@ Kaxaml is designed to be "notepad for XAML." It's supposed to be simple and ligh
 |:--:|
 | *Tag Edit Auto Matching Feature added in this Fork* |
 
-This is a fork of the orginal project that has been upgraded to .net 9.  It seems the original project has gone quiet so I am maintaining this here.  Note that this no longer supports Silverlight so if that is something you need, stick with the original.
+The big movtivation for this fork was the fact that the orginal project has been quiet for so many years.  I did not want to see if wither away as it is such a fantastic application - kudos to the  devs who put all of that effort into it.
 
-This is a fantasic project that are find very useful for my XAML work - kudos to the original devs.  I have taken the liberty of performing significant code cleanup and modernization as well as adding features I have always wished for.  No real roadmap to speak of, just fixing and adding things as they come up.  I welcome any feedback.
+First thing I did was upgrade to .NET 9.  While at it, I took the liberty of performing significant code cleanup and modernization.  I also fixed several annoying little bugs and added features I have always wished for.  No real roadmap to speak of, just fixing and adding things as they come up.
+
+Note that this no longer supports Silverlight so if that is something you need, stick with the original.
+
+I welcome any feedback.
 
 # Changelog
+
+## 9.3.3 - Fix another new document bug and more code cleanup
+- Fixed another temp folder exception when launched from start menu
+- Addressed TODO to remove p-invoke to get starting folder path
+- Addressed TODO to eliminate non-type-safe equals in xml parser
 
 ## 9.3.2 – Tab UX Refinement
 - Added `CTRL+F4` as an alternative to `CTRL+W` for closing tabs
