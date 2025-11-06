@@ -4,6 +4,10 @@ using System.Windows.Controls;
 
 namespace KaxamlPlugins;
 
+/// <summary>
+/// Global references for the application.
+/// TODO: Find a way to DI some or all of this
+/// </summary>
 public static class KaxamlInfo
 {
     public delegate void ContentLoadedDelegate();

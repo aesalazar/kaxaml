@@ -90,9 +90,9 @@ public partial class MainWindow
     {
         _logger = logger;
         _logger.LogInformation("Initializing Main Window...");
-        InitializeComponent();
-
         KaxamlInfo.MainWindow = this;
+        
+        InitializeComponent();
 
         // initialize commands
 

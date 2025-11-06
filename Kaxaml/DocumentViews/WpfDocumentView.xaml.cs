@@ -1,14 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
+using System.Xaml;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Controls;
 using Kaxaml.Documents;
@@ -19,28 +20,24 @@ using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TextChangedEventArgs = Kaxaml.Controls.TextChangedEventArgs;
+using XamlParseException = System.Windows.Markup.XamlParseException;
 
 namespace Kaxaml.DocumentViews;
 
 public partial class WpfDocumentView : IXamlDocumentView
 {
-    #region Static Fields
-
-    private static DispatcherTimer? _dispatcherTimer;
-
-    #endregion Static Fields
-
     #region Constructors
 
     public WpfDocumentView()
     {
         InitializeComponent();
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<WpfDocumentView>>();
+        _assemblyCacheManager = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyCacheManager>();
 
         KaxamlInfo.Frame = ContentArea;
         ContentArea.ContentRendered += ContentArea_ContentRendered;
-
         Dispatcher.UnhandledException += Dispatcher_UnhandledException;
+        _assemblyCacheManager.CacheUpdated += AssemblyCacheManager_OnCacheUpdated;
 
         var schemaFile = Path.Combine(
             Path.GetDirectoryName(ApplicationDiServiceProvider.StartupPath + "\\")
@@ -62,15 +59,19 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #region Fields
 
+    private static readonly IList<string> Colors = ["AliceBlue", "Aquamarine", "Azure", "Bisque", "BlanchedAlmond", "Burlywood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "DodgerBlue", "FloralWhite", "Gainsboro", "Ghostwhite", "Honeydew", "HotPink", "IndianRed", "LightSalmon", "Mintcream", "MistyRose", "Moccasin", "NavajoWhite", "Oldlace", "PapayaWhip", "PeachPuff", "Peru", "SaddleBrown", "Seashell", "Thistle", "Tomato", "WhiteSmoke"];
+
+    private DispatcherTimer? _dispatcherTimer;
+
     private readonly ILogger _logger;
+
+    private readonly AssemblyCacheManager _assemblyCacheManager;
 
     private bool _unhandledExceptionRaised;
 
     private readonly Brush _defaultBackgroundBrush = new SolidColorBrush(Color.FromRgb(0x40, 0x40, 0x40));
 
     private readonly Random _r = new();
-
-    private bool _isInitializing;
 
     /// <summary>
     /// Indicates if is currently <see cref="Documents.XamlDocument.SourceText"/> is being parsed and reapplied.
@@ -114,6 +115,12 @@ public partial class WpfDocumentView : IXamlDocumentView
         }
 
         e.Handled = true;
+    }
+
+    private void AssemblyCacheManager_OnCacheUpdated(object? sender, EventArgs __)
+    {
+        _logger.LogInformation("Starting parse attempt after assembly cache update...");
+        DispatchParseAttempt();
     }
 
     #endregion Event Handlers
@@ -270,18 +277,11 @@ public partial class WpfDocumentView : IXamlDocumentView
     private void Editor_OnTextChanged(object _, TextChangedEventArgs e)
     {
         if (XamlDocument == null || _isSettingSourceText) return;
-        if (_isInitializing)
-        {
-            _isInitializing = false;
-            _logger.LogInformation("Marked document as initialized.");
-        }
-        else
-        {
-            _logger.LogDebug("Processing text with length {Length}...", e.Text.Length);
-            ClearDispatcherTimer();
-            AttemptTagMatchParse();
-            DispatchParseAttempt();
-        }
+
+        _logger.LogDebug("Processing text with length {Length}...", e.Text.Length);
+        ClearDispatcherTimer();
+        AttemptTagMatchParse();
+        DispatchParseAttempt();
     }
 
     private void Editor_OnUndoStarted(object? _, EventArgs __)
@@ -389,28 +389,23 @@ public partial class WpfDocumentView : IXamlDocumentView
 
         try
         {
-            object? content;
-            using (var ms = new MemoryStream(str.Length))
-            {
-                using (var sw = new StreamWriter(ms))
-                {
-                    sw.Write(str);
-                    sw.Flush();
+            //Load the XAML to memory
+            using var memoryStream = new MemoryStream(str.Length);
+            using var streamWriter = new StreamWriter(memoryStream);
+            streamWriter.Write(str);
+            streamWriter.Flush();
+            memoryStream.Seek(0, SeekOrigin.Begin);
 
-                    ms.Seek(0, SeekOrigin.Begin);
+            ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
 
-                    var pc = new ParserContext
-                    {
-                        BaseUri = new Uri(XamlDocument?.Folder != null
-                            ? XamlDocument.Folder + "/"
-                            : Environment.CurrentDirectory + "/")
-                    };
+            //Use the newer XamlXmlReader to better support dynamic assembly loading
+            var assemblies = _assemblyCacheManager.SnapshotCurrentAssemblies();
+            var context = new XamlSchemaContext(assemblies);
+            using var reader = new XamlXmlReader(memoryStream, context);
+            using var writer = new XamlObjectWriter(context);
+            XamlServices.Transform(reader, writer);
 
-                    ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
-                    content = XamlReader.Load(ms, pc);
-                }
-            }
-
+            var content = writer.Result;
             if (content is Window window)
             {
                 window.Owner = Application.Current.MainWindow;
@@ -570,66 +565,17 @@ public partial class WpfDocumentView : IXamlDocumentView
         return s;
     }
 
-    private Color GetRandomColor()
-    {
-        return Color.FromRgb((byte)_r.Next(0, 255), (byte)_r.Next(0, 255), (byte)_r.Next(0, 255));
-    }
+    private Color GetRandomColor() => Color.FromRgb((byte)_r.Next(0, 255), (byte)_r.Next(0, 255), (byte)_r.Next(0, 255));
 
-    private string GetRandomColorName()
-    {
-        var colors = new[] { "AliceBlue", "Aquamarine", "Azure", "Bisque", "BlanchedAlmond", "Burlywood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "DodgerBlue", "FloralWhite", "Gainsboro", "Ghostwhite", "Honeydew", "HotPink", "IndianRed", "LightSalmon", "Mintcream", "MistyRose", "Moccasin", "NavajoWhite", "Oldlace", "PapayaWhip", "PeachPuff", "Peru", "SaddleBrown", "Seashell", "Thistle", "Tomato", "WhiteSmoke" };
-        return colors[_r.Next(0, colors.Length - 1)];
-    }
-
-    private void ReportError(Exception e)
-    {
-        IsValidXaml = false;
-
-        if (e is XamlParseException exception)
-        {
-            ErrorLineNumber = exception.LineNumber;
-            ErrorLinePosition = exception.LinePosition;
-        }
-        else
-        {
-            ErrorLineNumber = 0;
-            ErrorLinePosition = 0;
-        }
-
-        var inner = e;
-
-        while (inner.InnerException != null) inner = inner.InnerException;
-
-        var message = inner
-            .Message
-            .Replace("\r", "")
-            .Replace("\n", "")
-            .Replace("\t", "");
-
-        // get rid of everything after "Line" if it is in the last characters 
-        var pos = message.LastIndexOf("Line", StringComparison.InvariantCulture);
-        ErrorText = pos > 0 && pos > message.Length - 50
-            ? message.Substring(0, pos)
-            : message;
-
-        _logger.LogDebug("Parse error reported: {Message}", message);
-    }
+    private string GetRandomColorName() => Colors[_r.Next(0, Colors.Count - 1)];
 
     private void ShowErrorUi()
     {
         if (XamlDocument is null) return;
-        ImageSource? src;
 
-        if (_isInitializing)
-        {
-            src = XamlDocument.PreviewImage;
-        }
-        else
-        {
-            // update the error image
-            src = RenderHelper.ElementToGrayscaleBitmap(ContentArea);
-            XamlDocument.PreviewImage = src;
-        }
+        // update the error image
+        ImageSource? src = RenderHelper.ElementToGrayscaleBitmap(ContentArea);
+        XamlDocument.PreviewImage = src;
 
         var c = Color.FromArgb(255, 216, 216, 216);
 
@@ -661,22 +607,47 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     public void Parse()
     {
-        ClearDispatcherTimer();
         Parse(true);
-    }
-
-    public void Initialize()
-    {
-        IsValidXaml = true;
-        _isInitializing = true;
-        ContentArea.Content = null;
-
-        Parse();
     }
 
     public void OnActivate()
     {
         KaxamlInfo.Frame = ContentArea;
+        Parse();
+    }
+
+    public void ReportError(Exception e)
+    {
+        IsValidXaml = false;
+
+        if (e is XamlParseException exception)
+        {
+            ErrorLineNumber = exception.LineNumber;
+            ErrorLinePosition = exception.LinePosition;
+        }
+        else
+        {
+            ErrorLineNumber = 0;
+            ErrorLinePosition = 0;
+        }
+
+        var inner = e;
+
+        while (inner.InnerException != null) inner = inner.InnerException;
+
+        var message = inner
+            .Message
+            .Replace("\r", "")
+            .Replace("\n", "")
+            .Replace("\t", "");
+
+        // get rid of everything after "Line" if it is in the last characters 
+        var pos = message.LastIndexOf("Line", StringComparison.InvariantCulture);
+        ErrorText = pos > 0 && pos > message.Length - 50
+            ? message.Substring(0, pos)
+            : message;
+
+        _logger.LogDebug("Parse error reported: {Message}", message);
     }
 
     /// <summary>

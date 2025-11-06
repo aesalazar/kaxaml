@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using Kaxaml.Plugins.Default;
+using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,8 @@ public partial class App
     private static readonly IEnumerable<Type> DiTypes =
     [
         typeof(MainWindow),
-        typeof(App)
+        typeof(App),
+        typeof(AssemblyCacheManager)
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;

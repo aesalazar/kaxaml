@@ -141,9 +141,21 @@ public partial class PluginView
             }
         }
 
+        var references = new Plugin
+        {
+            Root = new References(),
+            Name = "References",
+            Description = "Add Assembly References to Kaxaml",
+            Key = Key.N,
+            ModifierKeys = ModifierKeys.Control,
+            Icon = LoadIcon(typeof(Plugin), "Images\\package_link.png")
+        };
+
+        Plugins.Add(references);
+
         _logger.LogInformation("Plugin load complete with {Count} plugins added.", Plugins.Count);
 
-        //// add the settings plugin (we always want this to be at the end)
+        // add the settings plugin (we always want this to be at the end)
         var settings = new Plugin
         {
             Root = new Settings(),
@@ -195,28 +207,28 @@ public partial class PluginView
         return null;
     }
 
-    public void OpenPlugin(Key key, ModifierKeys modifierkeys)
+    public void OpenPlugin(Key key, ModifierKeys modifierKeys)
     {
-        foreach (var p in Plugins)
-            if (modifierkeys == p.ModifierKeys && key == p.Key)
-                try
-                {
-                    var t = (TabItem)p.Root.Parent;
-                    t.IsSelected = true;
-                    t.Focus();
+        var plugins = Plugins
+            .Where(p => modifierKeys == p.ModifierKeys && key == p.Key)
+            .ToList();
 
-                    UpdateLayout();
+        foreach (var p in plugins)
+            try
+            {
+                var t = (TabItem)p.Root.Parent;
+                t.IsSelected = true;
+                t.Focus();
 
-                    if (t.Content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
-                }
-                catch (Exception ex)
-                {
-                    if (ex.IsCriticalException()) throw;
-                }
+                UpdateLayout();
+
+                if (t.Content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+            }
+            catch (Exception ex)
+            {
+                if (ex.IsCriticalException()) throw;
+            }
     }
 
-    internal Plugin? GetFindPlugin()
-    {
-        return _findPlugin;
-    }
+    internal Plugin? GetFindPlugin() => _findPlugin;
 }
