@@ -9,6 +9,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestAssemblies\Bad.dll" />
+    <None Remove="TestAssemblies\WpfSpinnerDemo.10.0.dll" />
+    <None Remove="TestAssemblies\WpfSpinnerDemo.9.0.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="TestAssemblies\Bad.dll" />
+    <EmbeddedResource Include="TestAssemblies\WpfSpinnerDemo.10.0.dll" />
+    <EmbeddedResource Include="TestAssemblies\WpfSpinnerDemo.9.0.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

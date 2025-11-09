@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.Loader;
 
 namespace KaxamlPlugins.Utilities;
@@ -10,6 +12,38 @@ namespace KaxamlPlugins.Utilities;
 /// </summary>
 public static class AssemblyUtilities
 {
+    /// <summary>
+    /// Read the current target .NET Runtime.
+    /// </summary>
+    /// <returns>Version of the current runtime, e.g. ".NET 9.0.0".</returns>
+    public static Version CurrentRuntimeVersion => Environment.Version;
+
+    /// <summary>
+    /// Reads the metadata of an external file and attempt to extract the .NET Runtime version.
+    /// </summary>
+    /// <param name="fileInfo">File to inspect.</param>
+    /// <returns>Version of the files target runtime; null if it could not be determined.</returns>
+    /// <exception cref="Exception">Thrown if any IO exceptions.</exception>
+    public static Version? ExtractTargetRuntime(FileInfo fileInfo)
+    {
+        using var stream = File.OpenRead(fileInfo.FullName);
+        using var peReader = new PEReader(stream);
+        if (peReader.HasMetadata is false) return null;
+
+        var metadataReader = peReader.GetMetadataReader();
+        foreach (var handle in metadataReader.AssemblyReferences)
+        {
+            var reference = metadataReader.GetAssemblyReference(handle);
+            var name = metadataReader.GetString(reference.Name);
+            if (name is "System.Runtime")
+            {
+                return reference.Version;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Reads the Assembly version from in a preferred order.
     /// </summary>

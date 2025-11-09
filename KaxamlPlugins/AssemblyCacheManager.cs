@@ -64,7 +64,7 @@ public sealed class AssemblyCacheManager
         }
         catch (Exception ex)
         {
-            throw new FileLoadException($"Could not load file: {fullName}", ex);
+            throw new FileLoadException($"Could not load file '{fileInfo.Name}': {ex.Message}", ex);
         }
         finally
         {
