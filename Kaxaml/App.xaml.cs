@@ -16,7 +16,8 @@ public partial class App
     [
         typeof(MainWindow),
         typeof(App),
-        typeof(AssemblyCacheManager)
+        typeof(AssemblyCacheManager),
+        typeof(References),
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;

@@ -20,7 +20,7 @@ public partial class References
 {
     private readonly HashSet<Reference> _addedReferences = [];
     private readonly AssemblyCacheManager _assemblyCacheManager;
-    private readonly ILogger<About> _logger;
+    private readonly ILogger _logger;
 
     private OpenFileDialog? _openReferencesDialog;
 
@@ -28,7 +28,7 @@ public partial class References
     {
         InitializeComponent();
         _assemblyCacheManager = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyCacheManager>();
-        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<About>>();
+        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<References>>();
         _logger.LogInformation("Initializing References Plugin complete.");
     }
 

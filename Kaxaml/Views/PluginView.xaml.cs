@@ -29,12 +29,14 @@ public partial class PluginView
         new UIPropertyMetadata(new List<Plugin>()));
 
     private readonly ILogger<PluginView> _logger;
+    private readonly References _references;
 
     private Plugin? _findPlugin;
 
     public PluginView()
     {
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
+        _references = ApplicationDiServiceProvider.Services.GetRequiredService<References>();
         _logger.LogInformation("Initializing Plugin View...");
         InitializeComponent();
         LoadPlugins();
@@ -143,7 +145,7 @@ public partial class PluginView
 
         var references = new Plugin
         {
-            Root = new References(),
+            Root = _references,
             Name = "References",
             Description = "Add Assembly References to Kaxaml",
             Key = Key.N,
