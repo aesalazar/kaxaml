@@ -9,11 +9,11 @@ using Microsoft.Extensions.Logging;
 namespace Kaxaml.Controls;
 
 /// <summary>
-/// Individual Asseembly file reference.
+/// Individual Assembly file reference.
 /// </summary>
-public class Reference
+public class AssemblyReference
 {
-    public Reference(
+    public AssemblyReference(
         FileInfo fileInfo,
         AssemblyCacheManager assemblyCacheManager,
         ILogger logger)
@@ -28,7 +28,13 @@ public class Reference
 
         TargetFramework =
             assembly.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkDisplayName
-            ?? throw new FileLoadException($"Could not determine target frameworok for file: {FullName}");
+            ?? throw new FileLoadException($"Could not determine target framework for file: {FullName}");
+
+        logger.LogInformation(
+            "Assembly File loaded: {Name} - {Version} - {Framework}",
+            FullName,
+            AssemblyFileVersion,
+            TargetFramework);
     }
 
     public string? Name { get; }
@@ -44,10 +50,10 @@ public class Reference
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != GetType()) return false;
-        return Equals((Reference)obj);
+        return Equals((AssemblyReference)obj);
     }
 
-    protected bool Equals(Reference other) =>
+    protected bool Equals(AssemblyReference other) =>
         string.Equals(Name, other.Name, StringComparison.InvariantCultureIgnoreCase) &&
         string.Equals(AssemblyFileVersion, other.AssemblyFileVersion, StringComparison.InvariantCultureIgnoreCase);
 
@@ -55,7 +61,7 @@ public class Reference
     {
         unchecked
         {
-            return (Name != null ? StringComparer.InvariantCultureIgnoreCase.GetHashCode(Name) : 0) * 397
+            return ((Name != null ? StringComparer.InvariantCultureIgnoreCase.GetHashCode(Name) : 0) * 397)
                    ^ (AssemblyFileVersion != null ? StringComparer.InvariantCultureIgnoreCase.GetHashCode(AssemblyFileVersion) : 0);
         }
     }

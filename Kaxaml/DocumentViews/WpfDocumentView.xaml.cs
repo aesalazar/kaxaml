@@ -35,7 +35,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         InitializeComponent();
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<WpfDocumentView>>();
         _assemblyCacheManager = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyCacheManager>();
-        _references = ApplicationDiServiceProvider.Services.GetRequiredService<References>();
+        _assemblyReferences = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyReferences>();
         _xamlDocumentManager = ApplicationDiServiceProvider.Services.GetRequiredService<XamlDocumentManager>();
 
         KaxamlInfo.Frame = ContentArea;
@@ -70,7 +70,7 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     private readonly AssemblyCacheManager _assemblyCacheManager;
 
-    private readonly References _references;
+    private readonly AssemblyReferences _assemblyReferences;
 
     private readonly XamlDocumentManager _xamlDocumentManager;
 
@@ -665,7 +665,7 @@ public partial class WpfDocumentView : IXamlDocumentView
             return null;
         }
 
-        return _references.LoadAssemblies(loaded);
+        return _assemblyReferences.LoadAssemblies(loaded);
     }
 
     /// <summary>

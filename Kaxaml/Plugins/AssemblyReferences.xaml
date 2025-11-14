@@ -1,5 +1,5 @@
 ﻿<UserControl
-    x:Class="Kaxaml.Plugins.Default.References"
+    x:Class="Kaxaml.Plugins.Default.AssemblyReferences"
     x:Name="MainUserControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -29,7 +29,7 @@
             </CollectionViewSource>
 
             <DataTemplate
-                DataType="{x:Type controls:Reference}">
+                DataType="{x:Type controls:AssemblyReference}">
                 <TextBlock
                     VerticalAlignment="Center"
                     Margin="2"

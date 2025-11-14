@@ -18,7 +18,7 @@ public partial class App
         typeof(MainWindow),
         typeof(App),
         typeof(AssemblyCacheManager),
-        typeof(References),
+        typeof(AssemblyReferences),
         typeof(XamlDocumentManager)
     ];
 

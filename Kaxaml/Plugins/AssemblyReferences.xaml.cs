@@ -16,30 +16,30 @@ namespace Kaxaml.Plugins.Default;
 /// <summary>
 /// Manages a collection of externally referenced Assemblies.
 /// </summary>
-public partial class References
+public partial class AssemblyReferences
 {
     /// <summary>
     /// Internal collection of references that have been added.
     /// </summary>
-    private readonly HashSet<Reference> _addedReferences = [];
+    private readonly HashSet<AssemblyReference> _addedReferences = [];
 
     private readonly AssemblyCacheManager _assemblyCacheManager;
     private readonly ILogger _logger;
 
     private OpenFileDialog? _openReferencesDialog;
 
-    public References()
+    public AssemblyReferences()
     {
         InitializeComponent();
         _assemblyCacheManager = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyCacheManager>();
-        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<References>>();
-        _logger.LogInformation("Initializing References Plugin complete.");
+        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<AssemblyReferences>>();
+        _logger.LogInformation("Initializing Assembly References Plugin complete.");
     }
 
     /// <summary>
     /// Collection of Assembly referenced added by the user.
     /// </summary>
-    public ObservableCollection<Reference> AllReferences { get; } = [];
+    public ObservableCollection<AssemblyReference> AllReferences { get; } = [];
 
     /// <summary>
     /// Attempts to add each file assembly.
@@ -103,12 +103,12 @@ public partial class References
             if (result is not MessageBoxResult.Yes) continue;
             if (AddNewReferences(s))
             {
-                _logger.LogInformation("Reference loaded: {Name}", s);
+                _logger.LogInformation("Assembly Reference loaded: {Name}", s);
                 isSomethingLoaded = true;
             }
             else
             {
-                _logger.LogError("Reference not loaded: {Name}", s);
+                _logger.LogError("Assembly Reference not loaded: {Name}", s);
             }
         }
 
@@ -155,11 +155,11 @@ public partial class References
 
         try
         {
-            var reference = new Reference(fileInfo, _assemblyCacheManager, _logger);
+            var reference = new AssemblyReference(fileInfo, _assemblyCacheManager, _logger);
 
             if (!_addedReferences.Add(reference))
             {
-                _logger.LogDebug("Reference already added: {Ref}", reference.FullName);
+                _logger.LogDebug("Assembly Reference already added: {Ref}", reference.FullName);
                 return false;
             }
 
