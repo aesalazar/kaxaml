@@ -308,11 +308,12 @@ public partial class WpfDocumentView : IXamlDocumentView
         _logger.LogDebug("Decrement REDO flag to: {Count}", _redoTriggerCount);
     }
 
-    private void ErrorOverlayAnimationCompleted(object? _, EventArgs __)
+    private void ErrorOverlayAnimationCompleted(object? sender, EventArgs __)
     {
         // once we're done fading into the "snapshot", we want to 
         // get rid of the existing content so that any really bad 
         // error (like one that is consuming memory) isn't persisted
+        if (sender is AnimationClock clock) clock.Completed -= ErrorOverlayAnimationCompleted;
         ContentArea.Content = null;
     }
 
