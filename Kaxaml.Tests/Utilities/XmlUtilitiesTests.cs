@@ -278,4 +278,108 @@ public class XmlUtilitiesTests
         secondOpen.Depth.Should().Be(0);
         secondClose.Should().BeNull();
     }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenXmlIsNull_ReturnsEmptyList()
+    {
+        var result = FindCommentAssemblyReferences(null);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenXmlIsEmpty_ReturnsEmptyList()
+    {
+        var result = FindCommentAssemblyReferences(string.Empty);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenNoAssemblyReferenceCommentsExist_ReturnsEmptyList()
+    {
+        var xml = "<Grid><!-- Just a regular comment --></Grid>";
+        var result = FindCommentAssemblyReferences(xml);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenSingleAssemblyReferenceComment_ReturnsDllPaths()
+    {
+        var xml = """
+                  <!--AssemblyReferences
+                  C:\temp\Alpha.dll
+                  C:\temp\Beta.dll
+                  -->
+                  """;
+
+        var result = FindCommentAssemblyReferences(xml);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Alpha.dll");
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Beta.dll");
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenMultipleAssemblyReferenceComments_ReturnsDllPaths()
+    {
+        var xml = """
+                  <!--AssemblyReferences
+                  C:\temp\Alpha.dll
+                  -->
+                  <!--AssemblyReferences
+                  C:\temp\Beta.dll
+                  C:\temp\Gamma.dll
+                  -->
+                  """;
+
+        var result = FindCommentAssemblyReferences(xml);
+
+        Assert.Equal(3, result.Count);
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Alpha.dll");
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Beta.dll");
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Gamma.dll");
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenNonDllLinesAssemblyReferenceComment_Ignores()
+    {
+        var xml = """
+                  <!--AssemblyReferences
+                  C:\temp\Alpha.dll
+                  NotAPath.txt
+                  SomeOther.dll.config
+                  -->
+                  """;
+
+        var result = FindCommentAssemblyReferences(xml);
+
+        Assert.Single(result);
+        Assert.Equal(@"C:\temp\Alpha.dll", result[0].FullName);
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenMixedLineEndingsAndWhitespace_Handles()
+    {
+        var xml = "<!--AssemblyReferences\r\n  C:\\temp\\Alpha.dll  \n\tC:\\temp\\Beta.dll\r\n-->";
+        var result = FindCommentAssemblyReferences(xml);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Alpha.dll");
+        Assert.Contains(result, f => f.FullName == @"C:\temp\Beta.dll");
+    }
+
+    [Fact]
+    public void FindCommentAssemblyReferences_WhenDuplicateDllPaths_ReturnsDistinct()
+    {
+        var xml = """
+                  <!--AssemblyReferences
+                  C:\temp\Alpha.dll
+                  C:\temp\Alpha.dll
+                  -->
+                  """;
+
+        var result = FindCommentAssemblyReferences(xml);
+
+        Assert.Single(result);
+        Assert.Equal(@"C:\temp\Alpha.dll", result[0].FullName);
+    }
 }

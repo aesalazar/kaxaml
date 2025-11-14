@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +19,7 @@ namespace KaxamlPlugins;
 /// </remarks>
 public sealed class AssemblyCacheManager
 {
-    private readonly HashSet<Assembly> _assemblyCache;
+    private readonly Dictionary<string, Assembly> _assemblyCache;
     private readonly object _assemblyCacheLock;
 
     private readonly ILogger _logger;
@@ -34,32 +35,32 @@ public sealed class AssemblyCacheManager
         _assemblyCache = AppDomain
             .CurrentDomain
             .GetAssemblies()
-            .Where(a => !a.IsDynamic)
-            .ToHashSet();
+            .Where(asm => !asm.IsDynamic)
+            .ToDictionary(asm => GetAssemblyHash(asm.Location), asm => asm);
 
         AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_OnAssemblyLoad;
         _logger.LogInformation("Created with {Count} loaded Assemblies.", _assemblyCache.Count);
     }
 
     /// <summary>
-    /// Loads an Assembly from file AND all of its dependant Assemblies.
+    /// Loads an Assembly from file AND all of its dependant Assemblies if not already in the cache.
     /// </summary>
     /// <param name="fileInfo">File info of the root assembly.</param>
     /// <returns>Reference to the loaded root assembly.</returns>
     /// <exception cref="FileLoadException">Thrown if loading the root or any of its dependencies fail.</exception>
     public Assembly LoadAssembly(FileInfo fileInfo)
     {
-        var fullName = fileInfo.FullName;
-        IList<Assembly> loadedAssemblies;
-
+        var hash = GetAssemblyHash(fileInfo.FullName);
         lock (_assemblyCacheLock)
         {
+            if (_assemblyCache.TryGetValue(hash, out var assembly)) return assembly;
             _isLoadingAssembly = true;
         }
 
+        IList<Assembly> loadedAssemblies;
         try
         {
-            _logger.LogInformation("Loading root assembly: {FullName}", fullName);
+            _logger.LogInformation("Loading root assembly: {FullName} ({Hash})", fileInfo.Name, hash);
             loadedAssemblies = AssemblyUtilities.LoadDependencyTree(fileInfo);
         }
         catch (Exception ex)
@@ -78,7 +79,7 @@ public sealed class AssemblyCacheManager
         {
             foreach (var loadedAssembly in loadedAssemblies)
             {
-                _logger.LogDebug("Loading dependent assembly: {FullName}", loadedAssembly.FullName);
+                _logger.LogDebug("Loaded assembly: {FullName}", loadedAssembly.FullName);
             }
         }
 
@@ -92,10 +93,14 @@ public sealed class AssemblyCacheManager
     /// <returns>Detached copy of the internal cache.</returns>
     public IList<Assembly> SnapshotCurrentAssemblies()
     {
+        List<Assembly> list;
         lock (_assemblyCacheLock)
         {
-            return _assemblyCache.ToList();
+            list = _assemblyCache.Values.ToList();
         }
+
+        _logger.LogDebug("Snapshot created with count: {Count}", list.Count);
+        return list;
     }
 
     /// <summary>
@@ -109,9 +114,11 @@ public sealed class AssemblyCacheManager
     private void CurrentDomain_OnAssemblyLoad(object? sender, AssemblyLoadEventArgs args)
     {
         bool isInvoke;
+        var hash = GetAssemblyHash(args.LoadedAssembly.Location);
+
         lock (_assemblyCacheLock)
         {
-            _assemblyCache.Add(args.LoadedAssembly);
+            _assemblyCache[hash] = args.LoadedAssembly;
             isInvoke = !_isLoadingAssembly;
         }
 
@@ -123,5 +130,13 @@ public sealed class AssemblyCacheManager
             sender?.GetType().Name,
             isInvoke ? "invoked" : "suppressed",
             args.LoadedAssembly.FullName);
+    }
+
+    private static string GetAssemblyHash(string path)
+    {
+        using var stream = File.OpenRead(path);
+        using var sha = SHA256.Create();
+        var hash = sha.ComputeHash(stream);
+        return Convert.ToHexString(hash);
     }
 }

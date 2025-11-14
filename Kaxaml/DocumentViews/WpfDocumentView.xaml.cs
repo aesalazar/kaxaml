@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,6 +14,7 @@ using System.Xaml;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Controls;
 using Kaxaml.Documents;
+using Kaxaml.Plugins.Default;
 using Kaxaml.Properties;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
@@ -33,9 +35,10 @@ public partial class WpfDocumentView : IXamlDocumentView
         InitializeComponent();
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<WpfDocumentView>>();
         _assemblyCacheManager = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyCacheManager>();
+        _references = ApplicationDiServiceProvider.Services.GetRequiredService<References>();
+        _xamlDocumentManager = ApplicationDiServiceProvider.Services.GetRequiredService<XamlDocumentManager>();
 
         KaxamlInfo.Frame = ContentArea;
-        ContentArea.ContentRendered += ContentArea_ContentRendered;
         Dispatcher.UnhandledException += Dispatcher_UnhandledException;
         _assemblyCacheManager.CacheUpdated += AssemblyCacheManager_OnCacheUpdated;
 
@@ -47,7 +50,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         Dispatcher.InvokeAsync(() =>
         {
             var ex = XmlCompletionDataProvider.LoadSchema(schemaFile);
-            if (ex is not null) _logger.LogError("Could not load Scheme File: {Ex}", ex);
+            if (ex is not null) _logger.LogError("{File} Could not load Scheme File: {Ex}", XamlDocument?.Filename, ex);
         });
 
         _logger.LogInformation(
@@ -66,6 +69,10 @@ public partial class WpfDocumentView : IXamlDocumentView
     private readonly ILogger _logger;
 
     private readonly AssemblyCacheManager _assemblyCacheManager;
+
+    private readonly References _references;
+
+    private readonly XamlDocumentManager _xamlDocumentManager;
 
     private bool _unhandledExceptionRaised;
 
@@ -89,41 +96,6 @@ public partial class WpfDocumentView : IXamlDocumentView
     private int _redoTriggerCount;
 
     #endregion Fields
-
-    #region Event Handlers
-
-    private static void ContentArea_ContentRendered(object? _, EventArgs __)
-    {
-        KaxamlInfo.RaiseContentLoaded();
-    }
-
-    private void Dispatcher_UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-    {
-        // try to shut this down by killing the content and showing an
-        // error page.  if it gets raised more than once between parses, then assume
-        // it's fatal and shutdown the app
-
-        if (!_unhandledExceptionRaised)
-        {
-            _unhandledExceptionRaised = true;
-            ContentArea.Content = null;
-            ReportError(e.Exception);
-        }
-        else
-        {
-            Application.Current.Shutdown();
-        }
-
-        e.Handled = true;
-    }
-
-    private void AssemblyCacheManager_OnCacheUpdated(object? sender, EventArgs __)
-    {
-        _logger.LogInformation("Starting parse attempt after assembly cache update...");
-        DispatchParseAttempt();
-    }
-
-    #endregion Event Handlers
 
     #region IsValidXaml (DependencyProperty)
 
@@ -274,11 +246,31 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #region Event Handlers
 
+    private void Dispatcher_UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+    {
+        // try to shut this down by killing the content and showing an
+        // error page.  if it gets raised more than once between parses, then assume
+        // it's fatal and shutdown the app
+
+        if (!_unhandledExceptionRaised)
+        {
+            _unhandledExceptionRaised = true;
+            ContentArea.Content = null;
+            ReportError(e.Exception);
+        }
+        else
+        {
+            Application.Current.Shutdown();
+        }
+
+        e.Handled = true;
+    }
+
     private void Editor_OnTextChanged(object _, TextChangedEventArgs e)
     {
         if (XamlDocument == null || _isSettingSourceText) return;
 
-        _logger.LogDebug("Processing text with length {Length}...", e.Text.Length);
+        _logger.LogDebug("{File} Processing text with length {Length}...", XamlDocument?.Filename, e.Text.Length);
         ClearDispatcherTimer();
         AttemptTagMatchParse();
         DispatchParseAttempt();
@@ -287,25 +279,25 @@ public partial class WpfDocumentView : IXamlDocumentView
     private void Editor_OnUndoStarted(object? _, EventArgs __)
     {
         _undoTriggerCount++;
-        _logger.LogDebug("Increment UNDO flag to: {Count}", _undoTriggerCount);
+        _logger.LogDebug("{File} Increment UNDO flag to: {Count}", XamlDocument?.Filename, _undoTriggerCount);
     }
 
     private void Editor_OnUndoCompleted(object? _, EventArgs __)
     {
         _undoTriggerCount--;
-        _logger.LogDebug("Decrement UNDO flag to: {Count}", _undoTriggerCount);
+        _logger.LogDebug("{File} Decrement UNDO flag to: {Count}", XamlDocument?.Filename, _undoTriggerCount);
     }
 
     private void Editor_OnRedoStarted(object? _, EventArgs __)
     {
         _redoTriggerCount++;
-        _logger.LogDebug("Increment REDO flag to: {Count}", _redoTriggerCount);
+        _logger.LogDebug("{File} Increment REDO flag to: {Count}", XamlDocument?.Filename, _redoTriggerCount);
     }
 
     private void Editor_OnRedoCompleted(object? _, EventArgs __)
     {
         _redoTriggerCount--;
-        _logger.LogDebug("Decrement REDO flag to: {Count}", _redoTriggerCount);
+        _logger.LogDebug("{File} Decrement REDO flag to: {Count}", XamlDocument?.Filename, _redoTriggerCount);
     }
 
     private void ErrorOverlayAnimationCompleted(object? sender, EventArgs __)
@@ -317,17 +309,23 @@ public partial class WpfDocumentView : IXamlDocumentView
         ContentArea.Content = null;
     }
 
-    private void ContentAreaRendered(object? _, EventArgs __)
+    private void ContentArea_ContentRendered(object? _, EventArgs __)
     {
         try
         {
-            if (IsValidXaml && XamlDocument is not null) XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(ContentArea, (int)ContentArea.ActualWidth, (int)ContentArea.ActualHeight, null);
+            if (IsValidXaml && XamlDocument is not null)
+                XamlDocument.PreviewImage = RenderHelper.VisualToBitmap(
+                    ContentArea,
+                    (int)ContentArea.ActualWidth,
+                    (int)ContentArea.ActualHeight, null);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Exception: {Ex}", ex);
+            _logger.LogError("{File} Exception: {Ex}", XamlDocument?.Filename, ex);
             if (ex.IsCriticalException()) throw;
         }
+
+        KaxamlInfo.RaiseContentLoaded();
     }
 
     private void LineNumberClick(object? _, RoutedEventArgs __)
@@ -337,16 +335,28 @@ public partial class WpfDocumentView : IXamlDocumentView
         Editor.TextEditor.Focus();
     }
 
+    private void AssemblyCacheManager_OnCacheUpdated(object? sender, EventArgs __)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            if (_xamlDocumentManager.SelectedXamlDocument == XamlDocument)
+            {
+                _logger.LogInformation("{File} Dispatching parse attempt after assembly cache update...", ReadFileName());
+                DispatchParseAttempt();
+            }
+        });
+    }
+
     #endregion
 
     #region Private Methods
 
     private void ClearDispatcherTimer()
     {
-        if (_dispatcherTimer == null) return;
-        _dispatcherTimer.Stop();
-        _dispatcherTimer = null;
-        _logger.LogDebug("Cleared Dispatcher Timer");
+        var timer = Interlocked.Exchange(ref _dispatcherTimer, null);
+        if (timer == null) return;
+        timer.Stop();
+        _logger.LogDebug("{File} Cleared Dispatcher Timer", ReadFileName());
     }
 
     private void DispatchParseAttempt()
@@ -354,28 +364,31 @@ public partial class WpfDocumentView : IXamlDocumentView
         if (Settings.Default.EnableAutoParse is false) return;
 
         ClearDispatcherTimer();
-        _dispatcherTimer = new DispatcherTimer(
+        var timer = new DispatcherTimer(
             TimeSpan.FromSeconds(Settings.Default.AutoParseTimeout),
             DispatcherPriority.ApplicationIdle,
-            ParseCallback,
+            DispatcherTimeParseCallback,
             Dispatcher.CurrentDispatcher);
 
-        _logger.LogInformation("Started new Dispatcher Timer");
+        Interlocked.Exchange(ref _dispatcherTimer, timer);
+        _logger.LogInformation("{File} Started new Dispatcher Timer.", ReadFileName());
     }
 
-    private void ParseCallback(object? _, EventArgs __)
+    private void DispatcherTimeParseCallback(object? _, EventArgs __)
     {
-        Parse(false);
+        _logger.LogDebug("{File} Invoking Parse callback Attempt...", XamlDocument?.Filename);
+        AttemptParse(false);
     }
 
-    private void Parse(bool isExplicit)
+    private void AttemptParse(bool isExplicit)
     {
-        _logger.LogInformation("Parse attempt as explicit = {Explicit} started...", isExplicit);
+        _logger.LogInformation("{File} Parse attempt as explicit = {Explicit} started...", XamlDocument?.Filename, isExplicit);
 
         ClearDispatcherTimer();
         if (XamlDocument?.SourceText == null || CodeCompletionPopup.IsOpenSomewhere)
         {
-            _logger.LogDebug("Aborting with is null source text = {IsNull} and is open = {IsOpen}...",
+            _logger.LogDebug("{File} Aborting with is null source text = {IsNull} and is open = {IsOpen}...",
+                XamlDocument?.Filename,
                 XamlDocument?.SourceText == null,
                 CodeCompletionPopup.IsOpenSomewhere);
             return;
@@ -388,6 +401,19 @@ public partial class WpfDocumentView : IXamlDocumentView
 
         var str = XamlDocument.SourceText;
 
+        //Check for any needed references
+        var isAssemblyLoaded = LoadAssemblyReferences(str);
+        if (isAssemblyLoaded is not false)
+        {
+            //something was loaded that will trigger event (or something went wrong)
+            _logger.LogDebug(
+                "{File} Aborting parse attempt after assembly load result: {Result}",
+                XamlDocument?.Filename,
+                isAssemblyLoaded is true ? "New Assembly Loaded" : "Assembly Load Failed");
+            return;
+        }
+
+        //Parse the XML
         try
         {
             //Load the XAML to memory
@@ -460,7 +486,10 @@ public partial class WpfDocumentView : IXamlDocumentView
             ReportError(ex);
         }
 
-        _logger.LogInformation("Parse attempt as explicit = {Explicit} complete.", isExplicit);
+        _logger.LogInformation(
+            "{File} Parse attempt as explicit = {Explicit} complete."
+            , XamlDocument?.Filename
+            , isExplicit);
     }
 
     private string PreParse(string str)
@@ -484,40 +513,40 @@ public partial class WpfDocumentView : IXamlDocumentView
     {
         if (Settings.Default.EnableAutomaticTagNameMatching is false)
         {
-            _logger.LogDebug("Aborting since tag matching is disabled.");
+            _logger.LogDebug("{File} Aborting since tag matching is disabled.", XamlDocument?.Filename);
             return;
         }
 
         if (_undoTriggerCount is not 0)
         {
-            _logger.LogInformation("Aborting with UNDO trigger count: {Count}", _undoTriggerCount);
+            _logger.LogInformation("{File} Aborting with UNDO trigger count: {Count}", XamlDocument?.Filename, _undoTriggerCount);
             return;
         }
 
         if (_redoTriggerCount is not 0)
         {
-            _logger.LogDebug("Aborting with REDO trigger count: {Count}", _redoTriggerCount);
+            _logger.LogDebug("{File} Aborting with REDO trigger count: {Count}", XamlDocument?.Filename, _redoTriggerCount);
             return;
         }
 
-        _logger.LogDebug("Looking for mismatched tags...");
+        _logger.LogDebug("{File} Looking for mismatched tags...", XamlDocument?.Filename);
 
         //Only attempt to match is the user is editing a single tag
         var mismatches = XmlUtilities.AuditXmlTags(TextEditor.Text, 2);
         if (mismatches.Count is not 1)
         {
-            _logger.LogDebug("Aborting with mismatched tag count of: {Count}", mismatches.Count);
+            _logger.LogDebug("{File} Aborting with mismatched tag count of: {Count}", XamlDocument?.Filename, mismatches.Count);
             return;
         }
 
         var (openTag, closeTag) = mismatches.First();
         if (openTag is null || closeTag is null)
         {
-            _logger.LogDebug("Aborting due to null tag in set: {Open}, {Close}", openTag, closeTag);
+            _logger.LogDebug("{File} Aborting due to null tag in set: {Open}, {Close}", XamlDocument?.Filename, openTag, closeTag);
             return;
         }
 
-        _logger.LogDebug("Processing single mismatched XAML tags: {Open}, {Close}", openTag, closeTag);
+        _logger.LogDebug("{File} Processing single mismatched XAML tags: {Open}, {Close}", XamlDocument?.Filename, openTag, closeTag);
 
         //Determine tag to use based on current cursor position
         string replaceName;
@@ -550,7 +579,8 @@ public partial class WpfDocumentView : IXamlDocumentView
         var old = TextEditor.ReplaceString(replaceStartIndex, replaceLength, replaceName);
         _isSettingSourceText = false;
 
-        _logger.LogInformation("Replaced {TagEnd} XAML Tag '{Orig}' with '{New}' at index {Index} for {Length} chars",
+        _logger.LogInformation("{File} Replaced {TagEnd} XAML Tag '{Orig}' with '{New}' at index {Index} for {Length} chars",
+            XamlDocument?.Filename,
             isCloseEdit ? "opened" : "closed",
             old, replaceName, replaceStartIndex, replaceLength);
     }
@@ -602,13 +632,60 @@ public partial class WpfDocumentView : IXamlDocumentView
         if (d != null) ErrorOverlay.BeginAnimation(OpacityProperty, d);
     }
 
+    /// <summary>
+    /// Scans the passed XAML for any external assembly references and loads them.
+    /// </summary>
+    /// <param name="xaml">Well-formed XML.</param>
+    /// <returns>Indication of a NEW assembly being loaded into memory; indicates that something went wrong.</returns>
+    private bool? LoadAssemblyReferences(string? xaml)
+    {
+        var references = XmlUtilities.FindCommentAssemblyReferences(xaml);
+        if (references.Any() is false) return false;
+
+        var missing = new List<string>();
+        var loaded = new List<string>();
+
+        foreach (var reference in references)
+        {
+            if (reference.Exists is false)
+            {
+                missing.Add(reference.FullName);
+                _logger.LogDebug("{File} Missing Assembly: {Name}", XamlDocument?.Filename, reference.FullName);
+            }
+            else
+            {
+                loaded.Add(reference.FullName);
+                _logger.LogDebug("{File} Loaded Assembly: {Name}", XamlDocument?.Filename, reference.FullName);
+            }
+        }
+
+        if (missing.Any())
+        {
+            ReportError(new Exception($"{XamlDocument?.Filename} Could not load Assembly Reference: {missing.First()}"));
+            return null;
+        }
+
+        return _references.LoadAssemblies(loaded);
+    }
+
+    /// <summary>
+    /// Read file name in a thread safe way.
+    /// </summary>
+    private string ReadFileName()
+    {
+        var fileName = string.Empty;
+        Dispatcher.Invoke(() => fileName = XamlDocument?.Filename);
+        return fileName;
+    }
+
     #endregion
 
     #region IXamlDocumentView Members
 
     public void Parse()
     {
-        Parse(true);
+        _logger.LogDebug("{File} Invoking explicit Parse Attempt...", XamlDocument?.Filename);
+        AttemptParse(true);
     }
 
     public void OnActivate()
@@ -648,7 +725,7 @@ public partial class WpfDocumentView : IXamlDocumentView
             ? message.Substring(0, pos)
             : message;
 
-        _logger.LogDebug("Parse error reported: {Message}", message);
+        _logger.LogDebug("{File} Parse error reported: {Message}", XamlDocument?.Filename, message);
     }
 
     /// <summary>

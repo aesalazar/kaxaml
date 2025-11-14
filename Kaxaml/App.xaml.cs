@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Windows;
+using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
@@ -18,6 +19,7 @@ public partial class App
         typeof(App),
         typeof(AssemblyCacheManager),
         typeof(References),
+        typeof(XamlDocumentManager)
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;

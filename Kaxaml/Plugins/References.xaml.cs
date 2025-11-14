@@ -18,7 +18,11 @@ namespace Kaxaml.Plugins.Default;
 /// </summary>
 public partial class References
 {
+    /// <summary>
+    /// Internal collection of references that have been added.
+    /// </summary>
     private readonly HashSet<Reference> _addedReferences = [];
+
     private readonly AssemblyCacheManager _assemblyCacheManager;
     private readonly ILogger _logger;
 
@@ -38,35 +42,18 @@ public partial class References
     public ObservableCollection<Reference> AllReferences { get; } = [];
 
     /// <summary>
-    /// Prompts the user to select external Assembly files.
+    /// Attempts to add each file assembly.
     /// </summary>
-    private void AddReferencesButton_OnClick(object _, RoutedEventArgs __)
+    public bool LoadAssemblies(IList<string> filePaths)
     {
-        _logger.LogDebug("Showing File Open Dialog...");
-        _openReferencesDialog ??= new OpenFileDialog
-        {
-            AddExtension = true,
-            DefaultExt = ".dll",
-            Filter = "Component files (*.dll;*.exe)|*.dll;*.exe|All files (*.*)|*.*",
-            Multiselect = true,
-            CheckFileExists = true,
-            CheckPathExists = true,
-            RestoreDirectory = true
-        };
-
-        if (_openReferencesDialog.ShowDialog() is not true)
-        {
-            _logger.LogDebug("User canceled file open.");
-            return;
-        }
-
         var runtime = AssemblyUtilities.CurrentRuntimeVersion;
         _logger.LogInformation(
             "Loading file(s) under current runtime {Runtime}: {files}",
             runtime.ToString(),
-            string.Join(" | ", _openReferencesDialog.FileNames));
+            string.Join(" | ", filePaths));
 
-        foreach (var s in _openReferencesDialog.FileNames)
+        var isSomethingLoaded = false;
+        foreach (var s in filePaths)
         {
             var fileInfo = new FileInfo(s);
             Version? fileRuntime;
@@ -117,12 +104,42 @@ public partial class References
             if (AddNewReferences(s))
             {
                 _logger.LogInformation("Reference loaded: {Name}", s);
+                isSomethingLoaded = true;
             }
             else
             {
                 _logger.LogError("Reference not loaded: {Name}", s);
             }
         }
+
+        return isSomethingLoaded;
+    }
+
+    /// <summary>
+    /// Prompts the user to select external Assembly files.
+    /// </summary>
+    private void AddReferencesButton_OnClick(object _, RoutedEventArgs __)
+    {
+        _logger.LogDebug("Showing File Open Dialog...");
+        _openReferencesDialog ??= new OpenFileDialog
+        {
+            AddExtension = true,
+            DefaultExt = ".dll",
+            Filter = "Component files (*.dll;*.exe)|*.dll;*.exe|All files (*.*)|*.*",
+            Multiselect = true,
+            CheckFileExists = true,
+            CheckPathExists = true,
+            RestoreDirectory = true
+        };
+
+        if (_openReferencesDialog.ShowDialog() is not true)
+        {
+            _logger.LogDebug("User canceled file open.");
+            return;
+        }
+
+        var loaded = LoadAssemblies(_openReferencesDialog.FileNames);
+        _logger.LogDebug("User file was loaded: {Result}", loaded);
     }
 
     /// <summary>
@@ -140,7 +157,12 @@ public partial class References
         {
             var reference = new Reference(fileInfo, _assemblyCacheManager, _logger);
 
-            if (!_addedReferences.Add(reference)) return false;
+            if (!_addedReferences.Add(reference))
+            {
+                _logger.LogDebug("Reference already added: {Ref}", reference.FullName);
+                return false;
+            }
+
             AllReferences.Add(reference);
             _logger.LogDebug("Adding: {Ref}", reference.FullName);
         }

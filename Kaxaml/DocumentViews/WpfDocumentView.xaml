@@ -59,7 +59,7 @@
             SnapsToDevicePixels="True"
             Grid.Row="1"
             Scale="{Binding ElementName=This, Path=Scale}"
-            ContentRendered="ContentAreaRendered">
+            ContentRendered="ContentArea_ContentRendered">
             <c:ZoomFrame.Template>
                 <ControlTemplate
                     TargetType="{x:Type c:ZoomFrame}">

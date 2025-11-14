@@ -1,9 +1,11 @@
-using System.Collections.ObjectModel;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using Kaxaml.Documents;
 using Kaxaml.DocumentViews;
 using KaxamlPlugins;
+using KaxamlPlugins.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kaxaml.Views;
 
@@ -13,77 +15,15 @@ public partial class DocumentsView
 
     public DocumentsView()
     {
-        InitializeComponent();
         KaxamlInfo.ParseRequested += KaxamlInfo_ParseRequested;
+        XamlDocumentManager = ApplicationDiServiceProvider.Services.GetRequiredService<XamlDocumentManager>();
+        XamlDocumentManager.SelectedXamlDocumentChanged += XamlDocumentManager_OnSelectedXamlDocumentChanged;
+        InitializeComponent();
     }
 
     #endregion Constructors
 
-
-    #region XamlDocuments (DependencyProperty)
-
-    /// <summary>
-    /// description of XamlDocuments
-    /// </summary>
-    public ObservableCollection<XamlDocument> XamlDocuments
-    {
-        get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty);
-        set => SetValue(XamlDocumentsProperty, value);
-    }
-
-    /// <summary>
-    /// DependencyProperty for XamlDocuments
-    /// </summary>
-    public static readonly DependencyProperty XamlDocumentsProperty =
-        DependencyProperty.Register(nameof(XamlDocuments), typeof(ObservableCollection<XamlDocument>), typeof(DocumentsView), new FrameworkPropertyMetadata(new ObservableCollection<XamlDocument>()));
-
-    #endregion
-
-    #region SelectedDocument (DependencyProperty)
-
-    /// <summary>
-    /// The currently selected XamlDocument.
-    /// </summary>
-    public XamlDocument? SelectedDocument
-    {
-        get => (XamlDocument?)GetValue(SelectedDocumentProperty);
-        set => SetValue(SelectedDocumentProperty, value);
-    }
-
-    /// <summary>
-    /// DependencyProperty for SelectedDocument
-    /// </summary>
-    public static readonly DependencyProperty SelectedDocumentProperty =
-        DependencyProperty.Register(nameof(SelectedDocument), typeof(XamlDocument), typeof(DocumentsView),
-            new FrameworkPropertyMetadata(default(XamlDocument), SelectedDocumentChanged));
-
-    /// <summary>
-    /// PropertyChangedCallback for SelectedDocument
-    /// </summary>
-    private static void SelectedDocumentChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
-    {
-        if (obj is DocumentsView owner)
-        {
-            // handle changed event here
-
-            var document = (XamlDocument)args.NewValue;
-            var listBoxItem = (ListBoxItem)owner.ContentListBox.ItemContainerGenerator.ContainerFromItem(document);
-
-            if (listBoxItem != null)
-            {
-                var v = (IXamlDocumentView)listBoxItem.Template.FindName("PART_DocumentView", listBoxItem);
-                if (v != null)
-                {
-                    owner._view = v; // (IXamlDocumentView)listBoxItem.Template.FindName("PART_DocumentView", listBoxItem);
-                    owner.SelectedView = owner._view;
-                    v.OnActivate();
-                    KaxamlInfo.Editor = owner.SelectedView.TextEditor;
-                }
-            }
-        }
-    }
-
-    #endregion
+    public XamlDocumentManager XamlDocumentManager { get; }
 
     #region SelectedView (DependencyProperty)
 
@@ -115,16 +55,32 @@ public partial class DocumentsView
     {
         _view = (IXamlDocumentView)sender;
 
-        if (SelectedDocument == _view.XamlDocument)
+        if (XamlDocumentManager.SelectedXamlDocument == _view.XamlDocument)
         {
             SelectedView = _view;
             KaxamlInfo.Editor = SelectedView.TextEditor;
         }
     }
 
-    private void KaxamlInfo_ParseRequested()
+    private void KaxamlInfo_ParseRequested() => SelectedView?.Parse();
+
+    private void XamlDocumentManager_OnSelectedXamlDocumentChanged(object? _, EventArgs __)
     {
-        if (SelectedView != null) SelectedView.Parse();
+        var listBoxItem = (ListBoxItem)ContentListBox
+            .ItemContainerGenerator
+            .ContainerFromItem(XamlDocumentManager.SelectedXamlDocument);
+
+        var view = (IXamlDocumentView?)listBoxItem?
+            .Template
+            .FindName("PART_DocumentView", listBoxItem);
+
+        if (view != null)
+        {
+            _view = view;
+            SelectedView = _view;
+            view.OnActivate();
+            KaxamlInfo.Editor = SelectedView.TextEditor;
+        }
     }
 
     #endregion

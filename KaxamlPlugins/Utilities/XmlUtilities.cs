@@ -1,13 +1,26 @@
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace KaxamlPlugins.Utilities;
 
+/// <summary>
+/// Tools for working with XML (typically XAML).
+/// </summary>
 public static class XmlUtilities
 {
     /// <summary>
     /// Match open to closings, ignoring self-closing XML.
     /// </summary>
-    private static readonly Regex TagPattern = new(@"<\s*(/?)([\w:.]+)([^<>]*?)(/?)\s*>", RegexOptions.Singleline);
+    private static readonly Regex TagPattern = new(
+        @"<\s*(/?)([\w:.]+)([^<>]*?)(/?)\s*>",
+        RegexOptions.Singleline | RegexOptions.Compiled);
+
+    /// <summary>
+    /// Match XAML Comment holding a collection of external Assemblies.
+    /// </summary>
+    private static readonly Regex AssemblyReferencePattern = new(
+        @"<!--\s*AssemblyReferences\s*(.*?)-->",
+        RegexOptions.Singleline | RegexOptions.Compiled);
 
     /// <summary>
     /// Parses XML to look for problem Tag pairs based on their position within the string.
@@ -94,6 +107,47 @@ public static class XmlUtilities
         }
 
         return unmatched;
+    }
+
+    /// <summary>
+    /// Scans the passed XML for well-formed XAML comments containing DLL file paths.
+    /// </summary>
+    /// <param name="xml">XAML to search.</param>
+    /// <returns>Collection of found paths; empty if none.</returns>
+    /// <remarks>
+    /// This does not validate the presence of the listed files in any way.
+    /// 
+    /// Comments should be written as:
+    ///<code>
+    /// &lt;!--AssemblyReferences
+    ///     c:\temp\SomeAssembly.dll
+    ///     c:\temp\AnotherAssembly.dll
+    /// --&gt;
+    /// </code>
+    /// </remarks>
+    public static IList<FileInfo> FindCommentAssemblyReferences(string? xml)
+    {
+        if (xml is null or [])
+        {
+            return [];
+        }
+
+        var dllPaths = new List<FileInfo>();
+
+        foreach (Match match in AssemblyReferencePattern.Matches(xml))
+        {
+            var blockContent = match.Groups[1].Value;
+            var lines = blockContent
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => line.Trim())
+                .Where(line => line.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                .Distinct()
+                .Select(line => new FileInfo(line));
+
+            dllPaths.AddRange(lines);
+        }
+
+        return dllPaths;
     }
 
     /// <summary>

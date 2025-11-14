@@ -10,6 +10,8 @@ public interface IXamlDocumentView
 
     XamlDocument? XamlDocument { get; }
 
+    double Scale { get; }
+
     void Parse();
 
     void OnActivate();

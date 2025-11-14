@@ -8,6 +8,8 @@ public interface IKaxamlInfoTextEditor
     string SelectedText { get; }
     int CaretIndex { get; set; }
     string Text { get; set; }
+    int LineNumber { get; }
+    int LinePosition { get; }
 
     // Methods
     void InsertCharacter(char ch);
