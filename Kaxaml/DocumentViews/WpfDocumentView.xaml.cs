@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
-using System.Xaml;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Controls;
 using Kaxaml.Documents;
@@ -22,7 +23,6 @@ using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TextChangedEventArgs = Kaxaml.Controls.TextChangedEventArgs;
-using XamlParseException = System.Windows.Markup.XamlParseException;
 
 namespace Kaxaml.DocumentViews;
 
@@ -380,6 +380,19 @@ public partial class WpfDocumentView : IXamlDocumentView
         AttemptParse(false);
     }
 
+    /// <summary>
+    /// Read the current document XAML and attempt to render.
+    /// </summary>
+    /// <param name="isExplicit">True if the current content is a Window and the user should be prompted to press F5.</param>
+    /// <remarks>
+    /// This uses an explicit <see cref="ParserContext"/> with an empty <see cref="XamlTypeMapper"/>.
+    /// This prevents the <see cref="XamlReader"/> from using any cached namespaces from prior parsing
+    /// attempts.  With an empty mapper, the reader will rely exclusively on the namespaces declared
+    /// explicitly in the XAML text (e.g. xmlns=...).  Without this, if there were any prior failed
+    /// attempts involving declared namespaces not yet available because the external assembly was
+    /// not yet loaded, that broken reference will be cached and used by the reader.  When this
+    /// happens, the Xaml will not be successfully parse even after the reference is loaded.
+    /// </remarks>
     private void AttemptParse(bool isExplicit)
     {
         _logger.LogInformation("{File} Parse attempt as explicit = {Explicit} started...", XamlDocument?.Filename, isExplicit);
@@ -417,22 +430,18 @@ public partial class WpfDocumentView : IXamlDocumentView
         try
         {
             //Load the XAML to memory
-            using var memoryStream = new MemoryStream(str.Length);
-            using var streamWriter = new StreamWriter(memoryStream);
-            streamWriter.Write(str);
-            streamWriter.Flush();
-            memoryStream.Seek(0, SeekOrigin.Begin);
+            using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(str));
+            var parserContext = new ParserContext
+            {
+                XamlTypeMapper = new XamlTypeMapper([]),
+                BaseUri = new Uri(XamlDocument?.Folder != null
+                    ? XamlDocument.Folder + "/"
+                    : Environment.CurrentDirectory + "/")
+            };
 
             ContentArea.JournalOwnership = JournalOwnership.UsesParentJournal;
+            var content = XamlReader.Load(memoryStream, parserContext);
 
-            //Use the newer XamlXmlReader to better support dynamic assembly loading
-            var assemblies = _assemblyCacheManager.SnapshotCurrentAssemblies();
-            var context = new XamlSchemaContext(assemblies);
-            using var reader = new XamlXmlReader(memoryStream, context);
-            using var writer = new XamlObjectWriter(context);
-            XamlServices.Transform(reader, writer);
-
-            var content = writer.Result;
             if (content is Window window)
             {
                 window.Owner = Application.Current.MainWindow;
