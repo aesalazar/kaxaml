@@ -66,6 +66,8 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     private DispatcherTimer? _dispatcherTimer;
 
+    private readonly Lock _dispatcherTimerLock = new();
+
     private readonly ILogger _logger;
 
     private readonly AssemblyCacheManager _assemblyCacheManager;
@@ -244,6 +246,26 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #endregion
 
+    #region IsDispatching
+
+    /// <inheritdoc cref="IsDispatching"/>
+    public static readonly DependencyProperty IsDispatchingProperty = DependencyProperty.Register(
+        nameof(IsDispatching),
+        typeof(bool),
+        typeof(WpfDocumentView),
+        new PropertyMetadata(default(bool)));
+
+    /// <summary>
+    /// Indicates if a dispatcher is currently in-flight.
+    /// </summary>
+    public bool IsDispatching
+    {
+        get => (bool)GetValue(IsDispatchingProperty);
+        set => SetValue(IsDispatchingProperty, value);
+    }
+
+    #endregion
+
     #region Event Handlers
 
     private void Dispatcher_UnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
@@ -353,7 +375,14 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     private void ClearDispatcherTimer()
     {
-        var timer = Interlocked.Exchange(ref _dispatcherTimer, null);
+        DispatcherTimer? timer;
+        lock (_dispatcherTimerLock)
+        {
+            Dispatcher.Invoke(() => IsDispatching = false);
+            timer = _dispatcherTimer;
+            _dispatcherTimer = null;
+        }
+
         if (timer == null) return;
         timer.Stop();
         _logger.LogDebug("{File} Cleared Dispatcher Timer", ReadFileName());
@@ -370,7 +399,12 @@ public partial class WpfDocumentView : IXamlDocumentView
             DispatcherTimeParseCallback,
             Dispatcher.CurrentDispatcher);
 
-        Interlocked.Exchange(ref _dispatcherTimer, timer);
+        lock (_dispatcherTimerLock)
+        {
+            _dispatcherTimer = timer;
+            Dispatcher.Invoke(() => IsDispatching = true);
+        }
+
         _logger.LogInformation("{File} Started new Dispatcher Timer.", ReadFileName());
     }
 
