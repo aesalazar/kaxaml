@@ -1,7 +1,7 @@
 ﻿using System.Configuration;
 using System.IO;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+using KaxamlPlugins.DependencyInjection.Registration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
@@ -59,7 +59,7 @@ public static class ApplicationDiServiceProvider
     /// </summary>
     /// <param name="typesToRegister">Types to register as singletons.</param>
     /// <exception cref="Exception">Thrown if already called.</exception>
-    public static void Initialize(IEnumerable<Type> typesToRegister)
+    public static void Initialize(IEnumerable<IDiRegistration> typesToRegister)
     {
         if (_host is not null)
             throw new Exception("DI Host has already been initialized");
@@ -79,7 +79,8 @@ public static class ApplicationDiServiceProvider
             })
             .ConfigureServices((_, services) =>
             {
-                foreach (var type in typesToRegister) services.AddSingleton(type);
+                foreach (var registration in typesToRegister)
+                    registration.RegisterSingleton(services);
             })
             .Build();
 

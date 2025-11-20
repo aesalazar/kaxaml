@@ -5,6 +5,7 @@ using Kaxaml.Documents;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
+using KaxamlPlugins.DependencyInjection.Registration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -13,13 +14,13 @@ namespace Kaxaml;
 
 public partial class App
 {
-    private static readonly IEnumerable<Type> DiTypes =
+    private static readonly IEnumerable<IDiRegistration> DiRegistrations =
     [
-        typeof(MainWindow),
-        typeof(App),
-        typeof(AssemblyCacheManager),
-        typeof(AssemblyReferences),
-        typeof(XamlDocumentManager)
+        new TypeDiRegistration<MainWindow>(),
+        new TypeDiRegistration<App>(),
+        new TypeDiRegistration<AssemblyCacheManager>(),
+        new TypeDiRegistration<AssemblyReferences>(),
+        new TypeDiRegistration<XamlDocumentManager>()
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;
@@ -33,7 +34,7 @@ public partial class App
         base.OnStartup(e);
         StartupArgs = e.Args;
 
-        ApplicationDiServiceProvider.Initialize(DiTypes);
+        ApplicationDiServiceProvider.Initialize(DiRegistrations);
         _logger = ApplicationDiServiceProvider
             .Services
             .GetRequiredService<ILogger<App>>();
