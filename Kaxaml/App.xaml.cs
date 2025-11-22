@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using Kaxaml.Documents;
+using Kaxaml.Plugins;
 using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
@@ -20,7 +21,11 @@ public partial class App
         new TypeDiRegistration<App>(),
         new TypeDiRegistration<AssemblyCacheManager>(),
         new TypeDiRegistration<AssemblyReferences>(),
-        new TypeDiRegistration<XamlDocumentManager>()
+        new TypeDiRegistration<XamlDocumentManager>(),
+        new TypeDiRegistration<About>(),
+        new TypeDiRegistration<Find>(),
+        new TypeDiRegistration<Settings>(),
+        new TypeDiRegistration<Snippets>()
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;

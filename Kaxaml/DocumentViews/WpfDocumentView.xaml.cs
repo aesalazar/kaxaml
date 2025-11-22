@@ -15,13 +15,13 @@ using System.Windows.Threading;
 using Kaxaml.CodeCompletion;
 using Kaxaml.Controls;
 using Kaxaml.Documents;
-using Kaxaml.Plugins.Default;
-using Kaxaml.Properties;
+using Kaxaml.Plugins;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Settings = Kaxaml.Properties.Settings;
 using TextChangedEventArgs = Kaxaml.Controls.TextChangedEventArgs;
 
 namespace Kaxaml.DocumentViews;

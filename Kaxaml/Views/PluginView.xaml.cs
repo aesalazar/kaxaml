@@ -28,15 +28,22 @@ public partial class PluginView
         typeof(PluginView),
         new UIPropertyMetadata(new List<Plugin>()));
 
-    private readonly ILogger<PluginView> _logger;
+    private readonly About _about;
     private readonly AssemblyReferences _assemblyReferences;
+    private readonly Find _find;
 
+    private readonly ILogger<PluginView> _logger;
+    private readonly Settings _settings;
     private Plugin? _findPlugin;
 
     public PluginView()
     {
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
+        _about = ApplicationDiServiceProvider.Services.GetRequiredService<About>();
         _assemblyReferences = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyReferences>();
+        _find = ApplicationDiServiceProvider.Services.GetRequiredService<Find>();
+        _settings = ApplicationDiServiceProvider.Services.GetRequiredService<Settings>();
+
         _logger.LogInformation("Initializing Plugin View...");
         InitializeComponent();
         LoadPlugins();
@@ -72,11 +79,10 @@ public partial class PluginView
         Plugins.Add(snippets);
         ((App)Application.Current).Snippets = (Snippets)snippets.Root;
 
-        //// add the find plugin 
         _logger.LogInformation("Loading Find...");
         var find = new Plugin
         {
-            Root = new Find(),
+            Root = _find,
             Name = "Find",
             Description = "Find and replace text in the editor (Ctrl+F, F3)",
             Key = Key.F,
@@ -160,7 +166,7 @@ public partial class PluginView
         // add the settings plugin (we always want this to be at the end)
         var settings = new Plugin
         {
-            Root = new Settings(),
+            Root = _settings,
             Name = "Settings",
             Description = "Modify program settings and options (Ctrl+E)",
             Key = Key.E,
@@ -170,10 +176,9 @@ public partial class PluginView
 
         Plugins.Add(settings);
 
-        // add the about plugin 
         var about = new Plugin
         {
-            Root = new About(),
+            Root = _about,
             Name = "About",
             Description = "All about Kaxaml",
             Icon = LoadIcon(typeof(Plugin), "Images\\kaxaml.png")

@@ -8,13 +8,13 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Documents;
-using Kaxaml.Plugins.Default;
-using Kaxaml.Properties;
+using Kaxaml.Plugins;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using Settings = Kaxaml.Properties.Settings;
 
 namespace Kaxaml;
 

@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
 
-namespace Kaxaml.Plugins.Default;
+namespace Kaxaml.Plugins;
 
 /// <summary>
 /// Manages a collection of externally referenced Assemblies.
