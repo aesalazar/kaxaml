@@ -13,8 +13,8 @@ namespace Kaxaml.CodeCompletion;
 /// </summary>
 public class XmlFoldStart
 {
-    private readonly string _name = string.Empty;
-    private readonly string _prefix = string.Empty;
+    private readonly string _name;
+    private readonly string _prefix;
 
     public XmlFoldStart(string prefix, string name, int line, int col)
     {
@@ -70,7 +70,7 @@ public class XmlFoldingStrategy : IFoldingStrategy
     /// Adds folds to the text editor around each start-end element pair.
     /// </summary>
     /// <remarks>
-    /// <para>If the xml is not well formed then no folds are created.</para> 
+    /// <para>If the xml is not well-formed or empty, no folds are created.</para> 
     /// <para>Note that the xml text reader lines and positions start 
     /// from 1 and the SharpDevelop text editor line information starts
     /// from 0.</para>
@@ -78,12 +78,12 @@ public class XmlFoldingStrategy : IFoldingStrategy
     public List<FoldMarker> GenerateFoldMarkers(IDocument document, string fileName, object parseInformation)
     {
         _showAttributesWhenFolded = true;
-
         var foldMarkers = new List<FoldMarker>();
+        var xml = document.TextContent;
+        if (string.IsNullOrWhiteSpace(xml)) return foldMarkers;
 
         try
         {
-            var xml = document.TextContent;
             using var stringReader = new StringReader(xml);
             using var reader = new XmlTextReader(stringReader);
 
@@ -136,25 +136,22 @@ public class XmlFoldingStrategy : IFoldingStrategy
     /// line of the comment.</remarks>
     private void CreateCommentFold(IDocument document, List<FoldMarker> foldMarkers, XmlTextReader reader)
     {
-        if (reader.Value != null)
+        var comment = reader.Value.Replace("\r\n", "\n");
+        var lines = comment.Split('\n');
+        if (lines.Length > 1)
         {
-            var comment = reader.Value.Replace("\r\n", "\n");
-            var lines = comment.Split('\n');
-            if (lines.Length > 1)
-            {
-                // Take off 5 chars to get the actual comment start (takes
-                // into account the <!-- chars.
+            // Take off 5 chars to get the actual comment start (takes
+            // into account the <!-- chars.
 
-                var startCol = reader.LinePosition - 5;
-                var startLine = reader.LineNumber - 1;
+            var startCol = reader.LinePosition - 5;
+            var startLine = reader.LineNumber - 1;
 
-                // Add 3 to the end col value to take into account the '-->'
-                var endCol = lines[lines.Length - 1].Length + startCol + 3;
-                var endLine = startLine + lines.Length - 1;
-                var foldText = string.Concat("<!--", lines[0], "-->");
-                var foldMarker = new FoldMarker(document, startLine, startCol, endLine, endCol, FoldType.TypeBody, foldText);
-                foldMarkers.Add(foldMarker);
-            }
+            // Add 3 to the end col value to take into account the '-->'
+            var endCol = lines[lines.Length - 1].Length + startCol + 3;
+            var endLine = startLine + lines.Length - 1;
+            var foldText = string.Concat("<!--", lines[0], "-->");
+            var foldMarker = new FoldMarker(document, startLine, startCol, endLine, endCol, FoldType.TypeBody, foldText);
+            foldMarkers.Add(foldMarker);
         }
     }
 

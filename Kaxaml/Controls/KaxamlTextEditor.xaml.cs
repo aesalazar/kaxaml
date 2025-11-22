@@ -9,13 +9,13 @@ using System.Windows.Threading;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Document;
 using Kaxaml.CodeCompletion;
-using Kaxaml.Plugins.Default;
-using Kaxaml.Properties;
+using Kaxaml.CodeSnippets;
 using KaxamlPlugins;
 using KaxamlPlugins.Utilities;
 using Application = System.Windows.Forms.Application;
 using MessageBox = System.Windows.MessageBox;
 using Point = System.Drawing.Point;
+using Settings = Kaxaml.Properties.Settings;
 
 namespace Kaxaml.Controls;
 

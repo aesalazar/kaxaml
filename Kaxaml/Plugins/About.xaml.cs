@@ -68,6 +68,11 @@ public partial class About
         OpenFolder(ApplicationDiServiceProvider.LogDirectory);
     }
 
+    private void SnippetFolderButton_Click(object _, RoutedEventArgs __)
+    {
+        OpenFolder(ApplicationDiServiceProvider.SnippetDirectory);
+    }
+
     private void OpenFolder(string folder)
     {
         if (!Directory.Exists(folder))

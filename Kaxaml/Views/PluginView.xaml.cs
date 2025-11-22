@@ -9,7 +9,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Plugins;
-using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
@@ -34,6 +33,7 @@ public partial class PluginView
 
     private readonly ILogger<PluginView> _logger;
     private readonly Settings _settings;
+    private readonly Snippets _snippets;
     private Plugin? _findPlugin;
 
     public PluginView()
@@ -43,6 +43,7 @@ public partial class PluginView
         _assemblyReferences = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyReferences>();
         _find = ApplicationDiServiceProvider.Services.GetRequiredService<Find>();
         _settings = ApplicationDiServiceProvider.Services.GetRequiredService<Settings>();
+        _snippets = ApplicationDiServiceProvider.Services.GetRequiredService<Snippets>();
 
         _logger.LogInformation("Initializing Plugin View...");
         InitializeComponent();
@@ -68,7 +69,7 @@ public partial class PluginView
         _logger.LogInformation("Loading Snippets...");
         var snippets = new Plugin
         {
-            Root = new Snippets(),
+            Root = _snippets,
             Name = "Snippets",
             Description = "Manage a set of commonly used snippets (Ctrl+N)",
             Key = Key.N,

@@ -1,47 +1,55 @@
 using System;
 using System.Collections;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Xml;
-using ICSharpCode.TextEditor;
-using ICSharpCode.TextEditor.Gui.CompletionWindow;
+using Kaxaml.CodeSnippets;
+using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 
-namespace Kaxaml.Plugins.Default;
+namespace Kaxaml.Plugins;
 
-public partial class Snippets : UserControl
+/// <summary>
+/// Manages access to the XML Snippet file.
+/// </summary>
+public partial class Snippets
 {
-    #region Const Fields
-
-    private const string SnippetsFile = "KaxamlSnippets.xml";
-
-    #endregion Const Fields
-
     #region Constructors
 
-    public Snippets()
+    public Snippets(SnippetEditor snippetEditor)
     {
+        _snippetEditor = snippetEditor;
+
         // load the snippets file from the disk
-        SnippetCategories = new ObservableCollection<SnippetCategory>();
+        SnippetCategories = [];
         ReadValues();
         InitializeComponent();
     }
 
     #endregion Constructors
 
+    #region Fields
+
+    private const string SnippetsFile = "KaxamlSnippets.xml";
+
+    private readonly SnippetEditor _snippetEditor;
+
+    #endregion Fields
+
     #region Event Handlers
 
-    private void editor_CommitValues(object sender, RoutedEventArgs e)
+    private void SnippetEditor_OnCommitValues(object sender, RoutedEventArgs e)
     {
         WriteValues();
+    }
+
+    private void SnippetEditor_OnClosed(object? sender, EventArgs e)
+    {
+        _snippetEditor.Closed -= SnippetEditor_OnClosed;
+        _snippetEditor.CommitValues -= SnippetEditor_OnCommitValues;
     }
 
     #endregion Event Handlers
@@ -58,38 +66,27 @@ public partial class Snippets : UserControl
 
     public ObservableCollection<SnippetCategory> SnippetCategories { get; }
 
-
-    private string SnippetsFullPath
-    {
-        get
-        {
-            var fi = new FileInfo(Assembly.GetExecutingAssembly().Location);
-            var dir = fi.DirectoryName;
-            return dir + "\\" + SnippetsFile;
-        }
-    }
-
+    private static string SnippetsFullPath => Path.Combine(
+        ApplicationDiServiceProvider.SnippetDirectory,
+        SnippetsFile);
 
     private TextBoxOverlay TextBoxOverlay
     {
         get
         {
-            if (_tbo == null)
+            if (_tbo != null) return _tbo;
+            _tbo = new TextBoxOverlay();
+            Style? style = null;
+            try
             {
-                _tbo = new TextBoxOverlay();
-                var style = (Style?)null;
-                try
-                {
-                    style = (Style)FindResource("TextBoxOverlayStyle");
-                }
-                catch (Exception ex)
-                {
-                    if (ex.IsCriticalException()) throw;
-                }
-
-                _tbo.Style = style;
+                style = (Style)FindResource("TextBoxOverlayStyle");
+            }
+            catch (Exception ex)
+            {
+                if (ex.IsCriticalException()) throw;
             }
 
+            _tbo.Style = style;
             return _tbo;
         }
     }
@@ -122,6 +119,18 @@ public partial class Snippets : UserControl
         if (index > 0) c.Snippets.Move(index, index - 1);
 
         WriteValues();
+    }
+
+    private static void ValidateSnippetXmlFile()
+    {
+        if (File.Exists(SnippetsFullPath)) return;
+
+        var sourcePath = Path.Combine(
+            ApplicationDiServiceProvider.StartupPath,
+            SnippetsFile);
+
+        Directory.CreateDirectory(ApplicationDiServiceProvider.SnippetDirectory);
+        File.Copy(sourcePath, SnippetsFullPath, true);
     }
 
     #endregion Private Methods
@@ -171,10 +180,10 @@ public partial class Snippets : UserControl
         if (e.Data.GetDataPresent(typeof(Snippet)))
         {
             var sc = (SnippetCategory)((FrameworkElement)o).DataContext;
-            var s = (Snippet)e.Data.GetData(typeof(Snippet));
+            var s = (Snippet?)e.Data.GetData(typeof(Snippet));
 
             // make sure we're not dragging into the same category
-            if (s.Category == sc) return;
+            if (s is null || s.Category == sc) return;
 
             // otherwise, consider this a move so remove from the previous category
             // and add to the new one
@@ -193,7 +202,9 @@ public partial class Snippets : UserControl
         }
         else if (e.Data.GetDataPresent(DataFormats.Text))
         {
-            var text = (string)e.Data.GetData(DataFormats.Text);
+            var text = (string?)e.Data.GetData(DataFormats.Text);
+            if (text is null) return;
+
             var sc = (SnippetCategory)((FrameworkElement)o).DataContext;
             sc.AddSnippet("New Snippet", "", text);
 
@@ -220,7 +231,9 @@ public partial class Snippets : UserControl
             };
             SnippetCategories.Add(sc);
 
-            var text = (string)e.Data.GetData(DataFormats.Text);
+            var text = (string?)e.Data.GetData(DataFormats.Text);
+            if (text is null) return;
+
             sc.AddSnippet("New Snippet", "", text);
 
             var ti = (TabItem)SnippetCategoriesTabControl.ItemContainerGenerator.ContainerFromItem(sc);
@@ -257,8 +270,9 @@ public partial class Snippets : UserControl
 
         if (lbi.DataContext is Snippet s)
         {
-            var editor = SnippetEditor.Show(s, Application.Current.MainWindow);
-            editor.CommitValues += editor_CommitValues;
+            _snippetEditor.Show(s);
+            _snippetEditor.CommitValues += SnippetEditor_OnCommitValues;
+            _snippetEditor.Closed += SnippetEditor_OnClosed;
         }
     }
 
@@ -316,18 +330,10 @@ public partial class Snippets : UserControl
         SnippetCategories.Add(s);
     }
 
-    public void NewSnippet(object o, EventArgs e)
-    {
-        var cm = (ContextMenu)ItemsControl.ItemsControlFromItemContainer(o as MenuItem);
-        var lbi = (ListBoxItem)cm.PlacementTarget;
-        var s = (Snippet)lbi.DataContext;
-        WriteValues();
-    }
-
     public void ReadValues()
     {
+        ValidateSnippetXmlFile();
         SnippetCategories.Clear();
-
         var xml = new XmlDocument();
 
         try
@@ -345,11 +351,14 @@ public partial class Snippets : UserControl
         foreach (XmlNode categoryNode in root.ChildNodes)
             if (categoryNode.Name == "Category")
             {
-                // look for a matching categor
+                // look for a matching category
                 var c = (SnippetCategory?)null;
 
                 foreach (var sc in SnippetCategories)
-                    if (sc.Name?.CompareTo(categoryNode.Attributes?["Name"]?.Value) == 0)
+                    if (string.Compare(
+                            sc.Name,
+                            categoryNode.Attributes?["Name"]?.Value,
+                            StringComparison.Ordinal) == 0)
                         c = sc;
 
                 if (c == null)
@@ -416,478 +425,27 @@ public partial class Snippets : UserControl
         var root = xml.DocumentElement
                    ?? throw new Exception($"Missing root element on snippet:{SnippetsFullPath}");
 
-        foreach (var c in SnippetCategories)
+        foreach (var snippetCategory in SnippetCategories)
         {
-            var cnode = xml.CreateElement("Category");
-            cnode.SetAttribute("Name", c.Name);
+            var categoryNode = xml.CreateElement("Category");
+            categoryNode.SetAttribute("Name", snippetCategory.Name);
 
-            if (c.Snippets != null)
+            foreach (var s in snippetCategory.Snippets)
             {
-                foreach (var s in c.Snippets)
-                {
-                    var snode = xml.CreateElement("Snippet");
-                    snode.SetAttribute("Name", s.Name);
-                    snode.SetAttribute("Shortcut", s.Shortcut);
-                    cnode.AppendChild(snode);
+                var snippetNode = xml.CreateElement("Snippet");
+                snippetNode.SetAttribute("Name", s.Name);
+                snippetNode.SetAttribute("Shortcut", s.Shortcut);
+                categoryNode.AppendChild(snippetNode);
 
-                    var cdata = xml.CreateCDataSection(s.Text);
-                    snode.AppendChild(cdata);
-                }
-
-                root.AppendChild(cnode);
+                var cdata = xml.CreateCDataSection(s.Text);
+                snippetNode.AppendChild(cdata);
             }
+
+            root.AppendChild(categoryNode);
         }
 
         xml.Save(SnippetsFullPath);
     }
 
     #endregion Public Methods
-}
-
-public class SnippetCompletionData : ICompletionData
-{
-    #region Constructors
-
-    public SnippetCompletionData(string description, string text, Snippet snippet)
-    {
-        Description = description;
-        Text = text;
-        Snippet = snippet;
-    }
-
-    #endregion Constructors
-
-    #region IComparable Members
-
-    public int CompareTo(object obj)
-    {
-        var s = (SnippetCompletionData)obj;
-        return s.Text.CompareTo(Text);
-    }
-
-    #endregion
-
-
-    #region ICompletionData Members
-
-    public string Description { get; }
-
-    public int ImageIndex => 0;
-
-    public bool InsertAction(TextArea textArea, char ch)
-    {
-        return true;
-    }
-
-    public double Priority => 0;
-
-    public string Text { get; set; }
-
-    public Snippet Snippet { get; set; }
-
-    #endregion
-}
-
-public class Snippet : INotifyPropertyChanged
-{
-    #region Constructors
-
-    public Snippet(string name, string shortcut, string text, SnippetCategory category)
-    {
-        _name = name;
-        _shortcut = shortcut;
-        _text = text;
-        _category = category;
-    }
-
-    #endregion Constructors
-
-    #region Events
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    #endregion Events
-
-    #region Overridden Methods
-
-    public override string ToString()
-    {
-        return Text;
-    }
-
-    #endregion Overridden Methods
-
-    #region Private Methods
-
-    private void OnPropertyChanged(string info)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
-    }
-
-    #endregion Private Methods
-
-    #region Public Methods
-
-    public string IndentedText(int count, bool skipFirstLine)
-    {
-        var t = Text.Replace("\r\n", "\n");
-
-        if (t.CompareTo(Text) != 0)
-        {
-            // separate Text into lines
-            var lines = t.Split('\n');
-
-            // generate the "indent" string
-            var indent = "";
-            for (var i = 0; i < count; i++) indent = indent + " ";
-
-            // append indent to the beginning of each string and
-            // generate the result string (with newly inserted line ends)
-
-            var result = "";
-            for (var i = 0; i < lines.Length; i++)
-                if (skipFirstLine && i == 0)
-                {
-                    result = result + lines[i] + "\r\n";
-                }
-                else if (i == lines.Length - 1)
-                {
-                    lines[i] = lines[i].Replace("\n", "");
-                    result = result + indent + lines[i];
-                }
-                else
-                {
-                    lines[i] = lines[i].Replace("\n", "");
-                    result = result + indent + lines[i] + "\r\n";
-                }
-
-            return result;
-        }
-
-        return Text;
-    }
-
-    #endregion Public Methods
-
-    #region Fields
-
-    private string _name;
-    private string _shortcut;
-    private string _text;
-
-    private SnippetCategory _category;
-
-    #endregion Fields
-
-    #region Properties
-
-    public string Name
-    {
-        get => _name;
-        set
-        {
-            if (_name != value)
-            {
-                _name = value;
-                OnPropertyChanged("Name");
-            }
-        }
-    }
-
-    public string Shortcut
-    {
-        get => _shortcut;
-        set
-        {
-            if (_shortcut != value)
-            {
-                _shortcut = value;
-                OnPropertyChanged("Shortcut");
-            }
-        }
-    }
-
-    public string Text
-    {
-        get => _text;
-        set
-        {
-            if (_text != value)
-            {
-                _text = value;
-                OnPropertyChanged("Text");
-            }
-        }
-    }
-
-
-    public SnippetCategory Category
-    {
-        get => _category;
-        set
-        {
-            if (_category != value)
-            {
-                _category = value;
-                OnPropertyChanged("Category");
-            }
-        }
-    }
-
-    #endregion Properties
-}
-
-public class SnippetCategory : INotifyPropertyChanged
-{
-    #region Fields
-
-    private string _name = string.Empty;
-
-    #endregion Fields
-
-    #region Events
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    #endregion Events
-
-    #region Private Methods
-
-    private void OnPropertyChanged(string info)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(info));
-    }
-
-    #endregion Private Methods
-
-    #region Public Methods
-
-    public void AddSnippet(string name, string shortcut, string text)
-    {
-        var s = new Snippet(name, shortcut, text, this);
-        Snippets.Add(s);
-    }
-
-    #endregion Public Methods
-
-    #region Properties
-
-    public ObservableCollection<Snippet> Snippets { get; } = new();
-
-    public string Name
-    {
-        get => _name;
-        set
-        {
-            if (_name != value)
-            {
-                _name = value;
-                OnPropertyChanged("Name");
-            }
-        }
-    }
-
-    #endregion Properties
-}
-
-public enum TextBoxOverlayResult
-{
-    None,
-    Accept,
-    Cancel
-}
-
-public class TextBoxOverlayHideEventArgs : EventArgs
-{
-    #region Constructors
-
-    public TextBoxOverlayHideEventArgs(TextBoxOverlayResult result, string resultText)
-    {
-        Result = result;
-        ResultText = resultText;
-    }
-
-    #endregion Constructors
-
-    #region Fields
-
-    public readonly string ResultText;
-
-    public readonly TextBoxOverlayResult Result;
-
-    #endregion Fields
-}
-
-public class TextBoxOverlay : TextBox
-{
-    #region Constructors
-
-    #endregion Constructors
-
-    #region Events
-
-    public event EventHandler<TextBoxOverlayHideEventArgs>? Hidden;
-
-    #endregion Events
-
-    #region Fields
-
-    private bool _isOpen;
-
-    private AdornerLayer? _adornerLayer;
-    private ElementAdorner? _elementAdorner;
-    private UIElement? _element;
-
-    #endregion Fields
-
-    #region Overridden Methods
-
-    protected override void OnKeyDown(KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-            if (_isOpen)
-                Hide(TextBoxOverlayResult.Accept);
-
-        if (e.Key == Key.Escape)
-            if (_isOpen)
-                Hide(TextBoxOverlayResult.Cancel);
-
-        base.OnKeyDown(e);
-    }
-
-    protected override void OnLostFocus(RoutedEventArgs e)
-    {
-        if (_isOpen) Hide(TextBoxOverlayResult.Accept);
-        base.OnLostFocus(e);
-    }
-
-    protected override void OnLostKeyboardFocus(KeyboardFocusChangedEventArgs e)
-    {
-        if (_isOpen) Hide(TextBoxOverlayResult.Accept);
-        base.OnLostKeyboardFocus(e);
-    }
-
-    protected override void OnLostMouseCapture(MouseEventArgs e)
-    {
-        if (_isOpen) Hide(TextBoxOverlayResult.Accept);
-        base.OnLostMouseCapture(e);
-    }
-
-    #endregion Overridden Methods
-
-    #region Public Methods
-
-    public void Hide(TextBoxOverlayResult result)
-    {
-        if (_isOpen) // only hide once
-        {
-            if (_elementAdorner != null)
-                if (VisualTreeHelper.GetParent(_elementAdorner) is AdornerLayer layer)
-                {
-                    _elementAdorner.Hide();
-                    layer.Remove(_elementAdorner);
-                }
-
-            var e = new TextBoxOverlayHideEventArgs(result, Text);
-            OnHidden(e);
-
-            _isOpen = false;
-        }
-    }
-
-    public void OnHidden(TextBoxOverlayHideEventArgs e)
-    {
-        Hidden?.Invoke(_element, e);
-    }
-
-    public void Show(UIElement element, Rect rect, string initialValue)
-    {
-        var size = rect.Size;
-        var offset = rect.Location;
-
-        Height = size.Height;
-        Width = size.Width;
-
-        Text = initialValue;
-        SelectAll();
-
-        _element = element;
-
-        _adornerLayer = AdornerLayer.GetAdornerLayer(element);
-
-        if (_adornerLayer == null) return;
-
-        _elementAdorner = new ElementAdorner(element, this, offset);
-        _adornerLayer.Add(_elementAdorner);
-        Focus();
-
-        _isOpen = true;
-    }
-
-    #endregion Public Methods
-}
-
-internal sealed class ElementAdorner : Adorner
-{
-    #region Constructors
-
-    public ElementAdorner(UIElement owner, UIElement element, Point offset)
-        : base(owner)
-    {
-        _element = element;
-
-        AddVisualChild(element);
-        Offset = offset;
-    }
-
-    #endregion Constructors
-
-    #region Methods
-
-    internal void Hide()
-    {
-        RemoveVisualChild(_element);
-        _element = null;
-    }
-
-    #endregion Methods
-
-    #region Fields
-
-    private Point _offset;
-    private UIElement? _element;
-
-    #endregion Fields
-
-    #region Properties
-
-    protected override int VisualChildrenCount => 1;
-
-
-    public Point Offset
-    {
-        get => _offset;
-        set
-        {
-            _offset = value;
-            InvalidateArrange();
-        }
-    }
-
-    #endregion Properties
-
-    #region Overridden Methods
-
-    protected override Size ArrangeOverride(Size finalSize)
-    {
-        _element?.Arrange(new Rect(Offset, _element.DesiredSize));
-        return finalSize;
-    }
-
-    protected override Visual? GetVisualChild(int index)
-    {
-        return _element;
-    }
-
-    #endregion Overridden Methods
 }

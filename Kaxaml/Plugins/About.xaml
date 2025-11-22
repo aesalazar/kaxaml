@@ -499,7 +499,7 @@
 
         <TextBlock
             Canvas.Left="100"
-            Canvas.Top="27"
+            Canvas.Top="10"
             Foreground="White">
             <Run
                 FontFamily="\Fonts\#Miramonte"
@@ -517,22 +517,44 @@
             <Run
                 Text="© 2009 Robby Ingebretsen" />
         </TextBlock>
-
-        <!--TEMP FILES BUTTON-->
-        <Button
-            Content="Temp Folder"
-            Padding="6,2"
+        <Grid
             Canvas.Left="100"
-            Canvas.Top="80"
-            Click="TempFolderButton_Click" />
+            Canvas.Top="60">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <!--TEMP FILES BUTTON-->
+            <Button
+                Grid.Row="0"
+                Grid.Column="0"
+                Content="Temp Folder"
+                Margin="2"
+                Padding="6,2"
+                Click="TempFolderButton_Click" />
 
-        <!--LOG FILES BUTTON-->
-        <Button
-            Content="Log Files"
-            Padding="6,2"
-            Canvas.Left="180"
-            Canvas.Top="80"
-            Click="LogFilesButton_Click" />
+            <!--LOG FILES BUTTON-->
+            <Button
+                Grid.Row="1"
+                Grid.Column="0"
+                Content="Log Files"
+                Margin="2"
+                Padding="6,2"
+                Click="LogFilesButton_Click" />
+
+            <!--SNIPPET FOLDER BUTTON-->
+            <Button
+                Grid.Row="0"
+                Grid.Column="1"
+                Content="Snippet File"
+                Margin="2"
+                Padding="6,2"
+                Click="SnippetFolderButton_Click" />
+        </Grid>
 
         <TextBlock
             Canvas.Left="20"

@@ -1,38 +1,29 @@
-using System;
 using System.Windows;
 using System.Windows.Input;
-using Kaxaml.Plugins.Default;
+using Kaxaml.CodeSnippets;
 
 namespace Kaxaml.Plugins;
 
-/// <summary>
-/// Interaction logic for SnippetEditor.xaml
-/// </summary>
-public partial class SnippetEditor : Window
+public partial class SnippetEditor
 {
     /// <summary>
     /// DependencyProperty for Snippet
     /// </summary>
-    public static readonly DependencyProperty SnippetProperty =
-        DependencyProperty.Register(nameof(Snippet), typeof(Snippet), typeof(SnippetEditor),
-            new FrameworkPropertyMetadata(default(Snippet), SnippetChanged));
-
-    private static SnippetEditor? _instance;
+    public static readonly DependencyProperty SnippetProperty = DependencyProperty.Register(
+        nameof(Snippet),
+        typeof(Snippet),
+        typeof(SnippetEditor),
+        new FrameworkPropertyMetadata(default(Snippet), SnippetChanged));
 
     public SnippetEditor()
     {
         InitializeComponent();
     }
 
-    public static SnippetEditor Show(Snippet s, Window owner)
+    public void Show(Snippet snippet)
     {
-        if (_instance == null) _instance = new SnippetEditor();
-
-        _instance.Owner = owner;
-        _instance.Snippet = s;
-        _instance.Show();
-
-        return _instance;
+        Snippet = snippet;
+        Show();
     }
 
     private void DoDone(object sender, RoutedEventArgs e)
@@ -41,8 +32,6 @@ public partial class SnippetEditor : Window
         Hide();
 
         RaiseCommitValuesEvent(this);
-
-        _instance = null;
     }
 
     private void DoCancel(object sender, RoutedEventArgs e)
@@ -50,15 +39,24 @@ public partial class SnippetEditor : Window
         Snippet.Name = _name;
         Snippet.Shortcut = _shortcut;
         Snippet.Text = _text;
-
         Hide();
-        _instance = null;
     }
 
-    protected override void OnClosed(EventArgs e)
+    #region RoutedEvent Helper Methods
+
+    /// <summary>
+    /// A static helper method to raise a routed event on a target UIElement or ContentElement.
+    /// </summary>
+    /// <param name="target">UIElement or ContentElement on which to raise the event</param>
+    /// <param name="args">RoutedEventArgs to use when raising the event</param>
+    private static void RaiseEvent(DependencyObject target, RoutedEventArgs args)
     {
-        _instance = null;
+        if (target is UIElement element)
+            element.RaiseEvent(args);
+        else if (target is ContentElement contentElement) contentElement.RaiseEvent(args);
     }
+
+    #endregion
 
     #region fields
 
@@ -79,7 +77,6 @@ public partial class SnippetEditor : Window
         set => SetValue(SnippetProperty, value);
     }
 
-
     /// <summary>
     /// PropertyChangedCallback for Snippet
     /// </summary>
@@ -97,83 +94,22 @@ public partial class SnippetEditor : Window
 
     #endregion
 
-    #region RoutedEvent Helper Methods
-
-    /// <summary>
-    /// A static helper method to raise a routed event on a target UIElement or ContentElement.
-    /// </summary>
-    /// <param name="target">UIElement or ContentElement on which to raise the event</param>
-    /// <param name="args">RoutedEventArgs to use when raising the event</param>
-    private static void RaiseEvent(DependencyObject target, RoutedEventArgs args)
-    {
-        if (target is UIElement element)
-            element.RaiseEvent(args);
-        else if (target is ContentElement contentElement) contentElement.RaiseEvent(args);
-    }
-
-    /// <summary>
-    /// A static helper method that adds a handler for a routed event 
-    /// to a target UIElement or ContentElement.
-    /// </summary>
-    /// <param name="element">UIElement or ContentElement that listens to the event</param>
-    /// <param name="routedEvent">Event that will be handled</param>
-    /// <param name="handler">Event handler to be added</param>
-    private static void AddHandler(DependencyObject element, RoutedEvent routedEvent, Delegate handler)
-    {
-        if (element is UIElement uie)
-        {
-            uie.AddHandler(routedEvent, handler);
-        }
-        else
-        {
-            if (element is ContentElement ce) ce.AddHandler(routedEvent, handler);
-        }
-    }
-
-    /// <summary>
-    /// A static helper method that removes a handler for a routed event 
-    /// from a target UIElement or ContentElement.
-    /// </summary>
-    /// <param name="element">UIElement or ContentElement that listens to the event</param>
-    /// <param name="routedEvent">Event that will no longer be handled</param>
-    /// <param name="handler">Event handler to be removed</param>
-    private static void RemoveHandler(DependencyObject element, RoutedEvent routedEvent, Delegate handler)
-    {
-        if (element is UIElement uie)
-        {
-            uie.RemoveHandler(routedEvent, handler);
-        }
-        else
-        {
-            if (element is ContentElement ce) ce.RemoveHandler(routedEvent, handler);
-        }
-    }
-
-    #endregion
-
     #region CommitValues
 
-    /// <summary>
-    /// CommitValues Routed Event
-    /// </summary>
-    public static readonly RoutedEvent CommitValuesEvent = EventManager.RegisterRoutedEvent("CommitValues",
-        RoutingStrategy.Bubble, typeof(RoutedEventHandler), typeof(SnippetEditor));
+    /// <inheritdoc cref="CommitValues" />
+    public static readonly RoutedEvent CommitValuesEvent = EventManager.RegisterRoutedEvent(
+        nameof(CommitValues),
+        RoutingStrategy.Bubble,
+        typeof(RoutedEventHandler),
+        typeof(SnippetEditor));
 
     /// <summary>
-    /// Occurs when ...
+    /// Fires when the value is saved.
     /// </summary>
     public event RoutedEventHandler CommitValues
     {
         add => AddHandler(CommitValuesEvent, value);
         remove => RemoveHandler(CommitValuesEvent, value);
-    }
-
-    /// <summary>
-    /// A helper method to raise the CommitValues event.
-    /// </summary>
-    protected RoutedEventArgs? RaiseCommitValuesEvent()
-    {
-        return RaiseCommitValuesEvent(this);
     }
 
     /// <summary>

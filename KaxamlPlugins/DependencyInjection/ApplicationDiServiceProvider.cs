@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using KaxamlPlugins.DependencyInjection.Registration;
+using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
@@ -21,13 +22,15 @@ public static class ApplicationDiServiceProvider
 {
     private const string ConfigurationKeyLogFolder = "Folder.AppData.Logs";
     private const string ConfigurationKeyTempFolder = "Folder.AppData.Temp";
+    private const string ConfigurationKeySnippetFolder = "Folder.AppData.Snippet";
     private static IHost? _host;
 
     /// <summary>
     /// Full path to where the application executable was launched from.
     /// </summary>
-    public static string? StartupPath { get; } = Path.GetDirectoryName(
-        Assembly.GetExecutingAssembly().Location);
+    public static string StartupPath { get; } = Path.GetDirectoryName(
+            Assembly.GetExecutingAssembly().Location)
+        .ShouldNotBeNull("Application must have an executing assembly path.");
 
     /// <summary>
     /// Full path to the Temp folder for the application.
@@ -44,6 +47,14 @@ public static class ApplicationDiServiceProvider
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         ConfigurationManager.AppSettings[ConfigurationKeyLogFolder]
         ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeyLogFolder}"));
+
+    /// <summary>
+    /// Full path to the Snippet folder for the application.
+    /// </summary>
+    public static string SnippetDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        ConfigurationManager.AppSettings[ConfigurationKeySnippetFolder]
+        ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeySnippetFolder}"));
 
     /// <summary>
     /// Allows reference to DI container from UI Controls.

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Windows;
 using Kaxaml.Documents;
 using Kaxaml.Plugins;
-using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.DependencyInjection.Registration;
@@ -25,7 +25,8 @@ public partial class App
         new TypeDiRegistration<About>(),
         new TypeDiRegistration<Find>(),
         new TypeDiRegistration<Settings>(),
-        new TypeDiRegistration<Snippets>()
+        new TypeDiRegistration<Snippets>(),
+        new TypeDiRegistration<SnippetEditor>()
     ];
 
     private ILogger<App> _logger = NullLogger<App>.Instance;
@@ -49,10 +50,24 @@ public partial class App
             "Application is starting with Main Window at {Stamp}...",
             DateTime.Now);
 
+        //Show the main window after wiring for linking to the snippets editor
+        var mainWindow = ApplicationDiServiceProvider
+            .Services
+            .GetRequiredService<MainWindow>();
+
+        mainWindow.Closing += MainWindow_OnClosing;
+        mainWindow.Show();
+    }
+
+    private void MainWindow_OnClosing(object? _, CancelEventArgs __)
+    {
+        _logger.LogInformation("Main Window closing...");
+
+        //Manually call close in case the window is never shown
         ApplicationDiServiceProvider
             .Services
-            .GetRequiredService<MainWindow>()
-            .Show();
+            .GetRequiredService<SnippetEditor>()
+            .Close();
     }
 
     protected override void OnExit(ExitEventArgs e)
