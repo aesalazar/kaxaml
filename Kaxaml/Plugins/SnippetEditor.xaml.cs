@@ -23,7 +23,11 @@ public partial class SnippetEditor
     public void Show(Snippet snippet)
     {
         Snippet = snippet;
+        
+        Topmost = true;
         Show();
+        Activate();
+        Topmost = false;
     }
 
     private void DoDone(object sender, RoutedEventArgs e)
