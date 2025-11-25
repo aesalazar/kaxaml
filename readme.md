@@ -10,6 +10,10 @@ Kaxaml is designed to be "notepad for XAML." It's supposed to be simple and ligh
 |:--:|
 | *Tag Edit Auto Matching Feature added in this Fork* |
 
+| ![Demo of External Assembly References](Assets/AssemblyReferenceDemo.gif) | 
+|:--:|
+| *Referencing External Assembly DLLs* |
+
 The big movtivation for this fork was the fact that the orginal project has been quiet for so many years.  I did not want to see if wither away as it is such a fantastic application - kudos to the  devs who put all of that effort into it.
 
 First thing I did was upgrade to .NET 9.  While at it, I took the liberty of performing significant code cleanup and modernization.  I also fixed several annoying little bugs and added features I have always wished for.  No real roadmap to speak of, just fixing and adding things as they come up.
@@ -19,6 +23,24 @@ Note that this no longer supports Silverlight so if that is something you need, 
 I welcome any feedback.
 
 # Changelog
+
+## 9.4.0 - External Assembly References
+- Provides the ability to load an external Assemblies
+- Inspired by punker76's fork of Kaxaml ([Punker76 Fork](https://github.com/punker76/kaxaml))
+- Allows DLLs to be loaded and referenced in XAML
+- Ref can be saved with XAML using XML comment
+- Other Changes
+    - Change plugins to load via Dependency Injection
+    - Add busy indicator when parse timer is in flight
+    - Remove Font Chooser plugin empty stub
+    - Snippet dialog editor single window instance
+    - Update nuget packages
+- Fixes
+    - Fix memory leak with WpfDocumentView animation
+    - Hide close buttons on Snippet and Xaml Dialog
+    - Fix namespace for certain plugins
+    - Fix snippet dialog editor memory leak
+    - Reduce WpfDocumentView memory leak (to revisit)
 
 ## 9.3.3 - Fix another new document bug and more code cleanup
 - Fixed another temp folder exception when launched from start menu
