@@ -4,7 +4,7 @@ using KaxamlPlugins;
 
 namespace Kaxaml.DocumentViews;
 
-public interface IXamlDocumentView
+public interface IXamlDocumentView : IDisposable
 {
     IKaxamlInfoTextEditor TextEditor { get; }
 

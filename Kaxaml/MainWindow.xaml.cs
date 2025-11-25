@@ -285,33 +285,27 @@ public partial class MainWindow
 
     public static readonly RoutedUICommand CloseTabCommand = new("Close Tab", "CloseTabCommand", typeof(MainWindow));
 
-    private void CloseTab_Executed(object sender, ExecutedRoutedEventArgs args)
+    private void CloseTab_Executed(object sender, ExecutedRoutedEventArgs _)
     {
-        if (Equals(sender, this))
+        if (!Equals(sender, this) ||
+            DocumentsView.SelectedView?.XamlDocument is not { } document)
+            return;
+
+        if (document.NeedsSave)
         {
-            XamlDocument? document = null;
+            var result = MessageBox.Show(
+                "The document " + document.Filename +
+                " has not been saved. Would you like to save it before closing?", "Save Document",
+                MessageBoxButton.YesNoCancel);
 
-            if (args.Parameter != null)
-                document = args.Parameter as XamlDocument;
-            else if (DocumentsView.SelectedView != null)
-                document = DocumentsView.SelectedView.XamlDocument;
-
-            if (document != null)
-            {
-                if (document.NeedsSave)
-                {
-                    var result = MessageBox.Show(
-                        "The document " + document.Filename +
-                        " has not been saved. Would you like to save it before closing?", "Save Document",
-                        MessageBoxButton.YesNoCancel);
-
-                    if (result == MessageBoxResult.Yes) document.Save();
-                    if (result == MessageBoxResult.Cancel) return;
-                }
-
-                _xamlDocumentManager.XamlDocuments.Remove(document);
-            }
+            if (result is MessageBoxResult.Yes)
+                document.Save();
+            else if (result is MessageBoxResult.Cancel)
+                return;
         }
+
+        DocumentsView.SelectedView.Dispose();
+        _xamlDocumentManager.XamlDocuments.Remove(document);
     }
 
     private void CloseTab_CanExecute(object sender, CanExecuteRoutedEventArgs args)

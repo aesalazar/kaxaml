@@ -60,6 +60,24 @@ public partial class WpfDocumentView : IXamlDocumentView
 
     #endregion Constructors
 
+    #region IDisposable Members
+
+    /// <summary>
+    /// Clear timers and external event handlers.
+    /// </summary>
+    public void Dispose()
+    {
+        Dispatcher.UnhandledException -= Dispatcher_UnhandledException;
+        _assemblyCacheManager.CacheUpdated -= AssemblyCacheManager_OnCacheUpdated;
+        ClearDispatcherTimer();
+
+        //Minimize memory leak as explained in KaxamlTextEditor.Dispose()
+        Editor.Dispose();
+        Editor = null;
+    }
+
+    #endregion
+
     #region Fields
 
     private static readonly IList<string> Colors = ["AliceBlue", "Aquamarine", "Azure", "Bisque", "BlanchedAlmond", "Burlywood", "CadetBlue", "Chartreuse", "Chocolate", "Coral", "CornflowerBlue", "Cornsilk", "DodgerBlue", "FloralWhite", "Gainsboro", "Ghostwhite", "Honeydew", "HotPink", "IndianRed", "LightSalmon", "Mintcream", "MistyRose", "Moccasin", "NavajoWhite", "Oldlace", "PapayaWhip", "PeachPuff", "Peru", "SaddleBrown", "Seashell", "Thistle", "Tomato", "WhiteSmoke"];
@@ -288,7 +306,7 @@ public partial class WpfDocumentView : IXamlDocumentView
         e.Handled = true;
     }
 
-    private void Editor_OnTextChanged(object _, TextChangedEventArgs e)
+    private void Editor_OnTextChanged(object? _, TextChangedEventArgs e)
     {
         if (XamlDocument == null || _isSettingSourceText) return;
 

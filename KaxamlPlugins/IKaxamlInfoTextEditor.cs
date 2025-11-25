@@ -2,7 +2,7 @@ using System.Windows;
 
 namespace KaxamlPlugins;
 
-public interface IKaxamlInfoTextEditor
+public interface IKaxamlInfoTextEditor : IDisposable
 {
     // Properties
     string SelectedText { get; }

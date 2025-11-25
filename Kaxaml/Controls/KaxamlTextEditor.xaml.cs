@@ -31,6 +31,34 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
 
     #endregion
 
+    #region IDisposable
+
+    /// <summary>
+    /// Clear fold timer.
+    /// </summary>
+    /// <remarks>
+    /// There is a memory leak resulting from having the Text Editor inside a WinForms host control.
+    /// This seems to be a known issue even in the lastest AvalonEdit control.
+    /// TODO: See if updating to a new Text Editor control gets around the Memory Leak from ICSharpCode.TextEditor
+    /// </remarks>
+    public void Dispose()
+    {
+        if (_foldingTimer is not null)
+        {
+            _foldingTimer.Stop();
+            _foldingTimer.Tick -= FoldingTimerTick;
+            _foldingTimer = null;
+        }
+
+        TextEditor.Document.UndoStack.ClearAll();
+        TextEditor.Dispose();
+        TextEditor = null;
+        FormsHost.Dispose();
+        FormsHost = null;
+    }
+
+    #endregion
+
     #region Fields
 
     private bool _setTextInternal;
