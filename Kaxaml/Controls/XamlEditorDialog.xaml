@@ -5,6 +5,8 @@
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   xmlns:c="clr-namespace:Kaxaml.Controls"
   xmlns:settings="clr-namespace:Kaxaml.Properties"
+  xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
+  xmlns:behaviors="clr-namespace:KaxamlPlugins.Behaviors;assembly=KaxamlPlugins"
   Title="Xaml Editor"
   Height="480"
   MinHeight="160"
@@ -26,7 +28,11 @@
     </ResourceDictionary>
   </Window.Resources>
 
-  <Grid SnapsToDevicePixels="True">
+    <b:Interaction.Behaviors>
+        <behaviors:HideCloseButtonBehavior />
+    </b:Interaction.Behaviors>
+
+    <Grid SnapsToDevicePixels="True">
 
     <Grid.RowDefinitions>
       <RowDefinition Height="*" />
