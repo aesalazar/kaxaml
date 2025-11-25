@@ -28,7 +28,7 @@ I welcome any feedback.
 - Provides the ability to load an external Assemblies
 - Inspired by punker76's fork of Kaxaml ([Punker76 Fork](https://github.com/punker76/kaxaml))
 - Allows DLLs to be loaded and referenced in XAML
-- Ref can be saved with XAML using XML comment
+- Ref can be saved with XAML using XML comment so they will be loaded automatically whenever XAML file is opened
 - Other Changes
     - Change plugins to load via Dependency Injection
     - Add busy indicator when parse timer is in flight
@@ -36,11 +36,11 @@ I welcome any feedback.
     - Snippet dialog editor single window instance
     - Update nuget packages
 - Fixes
-    - Fix memory leak with WpfDocumentView animation
+    - Fix memory leak with `WpfDocumentView` animation
     - Hide close buttons on Snippet and Xaml Dialog
     - Fix namespace for certain plugins
     - Fix snippet dialog editor memory leak
-    - Reduce WpfDocumentView memory leak (to revisit)
+    - Reduce `WpfDocumentView` memory leak (to revisit)
 
 ## 9.3.3 - Fix another new document bug and more code cleanup
 - Fixed another temp folder exception when launched from start menu
