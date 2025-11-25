@@ -2,12 +2,14 @@ using System.Windows;
 
 namespace KaxamlPlugins;
 
-public interface IKaxamlInfoTextEditor
+public interface IKaxamlInfoTextEditor : IDisposable
 {
     // Properties
     string SelectedText { get; }
     int CaretIndex { get; set; }
     string Text { get; set; }
+    int LineNumber { get; }
+    int LinePosition { get; }
 
     // Methods
     void InsertCharacter(char ch);

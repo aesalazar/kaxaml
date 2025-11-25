@@ -9,7 +9,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Plugins;
-using Kaxaml.Plugins.Default;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
@@ -28,13 +27,24 @@ public partial class PluginView
         typeof(PluginView),
         new UIPropertyMetadata(new List<Plugin>()));
 
-    private readonly ILogger<PluginView> _logger;
+    private readonly About _about;
+    private readonly AssemblyReferences _assemblyReferences;
+    private readonly Find _find;
 
+    private readonly ILogger<PluginView> _logger;
+    private readonly Settings _settings;
+    private readonly Snippets _snippets;
     private Plugin? _findPlugin;
 
     public PluginView()
     {
         _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<PluginView>>();
+        _about = ApplicationDiServiceProvider.Services.GetRequiredService<About>();
+        _assemblyReferences = ApplicationDiServiceProvider.Services.GetRequiredService<AssemblyReferences>();
+        _find = ApplicationDiServiceProvider.Services.GetRequiredService<Find>();
+        _settings = ApplicationDiServiceProvider.Services.GetRequiredService<Settings>();
+        _snippets = ApplicationDiServiceProvider.Services.GetRequiredService<Snippets>();
+
         _logger.LogInformation("Initializing Plugin View...");
         InitializeComponent();
         LoadPlugins();
@@ -59,7 +69,7 @@ public partial class PluginView
         _logger.LogInformation("Loading Snippets...");
         var snippets = new Plugin
         {
-            Root = new Snippets(),
+            Root = _snippets,
             Name = "Snippets",
             Description = "Manage a set of commonly used snippets (Ctrl+N)",
             Key = Key.N,
@@ -70,11 +80,10 @@ public partial class PluginView
         Plugins.Add(snippets);
         ((App)Application.Current).Snippets = (Snippets)snippets.Root;
 
-        //// add the find plugin 
         _logger.LogInformation("Loading Find...");
         var find = new Plugin
         {
-            Root = new Find(),
+            Root = _find,
             Name = "Find",
             Description = "Find and replace text in the editor (Ctrl+F, F3)",
             Key = Key.F,
@@ -141,12 +150,24 @@ public partial class PluginView
             }
         }
 
+        var assemblyReferences = new Plugin
+        {
+            Root = _assemblyReferences,
+            Name = "Assembly References",
+            Description = "Add Assembly References to Kaxaml",
+            Key = Key.N,
+            ModifierKeys = ModifierKeys.Control,
+            Icon = LoadIcon(typeof(Plugin), "Images\\package_link.png")
+        };
+
+        Plugins.Add(assemblyReferences);
+
         _logger.LogInformation("Plugin load complete with {Count} plugins added.", Plugins.Count);
 
-        //// add the settings plugin (we always want this to be at the end)
+        // add the settings plugin (we always want this to be at the end)
         var settings = new Plugin
         {
-            Root = new Settings(),
+            Root = _settings,
             Name = "Settings",
             Description = "Modify program settings and options (Ctrl+E)",
             Key = Key.E,
@@ -156,10 +177,9 @@ public partial class PluginView
 
         Plugins.Add(settings);
 
-        // add the about plugin 
         var about = new Plugin
         {
-            Root = new About(),
+            Root = _about,
             Name = "About",
             Description = "All about Kaxaml",
             Icon = LoadIcon(typeof(Plugin), "Images\\kaxaml.png")
@@ -195,28 +215,28 @@ public partial class PluginView
         return null;
     }
 
-    public void OpenPlugin(Key key, ModifierKeys modifierkeys)
+    public void OpenPlugin(Key key, ModifierKeys modifierKeys)
     {
-        foreach (var p in Plugins)
-            if (modifierkeys == p.ModifierKeys && key == p.Key)
-                try
-                {
-                    var t = (TabItem)p.Root.Parent;
-                    t.IsSelected = true;
-                    t.Focus();
+        var plugins = Plugins
+            .Where(p => modifierKeys == p.ModifierKeys && key == p.Key)
+            .ToList();
 
-                    UpdateLayout();
+        foreach (var p in plugins)
+            try
+            {
+                var t = (TabItem)p.Root.Parent;
+                t.IsSelected = true;
+                t.Focus();
 
-                    if (t.Content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
-                }
-                catch (Exception ex)
-                {
-                    if (ex.IsCriticalException()) throw;
-                }
+                UpdateLayout();
+
+                if (t.Content is FrameworkElement element) element.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));
+            }
+            catch (Exception ex)
+            {
+                if (ex.IsCriticalException()) throw;
+            }
     }
 
-    internal Plugin? GetFindPlugin()
-    {
-        return _findPlugin;
-    }
+    internal Plugin? GetFindPlugin() => _findPlugin;
 }

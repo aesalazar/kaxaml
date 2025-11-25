@@ -4744,5 +4744,11 @@ access a list of all snippets with shortcuts assigned to them.
   </Canvas>
 </Viewbox>
 ]]></Snippet>
+	<Snippet Name="Assembly References" Shortcut="Assembly References">
+		  <![CDATA[<!--AssemblyReferences
+c:\temp\SomeAssembly.dll
+c:\temp\AnotherAssembly.dll
+-->
+]]></Snippet>
   </Category>
 </Snippets>

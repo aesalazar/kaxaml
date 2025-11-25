@@ -1,7 +1,8 @@
 ﻿using System.Configuration;
 using System.IO;
 using System.Reflection;
-using Microsoft.Extensions.DependencyInjection;
+using KaxamlPlugins.DependencyInjection.Registration;
+using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NLog;
@@ -21,13 +22,15 @@ public static class ApplicationDiServiceProvider
 {
     private const string ConfigurationKeyLogFolder = "Folder.AppData.Logs";
     private const string ConfigurationKeyTempFolder = "Folder.AppData.Temp";
+    private const string ConfigurationKeySnippetFolder = "Folder.AppData.Snippet";
     private static IHost? _host;
 
     /// <summary>
     /// Full path to where the application executable was launched from.
     /// </summary>
-    public static string? StartupPath { get; } = Path.GetDirectoryName(
-        Assembly.GetExecutingAssembly().Location);
+    public static string StartupPath { get; } = Path.GetDirectoryName(
+            Assembly.GetExecutingAssembly().Location)
+        .ShouldNotBeNull("Application must have an executing assembly path.");
 
     /// <summary>
     /// Full path to the Temp folder for the application.
@@ -46,6 +49,14 @@ public static class ApplicationDiServiceProvider
         ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeyLogFolder}"));
 
     /// <summary>
+    /// Full path to the Snippet folder for the application.
+    /// </summary>
+    public static string SnippetDirectory { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        ConfigurationManager.AppSettings[ConfigurationKeySnippetFolder]
+        ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeySnippetFolder}"));
+
+    /// <summary>
     /// Allows reference to DI container from UI Controls.
     /// </summary>
     /// <remarks>
@@ -59,7 +70,7 @@ public static class ApplicationDiServiceProvider
     /// </summary>
     /// <param name="typesToRegister">Types to register as singletons.</param>
     /// <exception cref="Exception">Thrown if already called.</exception>
-    public static void Initialize(IEnumerable<Type> typesToRegister)
+    public static void Initialize(IEnumerable<IDiRegistration> typesToRegister)
     {
         if (_host is not null)
             throw new Exception("DI Host has already been initialized");
@@ -79,7 +90,8 @@ public static class ApplicationDiServiceProvider
             })
             .ConfigureServices((_, services) =>
             {
-                foreach (var type in typesToRegister) services.AddSingleton(type);
+                foreach (var registration in typesToRegister)
+                    registration.RegisterSingleton(services);
             })
             .Build();
 

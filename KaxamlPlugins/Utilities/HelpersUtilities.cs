@@ -42,4 +42,22 @@ public static class HelpersUtilities
 
         return false;
     } //*** static IsCriticalException
+
+    /// <summary>
+    /// Casts nullable object to non-null when expected not to be null.
+    /// </summary>
+    /// <typeparam name="T">Type of source object when not null.</typeparam>
+    /// <param name="value">Source object.</param>
+    /// <param name="exceptionMessage">Message to include if it turns out to be null.</param>
+    /// <returns>"Unboxed" object.</returns>
+    /// <exception cref="NullReferenceException">Thrown if the object is, in fact, null.</exception>
+    /// <remarks>
+    /// This is a cleaner way of use the "bangs" (exclamation marks) when referencing
+    /// an object that should not be null at the time.  If, for some reason it turns
+    /// out to be null, it allows for a message to help with code readability.
+    /// </remarks>
+    public static T ShouldNotBeNull<T>(this T? value, string exceptionMessage) =>
+        value is null
+            ? throw new NullReferenceException(exceptionMessage)
+            : (T)value;
 }

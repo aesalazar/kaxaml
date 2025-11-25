@@ -2,9 +2,9 @@ using System.Windows;
 using System.Windows.Controls;
 using KaxamlPlugins;
 
-namespace Kaxaml.Plugins.Default;
+namespace Kaxaml.Plugins;
 
-public partial class Find : UserControl
+public partial class Find
 {
     public Find()
     {

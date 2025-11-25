@@ -1,5 +1,4 @@
 using System;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -9,90 +8,31 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Kaxaml.Documents;
-using Kaxaml.Plugins.Default;
-using Kaxaml.Properties;
+using Kaxaml.Plugins;
 using KaxamlPlugins;
 using KaxamlPlugins.DependencyInjection;
 using KaxamlPlugins.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using Settings = Kaxaml.Properties.Settings;
 
 namespace Kaxaml;
 
 public partial class MainWindow
 {
     private readonly ILogger<MainWindow> _logger;
-
-    #region Private Methods
-
-    private BitmapSource RenderContent()
-    {
-        if (KaxamlInfo.Frame?.Content is not FrameworkElement element)
-            element = KaxamlInfo.Frame
-                      ?? throw new Exception("Expecting a FrameworkElement");
-
-        var width = (int)element.ActualWidth;
-        var height = (int)element.ActualHeight;
-        var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-        rtb.Render(element);
-
-        return rtb;
-    }
-
-    #endregion
-
-    #region Overrides
-
-    protected override void OnDrop(DragEventArgs e)
-    {
-        var filenames = (string[]?)e.Data.GetData("FileDrop", true);
-
-        if (filenames is { Length: > 0 })
-        {
-            var first = (XamlDocument?)null;
-            foreach (var f in filenames)
-            {
-                var ext = Path.GetExtension(f).ToLower();
-                if (ext.Equals(".png") || ext.Equals(".jpg") || ext.Equals(".jpeg") || ext.Equals(".bmp") ||
-                    ext.Equals(".gif"))
-                {
-                    // get a relative version of the file name
-                    var docFolder = DocumentsView.SelectedDocument?.Folder ??
-                                    throw new Exception("Expecting Selected Document");
-                    var rfilename = f.Replace(docFolder + "\\", "");
-
-                    // create and insert the xaml
-                    var xaml = Settings.Default.PasteImageXaml;
-                    xaml = xaml.Replace("$source$", rfilename);
-                    DocumentsView.SelectedView?.TextEditor.InsertStringAtCaret(xaml);
-                }
-                else
-                {
-                    var doc = XamlDocument.FromFile(f);
-
-                    if (doc != null)
-                    {
-                        DocumentsView.XamlDocuments.Add(doc);
-                        first ??= doc;
-                    }
-                }
-            }
-
-            if (first != null) DocumentsView.SelectedDocument = first;
-        }
-    }
-
-    #endregion
+    private readonly XamlDocumentManager _xamlDocumentManager;
 
     #region Constructors
 
-    public MainWindow(ILogger<MainWindow> logger)
+    public MainWindow(ILogger<MainWindow> logger, XamlDocumentManager xamlDocumentManager)
     {
         _logger = logger;
-        _logger.LogInformation("Initializing Main Window...");
-        InitializeComponent();
-
+        _xamlDocumentManager = xamlDocumentManager;
         KaxamlInfo.MainWindow = this;
+        _logger.LogInformation("Initializing Main Window...");
+
+        InitializeComponent();
 
         // initialize commands
 
@@ -241,7 +181,7 @@ public partial class MainWindow
                 if (File.Exists(s))
                 {
                     var doc = XamlDocument.FromFile(s);
-                    if (doc is not null) XamlDocuments.Add(doc);
+                    if (doc is not null) _xamlDocumentManager.XamlDocuments.Add(doc);
                 }
                 else
                 {
@@ -249,51 +189,56 @@ public partial class MainWindow
                 }
             }
 
-        if (XamlDocuments.Count == 0)
+        if (_xamlDocumentManager.XamlDocuments.Count == 0)
         {
             var doc = new WpfDocument(ApplicationDiServiceProvider.TempDirectory);
-            XamlDocuments.Add(doc);
+            _xamlDocumentManager.XamlDocuments.Add(doc);
             _logger.LogInformation("Created new WPF document: {Path}", doc.FullPath);
         }
 
         _logger.LogInformation("Initializing Main Window complete.");
     }
 
-    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        PluginView.OpenPlugin(e.Key, Keyboard.Modifiers);
-    }
-
     #endregion
 
-    #region XamlDocuments (DependencyProperty)
+    #region Overrides
 
-    /// <summary>
-    /// The collection of XamlDocuments that are currently actively being edited.
-    /// </summary>
-    public ObservableCollection<XamlDocument> XamlDocuments
+    protected override void OnDrop(DragEventArgs e)
     {
-        get => (ObservableCollection<XamlDocument>)GetValue(XamlDocumentsProperty);
-        set => SetValue(XamlDocumentsProperty, value);
-    }
+        var filenames = (string[]?)e.Data.GetData("FileDrop", true);
 
-    /// <summary>
-    /// DependencyProperty for XamlDocuments
-    /// </summary>
-    public static readonly DependencyProperty XamlDocumentsProperty = DependencyProperty.Register(
-        nameof(XamlDocuments),
-        typeof(ObservableCollection<XamlDocument>),
-        typeof(MainWindow),
-        new FrameworkPropertyMetadata(new ObservableCollection<XamlDocument>(), XamlDocumentsChanged));
-
-    /// <summary>
-    /// PropertyChangedCallback for XamlDocuments
-    /// </summary>
-    private static void XamlDocumentsChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
-    {
-        if (obj is MainWindow _)
+        if (filenames is { Length: > 0 })
         {
-            // handle changed event here
+            var first = (XamlDocument?)null;
+            foreach (var f in filenames)
+            {
+                var ext = Path.GetExtension(f).ToLower();
+                if (ext.Equals(".png") || ext.Equals(".jpg") || ext.Equals(".jpeg") || ext.Equals(".bmp") ||
+                    ext.Equals(".gif"))
+                {
+                    // get a relative version of the file name
+                    var docFolder = _xamlDocumentManager.SelectedXamlDocument?.Folder ??
+                                    throw new Exception("Expecting Selected Document");
+                    var rfilename = f.Replace(docFolder + "\\", "");
+
+                    // create and insert the xaml
+                    var xaml = Settings.Default.PasteImageXaml;
+                    xaml = xaml.Replace("$source$", rfilename);
+                    DocumentsView.SelectedView?.TextEditor.InsertStringAtCaret(xaml);
+                }
+                else
+                {
+                    var doc = XamlDocument.FromFile(f);
+
+                    if (doc != null)
+                    {
+                        _xamlDocumentManager.XamlDocuments.Add(doc);
+                        first ??= doc;
+                    }
+                }
+            }
+
+            if (first != null) _xamlDocumentManager.SelectedXamlDocument = first;
         }
     }
 
@@ -324,8 +269,8 @@ public partial class MainWindow
         if (Equals(sender, this))
         {
             var doc = new WpfDocument(ApplicationDiServiceProvider.TempDirectory);
-            XamlDocuments.Add(doc);
-            DocumentsView.SelectedDocument = doc;
+            _xamlDocumentManager.XamlDocuments.Add(doc);
+            _xamlDocumentManager.SelectedXamlDocument = doc;
         }
     }
 
@@ -340,38 +285,33 @@ public partial class MainWindow
 
     public static readonly RoutedUICommand CloseTabCommand = new("Close Tab", "CloseTabCommand", typeof(MainWindow));
 
-    private void CloseTab_Executed(object sender, ExecutedRoutedEventArgs args)
+    private void CloseTab_Executed(object sender, ExecutedRoutedEventArgs _)
     {
-        if (Equals(sender, this))
+        if (!Equals(sender, this) ||
+            DocumentsView.SelectedView?.XamlDocument is not { } document)
+            return;
+
+        if (document.NeedsSave)
         {
-            XamlDocument? document = null;
+            var result = MessageBox.Show(
+                "The document " + document.Filename +
+                " has not been saved. Would you like to save it before closing?", "Save Document",
+                MessageBoxButton.YesNoCancel);
 
-            if (args.Parameter != null)
-                document = args.Parameter as XamlDocument;
-            else if (DocumentsView.SelectedView != null)
-                document = DocumentsView.SelectedView.XamlDocument;
-
-            if (document != null)
-            {
-                if (document.NeedsSave)
-                {
-                    var result = MessageBox.Show(
-                        "The document " + document.Filename +
-                        " has not been saved. Would you like to save it before closing?", "Save Document",
-                        MessageBoxButton.YesNoCancel);
-
-                    if (result == MessageBoxResult.Yes) document.Save();
-                    if (result == MessageBoxResult.Cancel) return;
-                }
-
-                DocumentsView.XamlDocuments.Remove(document);
-            }
+            if (result is MessageBoxResult.Yes)
+                document.Save();
+            else if (result is MessageBoxResult.Cancel)
+                return;
         }
+
+        DocumentsView.SelectedView.Dispose();
+        _xamlDocumentManager.XamlDocuments.Remove(document);
     }
 
     private void CloseTab_CanExecute(object sender, CanExecuteRoutedEventArgs args)
     {
-        if (Equals(sender, this)) args.CanExecute = DocumentsView.XamlDocuments.Count > 1;
+        if (Equals(sender, this))
+            args.CanExecute = _xamlDocumentManager.XamlDocuments.Count > 1;
     }
 
     #endregion
@@ -565,8 +505,11 @@ public partial class MainWindow
 
                         if (!folder.Contains(':'))
                         {
-                            var selectedDocFolder = DocumentsView.SelectedDocument?.Folder
-                                                    ?? throw new Exception("Expecting Selected Document");
+                            var selectedDocFolder =
+                                _xamlDocumentManager
+                                    .SelectedXamlDocument?
+                                    .Folder
+                                ?? throw new Exception("Expecting Selected Document");
                             absfolder = Path.Combine(selectedDocFolder, folder);
                         }
                         else
@@ -604,8 +547,11 @@ public partial class MainWindow
                         }
 
                         // get a relative version of the file name
-                        var docFolder = DocumentsView.SelectedDocument?.Folder
-                                        ?? throw new Exception("Expecting Selected Document");
+                        var docFolder =
+                            _xamlDocumentManager
+                                .SelectedXamlDocument?
+                                .Folder
+                            ?? throw new Exception("Expecting Selected Document");
                         var rfilename = absfilename.Replace(docFolder + "\\", "");
 
                         // create and insert the xaml
@@ -806,12 +752,12 @@ public partial class MainWindow
 
                 if (doc != null)
                 {
-                    DocumentsView.XamlDocuments.Add(doc);
+                    _xamlDocumentManager.XamlDocuments.Add(doc);
                     if (first == null) first = doc;
                 }
             }
 
-            DocumentsView.SelectedDocument = first;
+            _xamlDocumentManager.SelectedXamlDocument = first;
 
             return true;
         }
@@ -862,7 +808,8 @@ public partial class MainWindow
     {
         base.OnClosing(e);
 
-        var dirty = XamlDocuments
+        var dirty = _xamlDocumentManager
+            .XamlDocuments
             .Where(d => d.NeedsSave)
             .ToList();
 
@@ -895,6 +842,29 @@ public partial class MainWindow
                 "User confirmed abandoning {Count} unsaved document(s) so processing with close...",
                 dirty.Count);
         }
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private BitmapSource RenderContent()
+    {
+        if (KaxamlInfo.Frame?.Content is not FrameworkElement element)
+            element = KaxamlInfo.Frame
+                      ?? throw new Exception("Expecting a FrameworkElement");
+
+        var width = (int)element.ActualWidth;
+        var height = (int)element.ActualHeight;
+        var rtb = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        rtb.Render(element);
+
+        return rtb;
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        PluginView.OpenPlugin(e.Key, Keyboard.Modifiers);
     }
 
     #endregion

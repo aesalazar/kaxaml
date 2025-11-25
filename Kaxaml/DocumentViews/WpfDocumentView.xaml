@@ -18,6 +18,8 @@
 
             <c:NotConverter
                 x:Key="NotConverter" />
+            <BooleanToVisibilityConverter
+                x:Key="BooleanToVisibilityConverter" />
 
             <!-- ReSharper disable once Xaml.RedundantResource - Referenced in Code-->
             <DoubleAnimation
@@ -50,7 +52,6 @@
         </Grid.RowDefinitions>
 
         <!-- Content -->
-
         <c:ZoomFrame
             x:Name="ContentArea"
             AllowDrop="True"
@@ -59,7 +60,7 @@
             SnapsToDevicePixels="True"
             Grid.Row="1"
             Scale="{Binding ElementName=This, Path=Scale}"
-            ContentRendered="ContentAreaRendered">
+            ContentRendered="ContentArea_ContentRendered">
             <c:ZoomFrame.Template>
                 <ControlTemplate
                     TargetType="{x:Type c:ZoomFrame}">
@@ -225,9 +226,7 @@
                 Stretch="None" />
         </Border>
 
-
         <!-- Error Display -->
-
         <Expander
             SnapsToDevicePixels="True"
             x:Name="ErrorDisplay"
@@ -462,6 +461,20 @@
             RedoStarted="Editor_OnRedoStarted"
             RedoComplete="Editor_OnRedoCompleted"
             TextChanged="Editor_OnTextChanged" />
+
+        <!--BUSY INDICATOR-->
+        <c:BusyIndicatory
+            Grid.Row="1"
+            Visibility="{Binding 
+                ElementName=This, 
+                Path=IsDispatching, 
+                Converter={StaticResource BooleanToVisibilityConverter}}"
+            Opacity="0.5"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Height="30"
+            Width="30"
+            Margin="10,0,0,10" />
     </Grid>
 
 </UserControl>

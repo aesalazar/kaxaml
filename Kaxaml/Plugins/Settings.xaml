@@ -3,9 +3,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:sys="clr-namespace:System;assembly=mscorlib"
     xmlns:settings="clr-namespace:Kaxaml.Properties"
-    xmlns:l="clr-namespace:Kaxaml.Plugins.Default"
     xmlns:c="clr-namespace:Kaxaml.Controls"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:codeSnippets="clr-namespace:Kaxaml.CodeSnippets">
 
     <UserControl.Resources>
 
@@ -15,7 +15,7 @@
         <!-- ReSharper disable once Xaml.RedundantResource - Searched for by Key in code-behind -->
         <Style
             x:Key="TextBoxOverlayStyle"
-            TargetType="{x:Type l:TextBoxOverlay}">
+            TargetType="{x:Type codeSnippets:TextBoxOverlay}">
             <Setter
                 Property="SnapsToDevicePixels"
                 Value="True" />

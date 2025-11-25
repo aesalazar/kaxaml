@@ -9,13 +9,13 @@ using System.Windows.Threading;
 using ICSharpCode.TextEditor;
 using ICSharpCode.TextEditor.Document;
 using Kaxaml.CodeCompletion;
-using Kaxaml.Plugins.Default;
-using Kaxaml.Properties;
+using Kaxaml.CodeSnippets;
 using KaxamlPlugins;
 using KaxamlPlugins.Utilities;
 using Application = System.Windows.Forms.Application;
 using MessageBox = System.Windows.MessageBox;
 using Point = System.Drawing.Point;
+using Settings = Kaxaml.Properties.Settings;
 
 namespace Kaxaml.Controls;
 
@@ -27,6 +27,34 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
     {
         get => TextEditor.ActiveTextAreaControl.TextArea.Caret.Offset;
         set => TextEditor.ActiveTextAreaControl.Caret.Position = TextEditor.Document.OffsetToPosition(value);
+    }
+
+    #endregion
+
+    #region IDisposable
+
+    /// <summary>
+    /// Clear fold timer.
+    /// </summary>
+    /// <remarks>
+    /// There is a memory leak resulting from having the Text Editor inside a WinForms host control.
+    /// This seems to be a known issue even in the lastest AvalonEdit control.
+    /// TODO: See if updating to a new Text Editor control gets around the Memory Leak from ICSharpCode.TextEditor
+    /// </remarks>
+    public void Dispose()
+    {
+        if (_foldingTimer is not null)
+        {
+            _foldingTimer.Stop();
+            _foldingTimer.Tick -= FoldingTimerTick;
+            _foldingTimer = null;
+        }
+
+        TextEditor.Document.UndoStack.ClearAll();
+        TextEditor.Dispose();
+        TextEditor = null;
+        FormsHost.Dispose();
+        FormsHost = null;
     }
 
     #endregion

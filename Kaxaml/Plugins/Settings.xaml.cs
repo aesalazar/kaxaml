@@ -1,10 +1,10 @@
 using System.Windows;
-using System.Windows.Controls;
 using Kaxaml.Controls;
+using KaxamlPlugins.Utilities;
 
 namespace Kaxaml.Plugins;
 
-public partial class Settings : UserControl
+public partial class Settings
 {
     #region Constructors
 
@@ -19,12 +19,24 @@ public partial class Settings : UserControl
 
     private void EditAgDefaultXaml(object sender, RoutedEventArgs e)
     {
-        Properties.Settings.Default.AgDefaultXaml = XamlEditorDialog.ShowModal(Properties.Settings.Default.AgDefaultXaml, "Default Silverlight Xaml", Application.Current.MainWindow);
+        Properties.Settings.Default.AgDefaultXaml = XamlEditorDialog.ShowModal(
+            Properties.Settings.Default.AgDefaultXaml,
+            "Default Silverlight Xaml",
+            Application
+                .Current
+                .MainWindow
+                .ShouldNotBeNull("Application must have Main Window"));
     }
 
     private void EditWpfDefaultXaml(object sender, RoutedEventArgs e)
     {
-        Properties.Settings.Default.WPFDefaultXaml = XamlEditorDialog.ShowModal(Properties.Settings.Default.WPFDefaultXaml, "Default WPF Xaml", Application.Current.MainWindow);
+        Properties.Settings.Default.WPFDefaultXaml = XamlEditorDialog.ShowModal(
+            Properties.Settings.Default.WPFDefaultXaml,
+            "Default WPF Xaml",
+            Application
+                .Current
+                .MainWindow
+                .ShouldNotBeNull("Application must have Main Window"));
     }
 
     #endregion Private Methods
