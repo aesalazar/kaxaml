@@ -3,7 +3,7 @@ using static KaxamlPlugins.Utilities.XmlUtilities;
 
 namespace Kaxaml.Tests.Utilities;
 
-public class XmlUtilitiesTests
+public sealed class XmlUtilitiesTests
 {
     [Fact]
     public void AuditXmlTags_WhenXmlIsNull_ShouldReturnEmpty()
@@ -296,7 +296,7 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenNoAssemblyReferenceCommentsExist_ReturnsEmptyList()
     {
-        var xml = "<Grid><!-- Just a regular comment --></Grid>";
+        const string xml = "<Grid><!-- Just a regular comment --></Grid>";
         var result = FindCommentAssemblyReferences(xml);
         Assert.Empty(result);
     }
@@ -304,12 +304,12 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenSingleAssemblyReferenceComment_ReturnsDllPaths()
     {
-        var xml = """
-                  <!--AssemblyReferences
-                  C:\temp\Alpha.dll
-                  C:\temp\Beta.dll
-                  -->
-                  """;
+        const string xml = """
+                           <!--AssemblyReferences
+                           C:\temp\Alpha.dll
+                           C:\temp\Beta.dll
+                           -->
+                           """;
 
         var result = FindCommentAssemblyReferences(xml);
 
@@ -321,15 +321,15 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenMultipleAssemblyReferenceComments_ReturnsDllPaths()
     {
-        var xml = """
-                  <!--AssemblyReferences
-                  C:\temp\Alpha.dll
-                  -->
-                  <!--AssemblyReferences
-                  C:\temp\Beta.dll
-                  C:\temp\Gamma.dll
-                  -->
-                  """;
+        const string xml = """
+                           <!--AssemblyReferences
+                           C:\temp\Alpha.dll
+                           -->
+                           <!--AssemblyReferences
+                           C:\temp\Beta.dll
+                           C:\temp\Gamma.dll
+                           -->
+                           """;
 
         var result = FindCommentAssemblyReferences(xml);
 
@@ -342,13 +342,13 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenNonDllLinesAssemblyReferenceComment_Ignores()
     {
-        var xml = """
-                  <!--AssemblyReferences
-                  C:\temp\Alpha.dll
-                  NotAPath.txt
-                  SomeOther.dll.config
-                  -->
-                  """;
+        const string xml = """
+                           <!--AssemblyReferences
+                           C:\temp\Alpha.dll
+                           NotAPath.txt
+                           SomeOther.dll.config
+                           -->
+                           """;
 
         var result = FindCommentAssemblyReferences(xml);
 
@@ -359,7 +359,7 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenMixedLineEndingsAndWhitespace_Handles()
     {
-        var xml = "<!--AssemblyReferences\r\n  C:\\temp\\Alpha.dll  \n\tC:\\temp\\Beta.dll\r\n-->";
+        const string xml = "<!--AssemblyReferences\r\n  C:\\temp\\Alpha.dll  \n\tC:\\temp\\Beta.dll\r\n-->";
         var result = FindCommentAssemblyReferences(xml);
 
         Assert.Equal(2, result.Count);
@@ -370,16 +370,263 @@ public class XmlUtilitiesTests
     [Fact]
     public void FindCommentAssemblyReferences_WhenDuplicateDllPaths_ReturnsDistinct()
     {
-        var xml = """
-                  <!--AssemblyReferences
-                  C:\temp\Alpha.dll
-                  C:\temp\Alpha.dll
-                  -->
-                  """;
+        const string xml = """
+                           <!--AssemblyReferences
+                           C:\temp\Alpha.dll
+                           C:\temp\Alpha.dll
+                           -->
+                           """;
 
         var result = FindCommentAssemblyReferences(xml);
 
         Assert.Single(result);
         Assert.Equal(@"C:\temp\Alpha.dll", result[0].FullName);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenEmptyString_ReturnsEmptyList()
+    {
+        var result = CalculateXmlFolds(string.Empty, true);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenSingleLineSelfClosingTag_ReturnsEmptyList()
+    {
+        const string xml = @"<Page><TextBlock Text=""Hello""/></Page>";
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Single(result);
+        Assert.Equal("Page", result[0].Name);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultiLineSelfClosingTag_ReturnsFold()
+    {
+        const string xml = @"<Page>
+  <TextBlock 
+    Text=""Hello"" 
+    Foreground=""Red"" 
+  />
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenShowAttributesTrue_FoldTextContainsAttributes()
+    {
+        const string xml = @"<Page>
+  <Grid Background=""Blue""></Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        var gridFold = Assert.Single(result, f => f.Name == "Grid");
+        Assert.Contains("Background=", gridFold.FoldText);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenShowAttributesFalse_FoldTextContainsOnlyTagName()
+    {
+        const string xml = @"<Page>
+  <Grid Background=""Blue""></Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, false);
+
+        var gridFold = Assert.Single(result, f => f.Name == "Grid");
+        Assert.Equal("<Grid>", gridFold.FoldText);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultiLineComment_ReturnsCommentFold()
+    {
+        const string xml = @"<Page>
+  <!--
+    This is a
+    multi-line comment
+  -->
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+        Assert.Contains(result, f => f.Name == "comment");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenNestedElements_AllNestedFoldsReturned()
+    {
+        const string xml = @"<Page>
+  <Grid>
+    <TextBlock Text=""Hello""/>
+  </Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "Grid");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenNamespacePrefixedElement_PrefixIsPreservedInName()
+    {
+        const string xml = @"<Page>
+  <x:Button 
+    Content=""Click Me"" 
+    Foreground=""Red"" 
+  />
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "x:Button");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenDeeplyNestedStructure_AllLevelsReturned()
+    {
+        const string xml = @"<Page>
+  <Grid>
+    <StackPanel>
+      <TextBlock 
+        Text=""Hello"" 
+        Foreground=""Red"" 
+      />
+    </StackPanel>
+  </Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(4, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "Grid");
+        Assert.Contains(result, f => f.Name == "StackPanel");
+        Assert.Contains(result, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMalformedXml_ReturnsNoFolds()
+    {
+        const string xml = @"<Page>
+  <Grid>
+    <TextBlock Text=""Hello""
+  </Grid>
+</Page>"; // TextBlock never closed
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "Grid");
+        Assert.DoesNotContain(result, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultipleSiblingElements_AllSiblingsReturned()
+    {
+        const string xml = @"<Page>
+  <StackPanel>
+    <TextBlock 
+      Text=""First"" 
+    />
+    <TextBlock 
+      Text=""Second"" 
+    />
+    <TextBlock 
+      Text=""Third"" 
+    />
+  </StackPanel>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Equal(5, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "StackPanel");
+        Assert.Equal(3, result.Count(f => f.Name == "TextBlock"));
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenAttributesSpreadAcrossMultipleLines_FoldTextIsNormalizedToSingleLine()
+    {
+        const string xml = @"<Page>
+  <Grid
+    Background=""Blue""
+    Margin=""10""
+    Padding=""5""
+  ></Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        var gridFold = Assert.Single(result, f => f.Name == "Grid");
+        // FoldText should be normalized to a single line with attributes collapsed
+        Assert.DoesNotContain("\n", gridFold.FoldText);
+        Assert.Contains("Background=", gridFold.FoldText);
+        Assert.Contains("Margin=", gridFold.FoldText);
+        Assert.Contains("Padding=", gridFold.FoldText);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenCommentContainsAttributeLikeText_TreatedAsCommentNotElement()
+    {
+        const string xml = @"<Page>
+  <!-- 
+        Background=""Blue"" Margin=""10"" 
+  -->
+  <Grid>
+    <TextBlock Text=""Hello""/>
+  </Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        // Expect Page and Grid folds, plus a comment fold
+        Assert.Equal(3, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "Grid");
+        Assert.Contains(result, f => f.Name == "comment");
+
+        // Ensure no element fold was mistakenly created for "Background" or "Margin"
+        Assert.DoesNotContain(result, f => f.Name.Contains("Background"));
+        Assert.DoesNotContain(result, f => f.Name.Contains("Margin"));
+
+        // FoldText for the comment should include the attribute-like text
+        var commentFold = result.First(f => f.Name == "comment");
+        Assert.Contains("Background=", commentFold.FoldText);
+        Assert.Contains("Margin=", commentFold.FoldText);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenCDataSection_PreservedAsTextAndDoesNotProduceFolds()
+    {
+        const string xml = @"<Page>
+  <Grid>
+    <![CDATA[
+      <TextBlock Text=""Hello"" Foreground=""Red""/>
+    ]]>
+  </Grid>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        // Expect Page and Grid folds only
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, f => f.Name == "Page");
+        Assert.Contains(result, f => f.Name == "Grid");
+
+        // Ensure no fold was created for the TextBlock inside CDATA
+        Assert.DoesNotContain(result, f => f.Name == "TextBlock");
+
+        // Ensure no fold was created for "CDATA"
+        Assert.DoesNotContain(result, f => f.Name.Contains("CDATA"));
     }
 }
