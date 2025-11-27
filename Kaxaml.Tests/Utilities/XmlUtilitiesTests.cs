@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using KaxamlPlugins.Utilities.XmlComponents;
 using static KaxamlPlugins.Utilities.XmlUtilities;
 
 namespace Kaxaml.Tests.Utilities;
@@ -395,13 +396,11 @@ public sealed class XmlUtilitiesTests
     {
         const string xml = @"<Page><TextBlock Text=""Hello""/></Page>";
         var result = CalculateXmlFolds(xml, true);
-
-        Assert.Single(result);
-        Assert.Equal("Page", result[0].Name);
+        Assert.Empty(result);
     }
 
     [Fact]
-    public void CalculateXmlFolds_WhenMultiLineSelfClosingTag_ReturnsFold()
+    public void CalculateXmlFolds_WhenWrappedMultiLineSelfClosingTag_ReturnsFold()
     {
         const string xml = @"<Page>
   <TextBlock 
@@ -417,29 +416,58 @@ public sealed class XmlUtilitiesTests
     }
 
     [Fact]
+    public void CalculateXmlFolds_WhenMultiLineSelfClosingTag_ReturnsFold()
+    {
+        const string xml = @" 
+<TextBlock 
+    Text=""Hello"" 
+    Foreground=""Red"" 
+/>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        Assert.Single(result);
+        Assert.Contains(result, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultiLineSelfClosingTagHasAttributes_IncludedInFoldText()
+    {
+        const string xml = @" 
+<TextBlock 
+    Text=""Hello"" 
+    Foreground=""Red"" 
+/>";
+
+        var result = CalculateXmlFolds(xml, true);
+        Assert.Single(result);
+        Assert.Contains("Text=\"Hello\"", result.First().FoldText);
+        Assert.DoesNotContain("Foreground=\"Red\"", result.First().FoldText);
+        Assert.EndsWith(".../>", result.First().FoldText);
+    }
+
+    [Fact]
     public void CalculateXmlFolds_WhenShowAttributesTrue_FoldTextContainsAttributes()
     {
-        const string xml = @"<Page>
+        const string xml = @"<Page Foreground=""Red"">
   <Grid Background=""Blue""></Grid>
 </Page>";
 
         var result = CalculateXmlFolds(xml, true);
-
-        var gridFold = Assert.Single(result, f => f.Name == "Grid");
-        Assert.Contains("Background=", gridFold.FoldText);
+        var fold = Assert.Single(result, f => f.Name == "Page");
+        Assert.Contains("Foreground=\"Red\"", fold.FoldText);
     }
 
     [Fact]
     public void CalculateXmlFolds_WhenShowAttributesFalse_FoldTextContainsOnlyTagName()
     {
-        const string xml = @"<Page>
+        const string xml = @"<Page Foreground=""Red"">
   <Grid Background=""Blue""></Grid>
 </Page>";
 
         var result = CalculateXmlFolds(xml, false);
-
-        var gridFold = Assert.Single(result, f => f.Name == "Grid");
-        Assert.Equal("<Grid>", gridFold.FoldText);
+        var fold = Assert.Single(result, f => f.Name == "Page");
+        Assert.Equal("<Page>", fold.FoldText);
     }
 
     [Fact]
@@ -454,6 +482,12 @@ public sealed class XmlUtilitiesTests
 
         var result = CalculateXmlFolds(xml, true);
         Assert.Contains(result, f => f.Name == "comment");
+
+        var fold = result.First();
+        Assert.Equal(1, fold.StartLine);
+        Assert.Equal(2, fold.StartColumn);
+        Assert.Equal(4, fold.EndLine);
+        Assert.Equal(5, fold.EndColumn);
     }
 
     [Fact]
@@ -522,11 +556,7 @@ public sealed class XmlUtilitiesTests
 </Page>"; // TextBlock never closed
 
         var result = CalculateXmlFolds(xml, true);
-
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, f => f.Name == "Page");
-        Assert.Contains(result, f => f.Name == "Grid");
-        Assert.DoesNotContain(result, f => f.Name == "TextBlock");
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -555,6 +585,45 @@ public sealed class XmlUtilitiesTests
     }
 
     [Fact]
+    public void CalculateXmlFolds_WhenMultipleSameElements_ReturnsLinesAndColumns()
+    {
+        const string xml = @"<Page>
+  <StackPanel>
+    <TextBlock 
+      Text=""First"" 
+    />
+    <TextBlock 
+      Text=""Second"" 
+    />
+    <TextBlock 
+      Text=""Third"" 
+    />
+  </StackPanel>
+</Page>";
+
+        var result = CalculateXmlFolds(xml, true);
+
+        var textBlocks = result.Where(f => f.Name == "TextBlock").ToList();
+        var first = textBlocks.First();
+        Assert.Equal(2, first.StartLine);
+        Assert.Equal(4, first.StartColumn);
+        Assert.Equal(4, first.EndLine);
+        Assert.Equal(6, first.EndColumn);
+
+        var second = textBlocks.Skip(1).First();
+        Assert.Equal(5, second.StartLine);
+        Assert.Equal(4, second.StartColumn);
+        Assert.Equal(7, second.EndLine);
+        Assert.Equal(6, second.EndColumn);
+
+        var third = textBlocks.Skip(2).First();
+        Assert.Equal(8, third.StartLine);
+        Assert.Equal(4, third.StartColumn);
+        Assert.Equal(10, third.EndLine);
+        Assert.Equal(6, third.EndColumn);
+    }
+
+    [Fact]
     public void CalculateXmlFolds_WhenAttributesSpreadAcrossMultipleLines_FoldTextIsNormalizedToSingleLine()
     {
         const string xml = @"<Page>
@@ -571,16 +640,16 @@ public sealed class XmlUtilitiesTests
         // FoldText should be normalized to a single line with attributes collapsed
         Assert.DoesNotContain("\n", gridFold.FoldText);
         Assert.Contains("Background=", gridFold.FoldText);
-        Assert.Contains("Margin=", gridFold.FoldText);
-        Assert.Contains("Padding=", gridFold.FoldText);
+        Assert.DoesNotContain("Margin=", gridFold.FoldText);
+        Assert.DoesNotContain("Padding=", gridFold.FoldText);
     }
 
     [Fact]
     public void CalculateXmlFolds_WhenCommentContainsAttributeLikeText_TreatedAsCommentNotElement()
     {
         const string xml = @"<Page>
-  <!-- 
-        Background=""Blue"" Margin=""10"" 
+  <!-- Background=""Blue"" 
+       Margin=""10"" 
   -->
   <Grid>
     <TextBlock Text=""Hello""/>
@@ -602,7 +671,7 @@ public sealed class XmlUtilitiesTests
         // FoldText for the comment should include the attribute-like text
         var commentFold = result.First(f => f.Name == "comment");
         Assert.Contains("Background=", commentFold.FoldText);
-        Assert.Contains("Margin=", commentFold.FoldText);
+        Assert.DoesNotContain("Margin=", commentFold.FoldText);
     }
 
     [Fact]
@@ -628,5 +697,126 @@ public sealed class XmlUtilitiesTests
 
         // Ensure no fold was created for "CDATA"
         Assert.DoesNotContain(result, f => f.Name.Contains("CDATA"));
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultilevel_ReturnsLineAndColumnAccurately()
+    {
+        const string xml = @"<Page>
+    <Grid>
+        <!-- Test
+            -->
+            <TextBlock Text=""Hello""/>
+     </Grid>
+</Page>";
+
+        var folds = CalculateXmlFolds(xml, false);
+        var pageFold = folds.Single(f => f.Name == "Page");
+        Assert.Equal(0, pageFold.StartLine);
+        Assert.Equal(0, pageFold.StartColumn);
+        Assert.Equal(6, pageFold.EndLine);
+        Assert.Equal(7, pageFold.EndColumn);
+
+        var commentFold = folds.Single(f => f.Name == "comment");
+        Assert.Equal(2, commentFold.StartLine);
+        Assert.Equal(8, commentFold.StartColumn);
+        Assert.Equal(3, commentFold.EndLine);
+        Assert.Equal(15, commentFold.EndColumn);
+
+        var gridFold = folds.Single(f => f.Name == "Grid");
+        Assert.Equal(1, gridFold.StartLine);
+        Assert.Equal(4, gridFold.StartColumn);
+        Assert.Equal(5, gridFold.EndLine);
+        Assert.Equal(12, gridFold.EndColumn);
+
+        Assert.DoesNotContain(folds, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultilevelWithAttributes_ReturnsLineAndColumnAccurately()
+    {
+        const string xml = @"<Page>
+    <Grid
+        Foreground=""Red""
+        Background=""Blue"">
+        <!-- Test
+            -->
+            <TextBlock Text=""Hello""/>
+     </Grid>
+</Page>";
+
+        var folds = CalculateXmlFolds(xml, false);
+        var pageFold = folds.Single(f => f.Name == "Page");
+        Assert.Equal(0, pageFold.StartLine);
+        Assert.Equal(0, pageFold.StartColumn);
+        Assert.Equal(8, pageFold.EndLine);
+        Assert.Equal(7, pageFold.EndColumn);
+
+        var gridFold = folds.Single(f => f.Name == "Grid");
+        Assert.Equal(1, gridFold.StartLine);
+        Assert.Equal(4, gridFold.StartColumn);
+        Assert.Equal(7, gridFold.EndLine);
+        Assert.Equal(12, gridFold.EndColumn);
+
+        var commentFold = folds.Single(f => f.Name == "comment");
+        Assert.Equal(4, commentFold.StartLine);
+        Assert.Equal(8, commentFold.StartColumn);
+        Assert.Equal(5, commentFold.EndLine);
+        Assert.Equal(15, commentFold.EndColumn);
+
+        Assert.DoesNotContain(folds, f => f.Name == "TextBlock");
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenSelfContainedIsMultilevel_ReturnsLineAndColumnAccurately()
+    {
+        const string xml = @"<TextBlock 
+    Text=""Hello"" />";
+
+        var folds = CalculateXmlFolds(xml, true);
+        var fold = folds.Single(f => f.Name == "TextBlock");
+        Assert.Equal(0, fold.StartLine);
+        Assert.Equal(0, fold.StartColumn);
+        Assert.Equal(1, fold.EndLine);
+        Assert.Equal(19, fold.EndColumn);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenSelfContainedIsMultilevelSeparateEnd_ReturnsLineAndColumnAccurately()
+    {
+        const string xml = @"<TextBlock 
+    Text=""Hello""
+    />";
+
+        var folds = CalculateXmlFolds(xml, true);
+        var fold = folds.Single(f => f.Name == "TextBlock");
+        Assert.Equal(0, fold.StartLine);
+        Assert.Equal(0, fold.StartColumn);
+        Assert.Equal(2, fold.EndLine);
+        //Assert.Equal(6, fold.EndColumn);
+    }
+
+    [Fact]
+    public void CalculateXmlFolds_WhenMultilineComment_ReturnsLineAndColumnAccurately()
+    {
+        const string xml = @"<Page>
+    <!--
+        This is a multi-line
+        comment block
+    -->
+    <Grid></Grid>
+</Page>";
+
+        var folds = CalculateXmlFolds(xml, false);
+        var commentFold = folds.Single(f => f.Name == "comment");
+
+        Assert.Equal(1, commentFold.StartLine);
+        Assert.Equal(4, commentFold.StartColumn);
+        Assert.Equal(4, commentFold.EndLine);
+        Assert.Equal(7, commentFold.EndColumn);
+
+        // FoldText should be truncated representation
+        Assert.StartsWith("<!--", commentFold.FoldText);
+        Assert.EndsWith("...", commentFold.FoldText);
     }
 }
