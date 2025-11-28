@@ -21,7 +21,7 @@ public class XmlFoldingBenchmarks
     /// <summary>
     /// Version prior to creating the CalculateXmlFolds method. 
     /// </summary>
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public IList<XmlFoldData> CalculateXmlFolds_XmlTextReader()
     {
         var folds = new List<XmlFoldData>();

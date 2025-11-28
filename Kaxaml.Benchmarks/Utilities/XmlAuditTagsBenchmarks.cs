@@ -27,7 +27,7 @@ public class XmlAuditTagsBenchmarks
 
     #region Benchmarks
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public IList<(XmlTagInfo? openTag, XmlTagInfo? closeTag)> InitialQueueVersion()
         => AuditXmlTags_Initial(TestXml, null);
 

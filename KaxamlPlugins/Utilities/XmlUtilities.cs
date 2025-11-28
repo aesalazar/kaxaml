@@ -15,15 +15,15 @@ public static partial class XmlUtilities
     /// <summary>
     /// Match open to closings, ignoring self-closing XML.
     /// </summary>
-    [GeneratedRegex(@"<\s*(/?)([\w:.]+)[^<>]*?(/?)\s*>", RegexOptions.Compiled)]
+    [GeneratedRegex(
+        @"<\s*(/?)([\w:.]+)[^<>]*?(/?)\s*>",
+        RegexOptions.Compiled)]
     public static partial Regex TagPattern();
 
-    /// <summary>
-    /// Match comment sections that reference external assemblies.
-    /// </summary>
-    private static readonly Regex AssemblyReferencePattern = new(
-        @"<!--\s*AssemblyReferences\s*(.*?)-->",
-        RegexOptions.Singleline | RegexOptions.Compiled);
+    [GeneratedRegex(
+        @"<!--\s*AssemblyReferences\s*(.*?)-->", 
+        RegexOptions.Singleline | RegexOptions.NonBacktracking | RegexOptions.Compiled)]
+    public static partial Regex AssemblyReferencePattern();
 
     #endregion
 
@@ -135,14 +135,12 @@ public static partial class XmlUtilities
     /// </remarks>
     public static IList<FileInfo> FindCommentAssemblyReferences(string? xml)
     {
-        if (xml is null or [])
-        {
+        if (string.IsNullOrEmpty(xml))
             return [];
-        }
 
         var dllPaths = new List<FileInfo>();
-
-        foreach (Match match in AssemblyReferencePattern.Matches(xml))
+        var match = AssemblyReferencePattern().Match(xml);
+        while (match.Success)
         {
             var blockContent = match.Groups[1].Value;
             var lines = blockContent
@@ -153,6 +151,7 @@ public static partial class XmlUtilities
                 .Select(line => new FileInfo(line));
 
             dllPaths.AddRange(lines);
+            match = match.NextMatch();
         }
 
         return dllPaths;
