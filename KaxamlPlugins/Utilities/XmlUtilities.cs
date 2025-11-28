@@ -8,16 +8,15 @@ namespace KaxamlPlugins.Utilities;
 /// <summary>
 /// Tools for working with XML (typically XAML).
 /// </summary>
-public static class XmlUtilities
+public static partial class XmlUtilities
 {
     #region RegEx
 
     /// <summary>
     /// Match open to closings, ignoring self-closing XML.
     /// </summary>
-    private static readonly Regex TagPattern = new(
-        @"<\s*(/?)([\w:.]+)([^<>]*?)(/?)\s*>",
-        RegexOptions.Singleline | RegexOptions.Compiled);
+    [GeneratedRegex(@"<\s*(/?)([\w:.]+)[^<>]*?(/?)\s*>", RegexOptions.Compiled)]
+    public static partial Regex TagPattern();
 
     /// <summary>
     /// Match comment sections that reference external assemblies.
@@ -52,66 +51,67 @@ public static class XmlUtilities
     /// </remarks>
     public static IList<(XmlTagInfo? openTag, XmlTagInfo? closeTag)> AuditXmlTags(string? xml, int? maxTagCount)
     {
-        if (xml is null or [])
-        {
+        if (string.IsNullOrEmpty(xml))
             return [];
-        }
 
-        //Use a queue to track in case there is an odd number
-        var tags = new Queue<XmlTagInfo>();
+        var unmatched = new List<(XmlTagInfo?, XmlTagInfo?)>();
+        var openings = new Stack<XmlTagInfo>();
         var depth = 0;
 
-        foreach (Match match in TagPattern.Matches(xml))
-        {
-            var isSelfClosing = match.Groups[4].Value.Contains('/');
-            if (isSelfClosing) continue;
+        bool IsMaxReached() => maxTagCount.HasValue && unmatched.Count >= maxTagCount.Value;
+        var match = TagPattern().Match(xml);
 
-            var start = match.Groups[0].Index;
-            var isOpening = match.Groups[1].Value != "/";
+        while (match.Success)
+        {
+            var isSelfClosing = match.Groups[3].Value.Length > 0;
+            if (isSelfClosing)
+            {
+                match = match.NextMatch();
+                continue;
+            }
+
+            var start = match.Index;
+            var isOpening = match.Groups[1].Value.Length == 0;
 
             var nameGroup = match.Groups[2];
             var name = nameGroup.Value;
             var nameStart = nameGroup.Index;
             var nameEnd = nameStart + nameGroup.Length;
 
-            //Depth can go negative if fewer open than close
-            tags.Enqueue(isOpening
-                ? new XmlTagInfo(name, true, start, nameStart, nameEnd, depth++)
-                : new XmlTagInfo(name, false, start, nameStart, nameEnd, --depth));
-        }
-
-        var unmatched = new List<(XmlTagInfo?, XmlTagInfo?)>();
-        var openings = new Stack<XmlTagInfo>();
-        bool IsMaxReached() => maxTagCount.HasValue && unmatched.Count >= maxTagCount.Value;
-
-        while (tags.Any() && IsMaxReached() is false)
-        {
-            var tag = tags.Dequeue();
-            if (tag.IsOpening)
+            if (isOpening)
             {
+                var tag = new XmlTagInfo(name, true, start, nameStart, nameEnd, depth);
                 openings.Push(tag);
-            }
-            else if (openings.Any())
-            {
-                if (openings.Peek().Name != tag.Name)
-                {
-                    unmatched.Add((openings.Peek(), tag));
-                }
-
-                openings.Pop();
+                depth++;
             }
             else
             {
-                //Handle orphaned closing tag
-                unmatched.Add((null, tag));
+                depth--;
+                var tag = new XmlTagInfo(name, false, start, nameStart, nameEnd, depth);
+
+                if (openings.Count > 0)
+                {
+                    var open = openings.Peek();
+                    if (open.Name != tag.Name)
+                    {
+                        unmatched.Add((open, tag));
+                    }
+
+                    openings.Pop();
+                }
+                else
+                {
+                    unmatched.Add((null, tag));
+                }
             }
+
+            if (IsMaxReached()) break;
+            match = match.NextMatch();
         }
 
-        //Handle orphaned opening tags
-        foreach (var opening in openings)
+        while (openings.Count > 0 && !IsMaxReached())
         {
-            if (IsMaxReached()) break;
-            unmatched.Add((opening, null));
+            unmatched.Add((openings.Pop(), null));
         }
 
         return unmatched;

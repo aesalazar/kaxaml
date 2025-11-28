@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using System.Text;
+using FluentAssertions;
 using KaxamlPlugins.Utilities.XmlComponents;
 using static KaxamlPlugins.Utilities.XmlUtilities;
 
@@ -229,7 +230,7 @@ public sealed class XmlUtilitiesTests
     }
 
     [Fact]
-    public void AuditXmlTags_WhenMultiLevl_ShouldAssignCorrectDepth()
+    public void AuditXmlTags_WhenMultiLevel_ShouldAssignCorrectDepth()
     {
         const string xml = "<Root><Grid><Inner></Inner1></Grid></Root>";
         var result = AuditXmlTags(xml, null);
@@ -271,13 +272,238 @@ public sealed class XmlUtilitiesTests
         var (firstOpen, firstClose) = result.First();
         firstOpen.Should().NotBeNull();
         firstOpen.Depth.Should().Be(1);
+        firstOpen.Name.Should().Be("Unclosed");
+
+        firstClose.Should().NotBeNull();
         firstClose.Should().NotBeNull();
         firstClose.Depth.Should().Be(1);
+        firstClose.Name.Should().Be("Root");
 
         var (secondOpen, secondClose) = result.Last();
         secondOpen.Should().NotBeNull();
         secondOpen.Depth.Should().Be(0);
+        secondOpen.Name.Should().Be("Root");
         secondClose.Should().BeNull();
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenSingleUnmatched_ReturnsPair()
+    {
+        const string xml = @"
+<Page 
+    xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
+    xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+    > 
+    <Grid1> 
+    </Grid> 
+</Page>
+";
+        var result = AuditXmlTags(xml, null);
+        result.Should().HaveCount(1);
+        var (firstOpen, firstClose) = result.First();
+
+        firstOpen.Should().NotBeNull();
+        firstOpen.Depth.Should().Be(1);
+        firstOpen.Name.Should().Be("Grid1");
+
+        firstClose.Should().NotBeNull();
+        firstClose.Depth.Should().Be(1);
+        firstClose.Name.Should().Be("Grid");
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenMultipleUnmatched_ReturnsAll()
+    {
+        const string xml = @"
+<Page 
+    xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
+    xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+    > 
+    <Grid1> 
+        <TextBlock1>
+        </TextBlock>
+    </Grid> 
+</Page1>
+";
+        var result = AuditXmlTags(xml, null);
+        result.Should().HaveCount(3);
+
+        var (firstOpen, firstClose) = result.First();
+        firstOpen.Should().NotBeNull();
+        firstOpen.Depth.Should().Be(2);
+        firstOpen.Name.Should().Be("TextBlock1");
+
+        firstClose.Should().NotBeNull();
+        firstClose.Depth.Should().Be(2);
+        firstClose.Name.Should().Be("TextBlock");
+
+        var (secondOpen, secondClose) = result.Skip(1).First();
+        secondOpen.Should().NotBeNull();
+        secondOpen.Depth.Should().Be(1);
+        secondOpen.Name.Should().Be("Grid1");
+
+        secondClose.Should().NotBeNull();
+        secondClose.Depth.Should().Be(1);
+        secondClose.Name.Should().Be("Grid");
+
+        var (thirdOpen, thirdCLose) = result.Skip(2).First();
+        thirdOpen.Should().NotBeNull();
+        thirdOpen.Depth.Should().Be(0);
+        thirdOpen.Name.Should().Be("Page");
+
+        thirdCLose.Should().NotBeNull();
+        thirdCLose.Depth.Should().Be(0);
+        thirdCLose.Name.Should().Be("Page1");
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenMultipleUnmatched_RespectsMaxCount()
+    {
+        const string xml = @"
+<Page 
+    xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" 
+    xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml""
+    > 
+    <Grid1> 
+        <TextBlock1>
+        </TextBlock>
+    </Grid> 
+</Page1>
+";
+        var result = AuditXmlTags(xml, 2);
+        result.Should().HaveCount(2);
+
+        var (firstOpen, firstClose) = result.First();
+        firstOpen.Should().NotBeNull();
+        firstOpen.Depth.Should().Be(2);
+        firstOpen.Name.Should().Be("TextBlock1");
+
+        firstClose.Should().NotBeNull();
+        firstClose.Depth.Should().Be(2);
+        firstClose.Name.Should().Be("TextBlock");
+
+        var (secondOpen, secondClose) = result.Skip(1).First();
+        secondOpen.Should().NotBeNull();
+        secondOpen.Depth.Should().Be(1);
+        secondOpen.Name.Should().Be("Grid1");
+
+        secondClose.Should().NotBeNull();
+        secondClose.Depth.Should().Be(1);
+        secondClose.Name.Should().Be("Grid");
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenTagHasAttributes_ShouldIgnoreAttributes()
+    {
+        const string xml = "<Root><Grid Height=\"100\"></Grid></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenTagHasAttributesAndMismatch_ShouldDetect()
+    {
+        const string xml = "<Root><Grid Height=\"100\"></Griddle></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().ContainSingle()
+            .Which.Should().Match<(XmlTagInfo? openTag, XmlTagInfo? closeTag)>(pair =>
+                pair.openTag != null &&
+                pair.openTag.Name == "Grid" &&
+                pair.closeTag != null &&
+                pair.closeTag.Name == "Griddle");
+    }
+
+    [Theory]
+    [InlineData("<Root>   <Grid>   </Grid>   </Root>")]
+    [InlineData("<Root><Grid   ></Grid></Root>")]
+    public void AuditXmlTags_WhenWhitespaceVariations_ShouldStillMatch(string xml)
+    {
+        var result = AuditXmlTags(xml, null);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenMultipleOrphanedCloses_ShouldDetectAll()
+    {
+        const string xml = "<Root></A></B></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().HaveCount(3);
+
+        var first = result.First();
+        first.openTag.Should().NotBeNull();
+        first.openTag.Name.Should().Be("Root");
+        first.closeTag.Should().NotBeNull();
+        first.closeTag.Name.Should().Be("A");
+
+        var second = result.Skip(1).First();
+        second.openTag.Should().BeNull();
+        second.closeTag.Should().NotBeNull();
+        second.closeTag.Name.Should().Be("B");
+
+        var third = result.Skip(2).First();
+        third.openTag.Should().BeNull();
+        third.closeTag.Should().NotBeNull();
+        third.closeTag.Name.Should().Be("Root");
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenMultipleOrphanedOpens_ShouldDetectAll()
+    {
+        const string xml = "<Root><A><B></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().HaveCount(3);
+
+        var first = result.First();
+        first.openTag.Should().NotBeNull();
+        first.openTag.Name.Should().Be("B");
+        first.closeTag.Should().NotBeNull();
+        first.closeTag.Name.Should().Be("Root");
+
+        var second = result.Skip(1).First();
+        second.openTag.Should().NotBeNull();
+        second.openTag.Name.Should().Be("A");
+        second.closeTag.Should().BeNull();
+
+        var third = result.Skip(2).First();
+        third.openTag.Should().NotBeNull();
+        third.openTag.Name.Should().Be("Root");
+        third.closeTag.Should().BeNull();
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenCaseMismatch_ShouldTreatAsDifferent()
+    {
+        const string xml = "<Root><Grid></grid></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().ContainSingle()
+            .Which.Should().Match<(XmlTagInfo? openTag, XmlTagInfo? closeTag)>(pair =>
+                pair.openTag != null &&
+                pair.openTag.Name == "Grid" &&
+                pair.closeTag != null &&
+                pair.closeTag.Name == "grid");
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenSelfClosingWithAttributes_ShouldIgnore()
+    {
+        const string xml = "<Root><SelfClosing attr=\"value\" /></Root>";
+        var result = AuditXmlTags(xml, null);
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditXmlTags_WhenLargeNested_ShouldRespectMaxTagCount()
+    {
+        var sb = new StringBuilder("<Root>");
+        for (var i = 0; i < 100; i++)
+            sb.Append($"<Tag{i}>");
+
+        sb.Append("</Wrong>");
+        sb.Append("</Root>");
+        var xml = sb.ToString();
+
+        var result = AuditXmlTags(xml, 1);
+        result.Should().HaveCount(1);
     }
 
     [Fact]
