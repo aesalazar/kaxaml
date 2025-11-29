@@ -6,13 +6,13 @@ Kaxaml is designed to be "notepad for XAML." It's supposed to be simple and ligh
 
 # This Fork
 
+| *Tag Edit Auto Matching (9.3.0)* |
+|:--:|
 | ![Demo of Tag Edit Auto Match](Assets/AutoTagMatchEditing.gif) | 
-|:--:|
-| *Tag Edit Auto Matching Feature added in this Fork* |
 
-| ![Demo of External Assembly References](Assets/AssemblyReferenceDemo.gif) | 
+| *Referencing External Assembly DLLs (9.4.0)* |
 |:--:|
-| *Referencing External Assembly DLLs* |
+| ![Demo of External Assembly References](Assets/AssemblyReferenceDemo.gif) | 
 
 The big movtivation for this fork was the fact that the orginal project has been quiet for so many years.  I did not want to see if wither away as it is such a fantastic application - kudos to the  devs who put all of that effort into it.
 
@@ -24,16 +24,29 @@ I welcome any feedback.
 
 # Changelog
 
+## 9.4.1 - Fix Folding on Non-Compliant XML
+- Change Folding Strategy to us TurboXml instead of native XmlTextReader
+- Folding now supports non-compliant XML, e.g. Snippets without declared Namespaces
+- Add Kaxaml.Benchmarks Project with BenchmarkDotNet to test performance
+- Improve performance of XAML Tag edit automatching logic
+- Improve performance of Assembly Comment RegEx scan
+- Rearrange Snippet Editor layout
+- Remove `TextDragger` logic to auto copy to Clipboard on first Click
+  - Formally tiggered on Snippet selection in the Plugin
+  - Formally triggered on Swatch click in the ColorPicker Plugin
+
 ## 9.4.0 - External Assembly References
 - Provides the ability to load an external Assemblies
-- Inspired by punker76's fork of Kaxaml ([Punker76 Fork](https://github.com/punker76/kaxaml))
+- Inspired by [Punker76's Fork](https://github.com/punker76/kaxaml)
 - Allows DLLs to be loaded and referenced in XAML
-- Ref can be saved with XAML using XML comment so they will be loaded automatically whenever XAML file is opened
+- Reference can be saved with XAML using XML comment so they will be loaded automatically whenever the file is opened
+
   ```xml
-    <!--AssemblyReferences
-    	C:\git\kaxaml\Kaxaml.Tests\TestAssemblies\WpfSpinnerDemo.9.0.dll
-    -->
+  <!--AssemblyReferences
+   C:\git\kaxaml\Kaxaml.Tests\TestAssemblies\WpfSpinnerDemo.9.0.dll
+  -->
   ```
+
 - Other Changes
     - Change plugins to load via Dependency Injection
     - Add busy indicator when parse timer is in flight
