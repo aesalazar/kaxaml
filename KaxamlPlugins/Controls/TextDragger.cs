@@ -20,8 +20,6 @@ public class TextDragger : Decorator
         typeof(TextDragger),
         new UIPropertyMetadata(null));
 
-    private bool _isClipboardSet;
-
     private bool _isDragging;
 
     static TextDragger()
@@ -29,13 +27,13 @@ public class TextDragger : Decorator
         CursorProperty.OverrideMetadata(typeof(TextDragger), new FrameworkPropertyMetadata(Cursors.Hand));
     }
 
-    public string Text
+    public string? Text
     {
-        get => (string)GetValue(TextProperty);
+        get => (string?)GetValue(TextProperty);
         set => SetValue(TextProperty, value);
     }
 
-    public object Data
+    public object? Data
     {
         get => GetValue(DataProperty);
         set => SetValue(DataProperty, value);
@@ -43,26 +41,9 @@ public class TextDragger : Decorator
 
     protected override void OnMouseDown(MouseButtonEventArgs e)
     {
-        if (e.ClickCount == 1)
+        if (e.ClickCount is 2 && Text is not null)
         {
-            if (!string.IsNullOrEmpty(Text))
-            {
-                Clipboard.SetText(Text);
-                _isClipboardSet = true;
-            }
-            else if (Data != null)
-            {
-                Clipboard.SetText(Data.ToString());
-                _isClipboardSet = true;
-            }
-        }
-        else if (e.ClickCount == 2)
-        {
-            if (_isClipboardSet)
-            {
-                KaxamlInfo.Editor?.InsertStringAtCaret(Text);
-                _isClipboardSet = false;
-            }
+            KaxamlInfo.Editor?.InsertStringAtCaret(Text);
         }
 
         base.OnMouseDown(e);
@@ -70,7 +51,7 @@ public class TextDragger : Decorator
 
     protected override void OnRender(DrawingContext drawingContext)
     {
-        // need this to ensure hittesting
+        // need this to ensure hit-testing
         drawingContext.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, ActualWidth, ActualHeight));
         base.OnRender(drawingContext);
     }
@@ -79,27 +60,24 @@ public class TextDragger : Decorator
     {
         if (e.LeftButton == MouseButtonState.Pressed && !_isDragging)
             StartDrag();
-        else if (e.LeftButton == MouseButtonState.Released) _isDragging = false;
+        else if (e.LeftButton == MouseButtonState.Released)
+            _isDragging = false;
 
         base.OnPreviewMouseMove(e);
     }
 
     private void StartDrag()
     {
-        var obj = new DataObject(DataFormats.Text, Text);
+        var obj = new DataObject(DataFormats.Text, Text ?? string.Empty);
+        if (Data != null) obj.SetData(Data.GetType(), Data);
 
-        if (obj != null)
+        try
         {
-            if (Data != null) obj.SetData(Data.GetType(), Data);
-
-            try
-            {
-                DragDrop.DoDragDrop(this, obj, DragDropEffects.Copy);
-            }
-            catch (Exception ex)
-            {
-                if (ex.IsCriticalException()) throw;
-            }
+            DragDrop.DoDragDrop(this, obj, DragDropEffects.Copy);
+        }
+        catch (Exception ex)
+        {
+            if (ex.IsCriticalException()) throw;
         }
     }
 }
