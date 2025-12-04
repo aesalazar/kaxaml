@@ -40,13 +40,11 @@ I welcome any feedback.
 - Inspired by [Punker76's Fork](https://github.com/punker76/kaxaml)
 - Allows DLLs to be loaded and referenced in XAML
 - Reference can be saved with XAML using XML comment so they will be loaded automatically whenever the file is opened
-
   ```xml
   <!--AssemblyReferences
    C:\git\kaxaml\Kaxaml.Tests\TestAssemblies\WpfSpinnerDemo.9.0.dll
   -->
   ```
-
 - Other Changes
     - Change plugins to load via Dependency Injection
     - Add busy indicator when parse timer is in flight
