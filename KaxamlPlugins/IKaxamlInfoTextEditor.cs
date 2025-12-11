@@ -25,6 +25,16 @@ public interface IKaxamlInfoTextEditor : IDisposable
     /// <returns>String that was replaced.</returns>
     string? ReplaceString(int beginIndex, int count, string s);
 
+    /// <summary>
+    /// Replaces the entire text content with the provided string.
+    /// </summary>
+    /// <param name="s">The new string to insert in place of the removed text.</param>
+    /// <remarks>
+    /// This should be used instead of setting the Documents Text directly to avoid clearing
+    /// the undo/redo stack.
+    /// </remarks>
+    void ReplaceAllText(string s);
+
     void RemoveString(int beginIndex, int count);
     void Find(string s);
     void FindNext();

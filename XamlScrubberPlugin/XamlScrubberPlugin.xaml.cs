@@ -4,6 +4,9 @@ using System.Windows.Input;
 using System.Xml;
 using Kaxaml.Plugins.XamlScrubber.Properties;
 using KaxamlPlugins;
+using KaxamlPlugins.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kaxaml.Plugins.XamlScrubber;
 
@@ -16,10 +19,13 @@ namespace Kaxaml.Plugins.XamlScrubber;
 )]
 public partial class XamlScrubberPlugin
 {
+    private readonly ILogger<XamlScrubberPlugin> _logger;
+
     public XamlScrubberPlugin()
     {
         InitializeComponent();
 
+        _logger = ApplicationDiServiceProvider.Services.GetRequiredService<ILogger<XamlScrubberPlugin>>();
         var binding = new CommandBinding(GoCommand);
         binding.Executed += Go_Executed;
         binding.CanExecute += Go_CanExecute;
@@ -36,17 +42,14 @@ public partial class XamlScrubberPlugin
     {
         InitializeValues();
 
-        if (KaxamlInfo.Editor is not null)
-        {
-            var s = KaxamlInfo.Editor.Text;
-
-            s = Indent(s);
-            s = ReducePrecision(s);
-
-            KaxamlInfo.Editor.Text = s;
-        }
+        if (KaxamlInfo.Editor is null) return;
+        var s = KaxamlInfo.Editor.Text;
+        var length = s.Length;
+        s = Indent(s);
+        s = ReducePrecision(s);
+        KaxamlInfo.Editor.ReplaceAllText(s);
+        _logger.LogDebug("Text length changed from {Original} to {Updated}", length, s.Length);
     }
-
 
     public string ReducePrecision(string s)
     {
