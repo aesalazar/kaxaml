@@ -9,6 +9,8 @@ namespace Kaxaml.Plugins.XamlScrubber.XamlPrettyPrint;
 /// </summary>
 public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
 {
+    private static readonly string[] NewLineStrings = ["\r\n", "\r", "\n"];
+
     /// <summary>
     /// Reduce numeric precision in the input string based on the configuration.
     /// </summary>
@@ -60,53 +62,28 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
             switch (xamlNodeData.NodeType)
             {
                 case XmlNodeType.Element:
-                    sb.AppendLine(
-                        CalculateIndent(
-                            xamlNodeData.Depth,
-                            config.IndentWidth,
-                            config.ConvertTabsToSpaces)
-                        + BuildElement(
-                            xamlNodeData,
-                            config.ReorderAttributes,
-                            config.RemoveCommonDefaultValues,
-                            config.AttributeCountTolerance,
-                            config.IndentWidth,
-                            config.ConvertTabsToSpaces));
+                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + BuildElement(xamlNodeData));
                     break;
 
                 case XmlNodeType.Text:
-                    sb.Append(xamlNodeData.Value
-                        .Replace("&", "&amp;")
-                        .Replace("<", "&lt;")
-                        .Replace(">", "&gt;")
-                        .Replace("\"", "&quot;"));
+                    var splits = xamlNodeData
+                        .Value
+                        .Split(NewLineStrings, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+                    foreach (var split in splits)
+                        sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + EscapeText(split));
                     break;
 
                 case XmlNodeType.EndElement:
-                    sb.AppendLine(
-                        CalculateIndent(
-                            xamlNodeData.Depth,
-                            config.IndentWidth,
-                            config.ConvertTabsToSpaces)
-                        + $"</{xamlNodeData.Name}>");
+                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"</{xamlNodeData.Name}>");
                     break;
 
                 case XmlNodeType.Comment:
-                    sb.AppendLine(
-                        CalculateIndent(
-                            xamlNodeData.Depth,
-                            config.IndentWidth,
-                            config.ConvertTabsToSpaces)
-                        + $"<!--{xamlNodeData.Value}-->");
+                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"<!--{xamlNodeData.Value}-->");
                     break;
 
                 case XmlNodeType.ProcessingInstruction:
-                    sb.AppendLine(
-                        CalculateIndent(
-                            xamlNodeData.Depth,
-                            config.IndentWidth,
-                            config.ConvertTabsToSpaces)
-                        + $"<?Mapping {xamlNodeData.Value} ?>");
+                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"<?Mapping {xamlNodeData.Value} ?>");
                     break;
             }
         }
@@ -114,18 +91,19 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
         return sb.ToString();
     }
 
-    private static string CalculateIndent(int depth, int indentWidth, bool convertTabsToSpaces) =>
-        convertTabsToSpaces
-            ? new string(' ', depth * indentWidth)
+    private string CalculateIndent(int depth) =>
+        config.ConvertTabsToSpaces
+            ? new string(' ', depth * config.IndentWidth)
             : new string('\t', depth);
 
-    private static string BuildElement(
-        XamlNodeData xamlNodeData,
-        bool reorderAttributes,
-        bool removeCommonDefaults,
-        int attributeCountTolerance,
-        int indentWidth,
-        bool convertTabsToSpaces)
+    private static string EscapeText(string input) =>
+        input
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;");
+
+    private string BuildElement(XamlNodeData xamlNodeData)
     {
         var elementName = xamlNodeData.Name;
         var isElementEmpty = xamlNodeData.IsEmptyElement;
@@ -137,24 +115,21 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
             var attributes = new List<XamlAttributeValuePair>();
             foreach (var xmlReaderAttributeValue in xamlNodeData.AttributeValues)
             {
-                if (removeCommonDefaults is false ||
+                if (config.RemoveCommonDefaultValues is false ||
                     XamlAttributeValuePair.IsCommonDefault(xmlReaderAttributeValue) is false)
                     attributes.Add(xmlReaderAttributeValue);
             }
 
-            if (reorderAttributes) attributes.Sort();
+            if (config.ReorderAttributes) attributes.Sort();
 
             foreach (var a in attributes)
             {
-                if (attributes.Count > attributeCountTolerance &&
+                if (attributes.Count > config.AttributeCountTolerance &&
                     !XamlAttributeValuePair.ForceNoLineBreaks(elementName))
                 {
                     sb
                         .AppendLine()
-                        .Append(CalculateIndent(
-                            xamlNodeData.Depth, 
-                            indentWidth, 
-                            convertTabsToSpaces))
+                        .Append(CalculateIndent(xamlNodeData.Depth + 1))
                         .Append($"{a.Name}=\"{a.Value}\"");
                 }
                 else

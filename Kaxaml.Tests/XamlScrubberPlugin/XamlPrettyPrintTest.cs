@@ -1,9 +1,17 @@
 ﻿using Kaxaml.Plugins.XamlScrubber.XamlPrettyPrint;
+using Xunit.Abstractions;
 
 namespace Kaxaml.Tests.XamlScrubberPlugin;
 
 public sealed class XamlPrettyPrinterTests
 {
+    private readonly ITestOutputHelper _output;
+
+    public XamlPrettyPrinterTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Fact]
     public void ReducePrecision_WhenDisabled_ReturnsOriginal()
     {
@@ -189,7 +197,7 @@ public sealed class XamlPrettyPrinterTests
         var result = printer.Indent(input);
         Assert.Contains("<TextBlock Text=\"Test Text\" />", result);
     }
-    
+
     [Fact]
     public void Indent_WhenCommentsAboveElements_AlignsWithElementOpen()
     {
@@ -216,6 +224,52 @@ public sealed class XamlPrettyPrinterTests
         Assert.Contains("<!--Test0-->", splits[0]);
         Assert.Contains("    <!--Test1-->", splits[4]); // 4 spaces
         Assert.Contains("        <!--Test2-->", splits[6]); // 8 spaces
+    }
+
+    [Fact]
+    public void Index_WhenEmptyNonSelfClosing_RemainsNonSelfClosing()
+    {
+        const string input = "<TextBlock> </TextBlock>";
+        var printer = CreatePrinter(attributeCountTolerance: 0);
+        var result = printer.Indent(input);
+        Assert.Contains("<TextBlock>\r\n</TextBlock>", result);
+    }
+
+    [Fact]
+    public void Index_WhenContainsInlineContent_BreaksIntoSeparateLines()
+    {
+        const string input = """<TextBlock ToolTip="Test Text">Test Test Inline</TextBlock>""";
+        var printer = CreatePrinter(indentWidth: 4);
+        var result = printer.Indent(input);
+
+        _output.WriteLine("RESULT:");
+        _output.WriteLine(result);
+
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(3, splits.Length);
+        Assert.Equal("    Test Test Inline", splits[1]);
+    }
+
+    [Fact]
+    public void Index_WhenRepeated_KeepsSameFormat()
+    {
+        const string input = @"
+<Grid>
+        <TextBlock>
+Line 1
+    Line 2
+Line 3
+        </TextBlock>
+</Grid>";
+
+        var printer = CreatePrinter();
+        var result1 = printer.Indent(input);
+        var result2 = printer.Indent(result1);
+        var result3 = printer.Indent(result2);
+
+        _output.WriteLine("RESULT1:");
+        _output.WriteLine(result1);
+        Assert.Equal(result1, result3);
     }
 
     private static XamlPrettyPrinter CreatePrinter(
