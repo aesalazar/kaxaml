@@ -50,7 +50,8 @@ public partial class XamlScrubberPlugin
             Settings.Default.Precision,
             Settings.Default.RemoveCommonDefaultValues,
             Settings.Default.SpaceCount,
-            Settings.Default.ConvertTabsToSpaces
+            Settings.Default.ConvertTabsToSpaces,
+            Settings.Default.IsEmptyNonSelfClosingSingleLine
         );
 
         var prettyPrinter = new XamlPrettyPrinter(config);

@@ -9,7 +9,7 @@ public record XamlNodeData(
     string Name,
     string Value,
     XmlNodeType NodeType,
-    bool IsEmptyElement,
+    bool IsSelfClosingElement,
     int Depth,
     IList<XamlAttributeValuePair> AttributeValues)
 {
@@ -27,6 +27,7 @@ public record XamlNodeData(
         var nodes = new List<XamlNodeData>();
         while (xmlReader.Read())
         {
+            var isEmpty = xmlReader.IsEmptyElement;
             var attributes = new List<XamlAttributeValuePair>();
             if (xmlReader.HasAttributes)
             {
@@ -45,7 +46,7 @@ public record XamlNodeData(
                 xmlReader.Name,
                 xmlReader.Value,
                 xmlReader.NodeType,
-                xmlReader.IsEmptyElement,
+                isEmpty,
                 xmlReader.Depth,
                 attributes));
         }

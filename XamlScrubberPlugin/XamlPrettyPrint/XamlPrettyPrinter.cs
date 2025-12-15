@@ -53,16 +53,34 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
     /// <returns>Reformatted XAML based on <see cref="config"/>.</returns>
     public string Indent(string input)
     {
+        //Pre-cache and filter nodes to allow for forward and reverse peeking
         using var xmlReader = XmlReader.Create(new StringReader(input));
-        var xamlNodes = XamlNodeData.ReadAllNodes(xmlReader);
-        var sb = new StringBuilder();
+        var xamlNodes = XamlNodeData
+            .ReadAllNodes(xmlReader)
+            .Where(n => n.NodeType
+                is XmlNodeType.Element
+                or XmlNodeType.Text
+                or XmlNodeType.EndElement
+                or XmlNodeType.Comment
+                or XmlNodeType.ProcessingInstruction)
+            .ToList();
 
-        foreach (var xamlNodeData in xamlNodes)
+        var sb = new StringBuilder();
+        for (var i = 0; i < xamlNodes.Count; i++)
         {
+            var xamlNodeData = xamlNodes[i];
+            var indent = CalculateIndent(xamlNodeData.Depth);
+
             switch (xamlNodeData.NodeType)
             {
                 case XmlNodeType.Element:
-                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + BuildElement(xamlNodeData));
+                    sb.Append(indent);
+                    var element = BuildElement(xamlNodeData);
+                    if (IsStartElementLineBreak())
+                        sb.AppendLine(element);
+                    else
+                        sb.Append(element);
+
                     break;
 
                 case XmlNodeType.Text:
@@ -71,20 +89,56 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
                         .Split(NewLineStrings, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
                     foreach (var split in splits)
-                        sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + EscapeText(split));
+                    {
+                        sb.Append(indent);
+                        sb.AppendLine(EscapeText(split));
+                    }
+
                     break;
 
                 case XmlNodeType.EndElement:
-                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"</{xamlNodeData.Name}>");
+                    if (IsEndElementIndented()) sb.Append(indent);
+                    sb.AppendLine($"</{xamlNodeData.Name}>");
                     break;
 
                 case XmlNodeType.Comment:
-                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"<!--{xamlNodeData.Value}-->");
+                    sb.Append(indent);
+                    sb.AppendLine($"<!--{xamlNodeData.Value}-->");
                     break;
 
                 case XmlNodeType.ProcessingInstruction:
-                    sb.AppendLine(CalculateIndent(xamlNodeData.Depth) + $"<?Mapping {xamlNodeData.Value} ?>");
+                    sb.Append(indent);
+                    sb.AppendLine($"<?Mapping {xamlNodeData.Value} ?>");
                     break;
+            }
+
+            continue;
+
+            bool IsStartElementLineBreak()
+            {
+                //Self-closing needs break because there will be no end tag later
+                if (xamlNodeData.IsSelfClosingElement
+                    || config.IsEmptyNonSelfClosingSingleLine is false
+                    || i + 1 >= xamlNodes.Count)
+                    return true;
+
+                var nextNode = xamlNodes[i + 1];
+                return (nextNode.NodeType == XmlNodeType.EndElement
+                        && nextNode.Name == xamlNodeData.Name) is false;
+            }
+
+            bool IsEndElementIndented()
+            {
+                if (i < 1
+                    || xamlNodeData.IsSelfClosingElement)
+                    return false;
+
+                if (config.IsEmptyNonSelfClosingSingleLine is false)
+                    return true;
+
+                var priorNode = xamlNodes[i - 1];
+                return priorNode.NodeType is not XmlNodeType.Element
+                       || priorNode.Name != xamlNodeData.Name;
             }
         }
 
@@ -106,7 +160,6 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
     private string BuildElement(XamlNodeData xamlNodeData)
     {
         var elementName = xamlNodeData.Name;
-        var isElementEmpty = xamlNodeData.IsEmptyElement;
         var sb = new StringBuilder();
         sb.Append("<").Append(elementName);
 
@@ -139,7 +192,7 @@ public class XamlPrettyPrinter(XamlPrettyPrintConfig config)
             }
         }
 
-        sb.Append(isElementEmpty ? " />" : ">");
+        sb.Append(xamlNodeData.IsSelfClosingElement ? " />" : ">");
         return sb.ToString();
     }
 }

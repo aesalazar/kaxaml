@@ -118,5 +118,17 @@ namespace Kaxaml.Plugins.XamlScrubber.Properties {
                 this["SpaceCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool IsEmptyNonSelfClosingSingleLine {
+            get {
+                return ((bool)(this["IsEmptyNonSelfClosingSingleLine"]));
+            }
+            set {
+                this["IsEmptyNonSelfClosingSingleLine"] = value;
+            }
+        }
     }
 }

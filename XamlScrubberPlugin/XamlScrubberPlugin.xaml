@@ -99,6 +99,16 @@
         Remove common default values
       </CheckBox>
 
+      <!-- IsEmptyNonSelfClosingSingleLine -->
+      <CheckBox Margin="0,0,0,12" Foreground="White" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=IsEmptyNonSelfClosingSingleLine, Mode=TwoWay}">
+        <CheckBox.ToolTip>
+          <TextBlock TextWrapping="Wrap" Width="320">
+            Xaml Scrubber will collapse empty non-self-closing tags (e.g. <Run Text="&lt;TextBlock&gt;&lt;/TextBlock&gt;" /> remains on one line).
+          </TextBlock>
+        </CheckBox.ToolTip>
+        Single line empty non-self-closing tags
+      </CheckBox>
+
       <!-- Convert To Spaces -->
       <StackPanel Margin="0,0,0,12" Orientation="Horizontal" Background="Transparent" >
         <StackPanel.ToolTip>

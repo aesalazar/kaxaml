@@ -10,5 +10,6 @@ public sealed record XamlPrettyPrintConfig(
     int Precision,
     bool RemoveCommonDefaultValues,
     int IndentWidth,
-    bool ConvertTabsToSpaces
+    bool ConvertTabsToSpaces,
+    bool IsEmptyNonSelfClosingSingleLine
 );

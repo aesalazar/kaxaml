@@ -3,15 +3,8 @@ using Xunit.Abstractions;
 
 namespace Kaxaml.Tests.XamlScrubberPlugin;
 
-public sealed class XamlPrettyPrinterTests
+public sealed class XamlPrettyPrinterTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public XamlPrettyPrinterTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public void ReducePrecision_WhenDisabled_ReturnsOriginal()
     {
@@ -242,8 +235,8 @@ public sealed class XamlPrettyPrinterTests
         var printer = CreatePrinter(indentWidth: 4);
         var result = printer.Indent(input);
 
-        _output.WriteLine("RESULT:");
-        _output.WriteLine(result);
+        output.WriteLine("RESULT:");
+        output.WriteLine(result);
 
         var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
         Assert.Equal(3, splits.Length);
@@ -267,10 +260,121 @@ Line 3
         var result2 = printer.Indent(result1);
         var result3 = printer.Indent(result2);
 
-        _output.WriteLine("RESULT1:");
-        _output.WriteLine(result1);
+        output.WriteLine("RESULT1:");
+        output.WriteLine(result1);
         Assert.Equal(result1, result3);
     }
+
+    [Fact]
+    public void Index_WhenIsEmptyNonSelfClosingSingleLine_KeepsEmptyTagOnSingleLine()
+    {
+        const string input = "<TextBlock></TextBlock>";
+        var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
+        var result = printer.Indent(input);
+        Assert.Contains("<TextBlock></TextBlock>", result);
+    }
+
+    [Fact]
+    public void Index_WhenIsEmptyNonSelfClosingSingleLine_CrushesWhitespaceOnlyContent()
+    {
+        const string input = "<TextBlock> </TextBlock>";
+        var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
+        var result = printer.Indent(input);
+        Assert.Contains("<TextBlock></TextBlock>", result);
+    }
+
+    [Fact]
+    public void Index_WhenIsEmptyNonSelfClosingSingleLineWithAttributes_KeepsOnSingleLine()
+    {
+        const string input = @"
+<TextBlock Text=""Test Text"">
+</TextBlock>";
+        var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
+        var result = printer.Indent(input);
+        Assert.Contains("<TextBlock Text=\"Test Text\"></TextBlock>", result);
+    }
+
+    [Fact]
+    public void Index_WhenIsEmptyNonSelfClosingSingleLineButContainsSelfClosing_ReturnsExpected()
+    {
+        const string input = @"
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+  xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+<Ellipse
+/>
+</Page>
+";
+        var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
+        var result = printer.Indent(input);
+        output.WriteLine(result);
+
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        Assert.Equal(3, splits.Length);
+        Assert.Equal("  <Ellipse />", splits[1]);
+    }
+
+    [Fact]
+    public void Index_WhenIsEmptyNonSelfClosingSingleLine_KeepsOnSingleLine()
+    {
+        const string input = @"
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+  xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        output.WriteLine(result);
+        Assert.Equal(3, splits.Length);
+        Assert.Equal("  <Grid></Grid>", splits[1]);
+    }
+
+    [Fact]
+    public void Index_WhenProcessingInstructionOnFirstLine_IsChangedToMapping()
+    {
+        const string input = @"<?xaml-comp compile=""true""?>
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+  xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(attributeCountTolerance: 0);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        output.WriteLine(result);
+
+        Assert.Equal(7, splits.Length);
+        Assert.Equal("<?Mapping compile=\"true\" ?>", splits[0]);
+        Assert.Equal("<Page", splits[1]);
+        Assert.Equal("  <Grid>", splits[4]);
+    }
+
+    [Fact]
+    public void Index_WhenXmlDeclarationPresent_IsRemoved()
+    {
+        const string input = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+  xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(attributeCountTolerance: 0);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        output.WriteLine(result);
+
+        Assert.Equal(6, splits.Length);
+        Assert.Equal("<Page", splits[0]);
+        Assert.Equal("  <Grid>", splits[3]);
+    }
+
+    #region Helpers
 
     private static XamlPrettyPrinter CreatePrinter(
         bool reducePrecision = true,
@@ -279,7 +383,8 @@ Line 3
         bool removeCommonDefaults = true,
         int attributeCountTolerance = 3,
         int indentWidth = 2,
-        bool convertTabsToSpaces = true)
+        bool convertTabsToSpaces = true,
+        bool isEmptyNonSelfClosingSingleLine = false)
     {
         var config = new XamlPrettyPrintConfig(
             attributeCountTolerance,
@@ -288,8 +393,11 @@ Line 3
             precision,
             removeCommonDefaults,
             indentWidth,
-            convertTabsToSpaces);
+            convertTabsToSpaces,
+            isEmptyNonSelfClosingSingleLine);
 
         return new XamlPrettyPrinter(config);
     }
+
+    #endregion
 }
