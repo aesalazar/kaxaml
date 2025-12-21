@@ -1,4 +1,5 @@
-﻿using System.Xml;
+﻿using System.Text;
+using System.Xml;
 
 namespace Kaxaml.Plugins.XamlScrubber.XamlPrettyPrint;
 
@@ -21,6 +22,8 @@ public record XamlNodeData(
     /// <remarks>
     /// This allows for easier manipulation of the XAML structure before writing
     /// it back out.  For example, support for both forward and backward traversal.
+    ///
+    /// Note that this normalizes all line breaks to <see cref="Environment.NewLine"/>.
     /// </remarks>
     public static IList<XamlNodeData> ReadAllNodes(XmlReader xmlReader)
     {
@@ -36,7 +39,7 @@ public record XamlNodeData(
                     xmlReader.MoveToAttribute(i);
                     attributes.Add(new XamlAttributeValuePair(
                         xmlReader.Name,
-                        xmlReader.Value));
+                        NormalizeLineBreaks(xmlReader.Value)));
                 }
 
                 xmlReader.MoveToElement();
@@ -44,7 +47,7 @@ public record XamlNodeData(
 
             nodes.Add(new XamlNodeData(
                 xmlReader.Name,
-                xmlReader.Value,
+                NormalizeLineBreaks(xmlReader.Value),
                 xmlReader.NodeType,
                 isEmpty,
                 xmlReader.Depth,
@@ -52,5 +55,38 @@ public record XamlNodeData(
         }
 
         return nodes;
+    }
+
+    /// <summary>
+    /// Replace are line breaks with <see cref="Environment.NewLine"/>.
+    /// </summary>
+    public static string NormalizeLineBreaks(string? input)
+    {
+        if (string.IsNullOrEmpty(input))
+            return string.Empty;
+
+        var sb = new StringBuilder(input.Length);
+        for (var i = 0; i < input.Length; i++)
+        {
+            var c = input[i];
+            switch (c)
+            {
+                case '\r':
+                    //Bypass any \n
+                    if (i + 1 < input.Length && input[i + 1] is '\n') i++;
+                    sb.Append(Environment.NewLine);
+                    break;
+
+                case '\n':
+                    sb.Append(Environment.NewLine);
+                    break;
+
+                default:
+                    sb.Append(c);
+                    break;
+            }
+        }
+
+        return sb.ToString();
     }
 }

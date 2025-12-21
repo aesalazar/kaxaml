@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 using BenchmarkDotNet.Attributes;
+using Kaxaml.Benchmarks.TestHelpers;
 using KaxamlPlugins.Utilities;
 using KaxamlPlugins.Utilities.XmlComponents;
 

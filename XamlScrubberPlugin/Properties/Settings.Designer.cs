@@ -130,5 +130,29 @@ namespace Kaxaml.Plugins.XamlScrubber.Properties {
                 this["IsEmptyNonSelfClosingSingleLine"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsLongLineWrapping {
+            get {
+                return ((bool)(this["IsLongLineWrapping"]));
+            }
+            set {
+                this["IsLongLineWrapping"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int LongLineWrappingThreshold {
+            get {
+                return ((int)(this["LongLineWrappingThreshold"]));
+            }
+            set {
+                this["LongLineWrappingThreshold"] = value;
+            }
+        }
     }
 }

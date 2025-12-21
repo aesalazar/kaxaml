@@ -11,5 +11,7 @@ public sealed record XamlPrettyPrintConfig(
     bool RemoveCommonDefaultValues,
     int IndentWidth,
     bool ConvertTabsToSpaces,
-    bool IsEmptyNonSelfClosingSingleLine
+    bool IsEmptyNonSelfClosingSingleLine,
+    bool IsLongLineWrapping,
+    int LongLineWrappingThreshold
 );

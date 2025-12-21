@@ -116,7 +116,7 @@
             If this is checked, Xaml Scrubber will indent using spaces instead of tabs
           </TextBlock>
         </StackPanel.ToolTip>
-        <CheckBox Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0" Width="140" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=ConvertTabsToSpaces, Mode=TwoWay}">Indent using spaces</CheckBox>
+        <CheckBox Foreground="White" VerticalAlignment="Center" Margin="0,0,4,0" Width="140" IsChecked="{Binding Source={x:Static settings:Settings.Default}, Path=ConvertTabsToSpaces, Mode=TwoWay}">Indent using spaces:</CheckBox>
         <ComboBox Width="85" SelectedItem="{Binding Source={x:Static settings:Settings.Default}, Path=SpaceCount, Mode=TwoWay}" VerticalAlignment="Center" >
           <ComboBox.Resources>
             <DataTemplate DataType="{x:Type sys:Int32}">
@@ -134,6 +134,36 @@
         </ComboBox>
       </StackPanel>
 
+      <!-- Long Line Wrapping-->
+      <StackPanel Margin="0,0,0,12" Orientation="Horizontal" Background="Transparent" >
+          <StackPanel.ToolTip>
+              <TextBlock TextWrapping="Wrap" Width="240">
+                  If this is checked, Xaml Scrubber will break lines at Whitespace closest to the
+                  Threshold (excludes Comments and Xml Declarations)
+              </TextBlock>
+          </StackPanel.ToolTip>
+            <CheckBox 
+              Foreground="White"
+              VerticalAlignment="Center"
+              Margin="0,0,4,0"
+              Width="140"
+              Content="Wrap long lines:"
+              IsChecked="{Binding 
+                Source={x:Static settings:Settings.Default}, 
+                Path=IsLongLineWrapping, 
+                Mode=TwoWay}" />
+          <TextBox 
+              Text="{Binding
+                Source={x:Static settings:Settings.Default},
+                Path=LongLineWrappingThreshold,
+                Mode=TwoWay}" 
+              Width="85" 
+              MinWidth="0"
+              ToolTip="Maximum number of Characters per Line"
+              VerticalAlignment="Center"/>
+      </StackPanel>
+
+      <!--GO BUTTON-->
       <Button MinWidth="0" MinHeight="0" Width="100" Height="24" HorizontalAlignment="Center" Click="Go_Click" Margin="0,12,0,4">
         <StackPanel Orientation="Horizontal">
           <Image Width="16" Height="16" Source="Images\lightning.png" VerticalAlignment="Center" Margin="0,0,3,0"/>

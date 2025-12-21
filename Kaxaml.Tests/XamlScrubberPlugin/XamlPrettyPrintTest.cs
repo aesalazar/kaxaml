@@ -194,8 +194,7 @@ public sealed class XamlPrettyPrinterTests(ITestOutputHelper output)
     [Fact]
     public void Indent_WhenCommentsAboveElements_AlignsWithElementOpen()
     {
-        const string input
-            = @"
+        const string input = @"
 <!--Test0-->
 <Page
     xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
@@ -238,8 +237,8 @@ public sealed class XamlPrettyPrinterTests(ITestOutputHelper output)
         output.WriteLine("RESULT:");
         output.WriteLine(result);
 
-        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(3, splits.Length);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        Assert.Equal(4, splits.Length);
         Assert.Equal("    Test Test Inline", splits[1]);
     }
 
@@ -309,8 +308,8 @@ Line 3
         var result = printer.Indent(input);
         output.WriteLine(result);
 
-        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
-        Assert.Equal(3, splits.Length);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        Assert.Equal(4, splits.Length);
         Assert.Equal("  <Ellipse />", splits[1]);
     }
 
@@ -327,9 +326,9 @@ Line 3
 </Page>";
         var printer = CreatePrinter(isEmptyNonSelfClosingSingleLine: true);
         var result = printer.Indent(input);
-        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
         output.WriteLine(result);
-        Assert.Equal(3, splits.Length);
+        Assert.Equal(4, splits.Length);
         Assert.Equal("  <Grid></Grid>", splits[1]);
     }
 
@@ -345,10 +344,10 @@ Line 3
 </Page>";
         var printer = CreatePrinter(attributeCountTolerance: 0);
         var result = printer.Indent(input);
-        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
         output.WriteLine(result);
 
-        Assert.Equal(7, splits.Length);
+        Assert.Equal(8, splits.Length);
         Assert.Equal("<?Mapping compile=\"true\" ?>", splits[0]);
         Assert.Equal("<Page", splits[1]);
         Assert.Equal("  <Grid>", splits[4]);
@@ -366,12 +365,292 @@ Line 3
 </Page>";
         var printer = CreatePrinter(attributeCountTolerance: 0);
         var result = printer.Indent(input);
-        var splits = result.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
         output.WriteLine(result);
 
-        Assert.Equal(6, splits.Length);
+        Assert.Equal(7, splits.Length);
         Assert.Equal("<Page", splits[0]);
         Assert.Equal("  <Grid>", splits[3]);
+    }
+
+    [Fact]
+    public void Index_WhenMappingDeclarationPresent_Remains()
+    {
+        const string input = @"<?Mapping version=""1.0"" encoding=""utf-8"" ?>
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
+  xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(attributeCountTolerance: 0);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+
+        Assert.Equal(8, splits.Length);
+        Assert.Equal("<?Mapping version=\"1.0\" encoding=\"utf-8\" ?>", splits[0]);
+    }
+
+    [Fact]
+    public void Index_WhenMultiLineText_IndentsEqually()
+    {
+        const string input = @"
+<Grid>
+        <TextBlock>
+Line 1
+    Line 2
+Line 3
+        </TextBlock>
+</Grid>";
+
+        var printer = CreatePrinter();
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        Assert.Equal(8, splits.Length);
+        Assert.Equal("    Line 1", splits[2]); //4 spaces
+        Assert.Equal("    Line 2", splits[3]); //4 spaces
+        Assert.Equal("    Line 3", splits[4]); //4 spaces
+    }
+
+    [Fact]
+    public void Indent_WhenWrappingElementLongLines_BreaksOnWordsWithSecondaryTabs()
+    {
+        const string input = @"
+<Page xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  
+  </Grid>
+</Page>
+";
+        var printer = CreatePrinter(isLongLineWrapping: true, longLineWrappingThreshold: 50, indentWidth: 3);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+
+        Assert.Equal(7, splits.Length);
+        Assert.Equal("<Page", splits[0]);
+        Assert.Equal(@"   xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""", splits[1]); //3 spaces
+        Assert.Equal(@"   xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">", splits[2]); //3 spaces
+    }
+
+    [Fact]
+    public void Indent_WhenWrappingTextLongLines_BreaksOnWordsWithoutSecondaryTabs()
+    {
+        const string input = @"
+<Page>
+  <TextBlock>
+123456789 987654321 ABCDEFGHI IHGFEDCBA
+  </TextBlock>
+</Page>
+";
+        var printer = CreatePrinter(isLongLineWrapping: true, longLineWrappingThreshold: 10, indentWidth: 3);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+
+        Assert.Equal(9, splits.Length);
+        Assert.Equal("<Page>", splits[0]);
+        Assert.Equal("   <TextBlock>", splits[1]); //3 spaces
+        Assert.Equal("      123456789", splits[2]); //6 spaces
+        Assert.Equal("      987654321", splits[3]);
+        Assert.Equal("      ABCDEFGHI", splits[4]);
+        Assert.Equal("      IHGFEDCBA", splits[5]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_LeavesXmlDeclarationAlone()
+    {
+        const string input = @"<?Mapping version=""1.0"" encoding=""utf-8""?>
+<Page
+  xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"">
+  <Grid>  
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(isLongLineWrapping: true, longLineWrappingThreshold: 10);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(@"<?Mapping version=""1.0"" encoding=""utf-8"" ?>", splits[0]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_SpaceAttributesOnSameLineCorrectly()
+    {
+        const string input = @"
+<Page>
+  <Grid   Height=""9""   Opacity=""0.1"">
+  </Grid>
+</Page>";
+        var printer = CreatePrinter(isLongLineWrapping: true, longLineWrappingThreshold: 50);
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(5, splits.Length);
+        Assert.Equal("""  <Grid Height="9" Opacity="0.1">""", splits[1]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_BreaksOnUnclosedEmptyTags()
+    {
+        const string input = @"
+<Page>
+  <TextBlock></TextBlock>
+  <Abcdefghijklmnopqustuvwxyz></Abcdefghijklmnopqustuvwxyz>
+</Page>";
+        var printer = CreatePrinter(
+            isLongLineWrapping: true,
+            longLineWrappingThreshold: 50,
+            isEmptyNonSelfClosingSingleLine: true);
+
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(6, splits.Length);
+        Assert.Equal("  <TextBlock></TextBlock>", splits[1]);
+        Assert.Equal("  <Abcdefghijklmnopqustuvwxyz>", splits[2]);
+        Assert.Equal("  </Abcdefghijklmnopqustuvwxyz>", splits[3]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_OnlyBreaksOnSpacesOutsideOfQuotes()
+    {
+        const string input = @"
+<Page>
+    <Path Width=""21"" Height=""21"" Canvas.Left=""39"" Canvas.Top=""123"" Stretch=""Fill"" Fill=""#FFFFFFFF"" Data=""F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z ""/>
+</Page>
+";
+        var printer = CreatePrinter(
+            isLongLineWrapping: true,
+            longLineWrappingThreshold: 110,
+            reorderAttributes: false,
+            indentWidth: 4,
+            attributeCountTolerance: 100,
+            isEmptyNonSelfClosingSingleLine: true);
+
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(6, splits.Length);
+        Assert.Equal("    <Path Width=\"21\" Height=\"21\" Canvas.Left=\"39\" Canvas.Top=\"123\" Stretch=\"Fill\" Fill=\"#FFFFFFFF\"", splits[1]);
+        Assert.Equal("        Data=\"F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z \"", splits[2]);
+        Assert.Equal("        />", splits[3]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_UsesAttributeCountToleranceFirst()
+    {
+        const string input = @"
+<Page>
+    <Path Width=""21"" Height=""21"" Canvas.Left=""39"" Canvas.Top=""123"" 
+        Data=""F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z ""
+        Stretch=""Fill"" Fill=""#FFFFFFFF""/>
+</Page>
+";
+        var printer = CreatePrinter(
+            isLongLineWrapping: true,
+            longLineWrappingThreshold: 10000, //Fits all but tolerance takes precedent
+            reorderAttributes: false,
+            attributeCountTolerance: 6, //One too many attributes
+            indentWidth: 4,
+            isEmptyNonSelfClosingSingleLine: true);
+
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(11, splits.Length);
+        Assert.Equal("    <Path", splits[1]);
+        Assert.Equal("        Width=\"21\"", splits[2]);
+        Assert.Equal("        Height=\"21\"", splits[3]);
+        Assert.Equal("        Data=\"F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z \"", splits[6]);
+        Assert.Equal("        Fill=\"#FFFFFFFF\" />", splits[8]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_UsesAttributeCountToleranceFirst2()
+    {
+        const string input = @"
+<Page>
+    <Path Width=""21"" 
+    Data=""F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z ""
+    Height=""21"" Canvas.Left=""39"" Canvas.Top=""123"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
+</Page>
+";
+        var printer = CreatePrinter(
+            isLongLineWrapping: true,
+            longLineWrappingThreshold: 10000, //Fits all but tolerance takes precedent
+            reorderAttributes: false,
+            attributeCountTolerance: 6, //One too many attributes
+            indentWidth: 4,
+            isEmptyNonSelfClosingSingleLine: true);
+
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(11, splits.Length);
+        Assert.Equal("    <Path", splits[1]);
+        Assert.Equal("        Width=\"21\"", splits[2]);
+        Assert.Equal("        Data=\"F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z \"", splits[3]);
+        Assert.Equal("        Fill=\"#FFFFFFFF\" />", splits[8]);
+    }
+
+    [Fact]
+    public void Index_WhenWrappingLongLines_UsesAttributeCountToleranceFirst3()
+    {
+        const string input = @"
+<Page>
+    <Path Width=""21"" Height=""21"" Canvas.Left=""39"" Canvas.Top=""123"" 
+        Data=""F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z ""
+        Stretch=""Fill"" Fill=""#FFFFFFFF""/>
+</Page>
+";
+        var printer = CreatePrinter(
+            isLongLineWrapping: true,
+            longLineWrappingThreshold: 50, //Would cause line break but attribute tolerance should force to single for all
+            reorderAttributes: false,
+            attributeCountTolerance: 6, //One too many attributes
+            indentWidth: 4,
+            isEmptyNonSelfClosingSingleLine: true);
+
+        var result = printer.Indent(input);
+        var splits = result.Split([Environment.NewLine], StringSplitOptions.None);
+        output.WriteLine(result);
+        Assert.Equal(11, splits.Length);
+        Assert.Equal("    <Path", splits[1]);
+        Assert.Equal("        Width=\"21\"", splits[2]);
+        Assert.Equal("        Height=\"21\"", splits[3]);
+        Assert.Equal("        Data=\"F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z \"", splits[6]);
+        Assert.Equal("        Fill=\"#FFFFFFFF\" />", splits[8]);
+    }
+
+    [Fact]
+    public void Indent_WhenCommentsArePresent_AreIgnored()
+    {
+        const string input = @"
+<!--Comment0 Line0 Line1-->
+<Page>
+    <!--
+        Comment1
+        Line2 
+        Line3-->
+</Page>
+";
+        var printer = CreatePrinter(
+            indentWidth: 4,
+            isLongLineWrapping:true,
+            longLineWrappingThreshold: 5);
+        var result = printer.Indent(input);
+        var splits = result.Split(Environment.NewLine);
+        output.WriteLine(result);
+        
+        Assert.Equal(8, splits.Length);
+        Assert.Contains("<!--Comment0 Line0 Line1-->", splits[0]);
+        Assert.Contains("<Page>", splits[1]);
+        Assert.Contains("    <!--", splits[2]);
+        Assert.Contains("        Comment1", splits[3]);
+        Assert.Contains("        Line2", splits[4]);
+        Assert.Contains("        Line3-->", splits[5]);
+        Assert.Contains("</Page>", splits[6]);
     }
 
     #region Helpers
@@ -384,7 +663,9 @@ Line 3
         int attributeCountTolerance = 3,
         int indentWidth = 2,
         bool convertTabsToSpaces = true,
-        bool isEmptyNonSelfClosingSingleLine = false)
+        bool isEmptyNonSelfClosingSingleLine = false,
+        bool isLongLineWrapping = false,
+        int longLineWrappingThreshold = 100)
     {
         var config = new XamlPrettyPrintConfig(
             attributeCountTolerance,
@@ -394,7 +675,9 @@ Line 3
             removeCommonDefaults,
             indentWidth,
             convertTabsToSpaces,
-            isEmptyNonSelfClosingSingleLine);
+            isEmptyNonSelfClosingSingleLine,
+            isLongLineWrapping,
+            longLineWrappingThreshold);
 
         return new XamlPrettyPrinter(config);
     }

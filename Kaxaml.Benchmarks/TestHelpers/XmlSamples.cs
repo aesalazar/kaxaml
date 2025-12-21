@@ -1,9 +1,16 @@
 ﻿using System.Text;
 
-namespace Kaxaml.Benchmarks.Utilities;
+namespace Kaxaml.Benchmarks.TestHelpers;
 
 public static class XmlSamples
 {
+    /// <summary>
+    /// Large well-formed XML Sample.
+    /// </summary>
+    /// <remarks>
+    /// All Ellipse entries are empty non-self-closing tags.
+    /// All Paths entries are empty self-closing tags.
+    /// </remarks>
     public const string StarTrekXml = @"
 <Page
   xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation""
@@ -17,21 +24,21 @@ public static class XmlSamples
       CANVAS 
     -->
     <Canvas xmlns=""http://schemas.microsoft.com/winfx/2006/xaml/presentation"" xmlns:x=""http://schemas.microsoft.com/winfx/2006/xaml"" Width=""780"" Height=""780"" UseLayoutRounding=""False"">
-      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""-59"" Canvas.Top=""721"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""193"" Canvas.Top=""683"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""595"" Canvas.Top=""661"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""65"" Canvas.Top=""47"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""274"" Canvas.Top=""63"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""110"" Canvas.Top=""565"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""702"" Canvas.Top=""665"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""254"" Canvas.Top=""719"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""409"" Canvas.Top=""759"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""-9.92877e-007"" Canvas.Top=""155"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""676"" Canvas.Top=""725"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
+      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""-59"" Canvas.Top=""721"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""193"" Canvas.Top=""683"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""595"" Canvas.Top=""661"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""65"" Canvas.Top=""47"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""274"" Canvas.Top=""63"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""110"" Canvas.Top=""565"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""702"" Canvas.Top=""665"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""254"" Canvas.Top=""719"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""409"" Canvas.Top=""759"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""-9.92877e-007"" Canvas.Top=""155"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse Width=""21"" Height=""21"" Canvas.Left=""676"" Canvas.Top=""725"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
       <Path Width=""21"" Height=""21"" Canvas.Left=""39"" Canvas.Top=""123"" Stretch=""Fill"" Fill=""#FFFFFFFF"" Data=""F1 M 50,122.537C 55,123 60,127 60,132.935C 60,139 55,143 50,143.334C 44,143 39,139 39,132.935C 39,127 44,123 50,123 Z ""/>
       <Path Width=""21"" Height=""21"" Canvas.Left=""599"" Canvas.Top=""69"" Stretch=""Fill"" Fill=""#FFFFFFFF"" Data=""F1 M 610,68.5366C 615,69 620,73 620,78.935C 620,85 615,89 610,89.3334C 604,89 599,85 599,78.935C 599,73 604,69 610,69 Z ""/>
-      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""515"" Canvas.Top=""38"" Stretch=""Fill"" Fill=""#FFFFFFFF""/>
-      <Ellipse x:Name=""planet"" Width=""647"" Height=""647"" Canvas.Left=""133"" Canvas.Top=""70"" Stretch=""Fill"" Fill=""#FE9A5809""/>
+      <Ellipse Width=""59"" Height=""59"" Canvas.Left=""515"" Canvas.Top=""38"" Stretch=""Fill"" Fill=""#FFFFFFFF""></Ellipse>
+      <Ellipse x:Name=""planet"" Width=""647"" Height=""647"" Canvas.Left=""133"" Canvas.Top=""70"" Stretch=""Fill"" Fill=""#FE9A5809""></Ellipse>
       <Path Width=""636"" Height=""638"" Canvas.Left=""144"" Canvas.Top=""79"" Stretch=""Fill"" Fill=""#FE9A3809"" Data=""F1 M 144,477.519L 168,395.454L 243,338.457L 299,238.933C 314,204 329,168 354,149.933C 378,132 411,130 445,128.933L 490,102.968L 535,78.9695L 608,108.706L 507,173.465C 464,187 422,200 397,231.462C 371,262 363,311 355,359.455L 286,420.952C 255,454 224,488 210,515.948C 195,544 197,566 199,588.944L 246,639.873L 292,588.944C 309,553 325,518 358,495.199C 391,472 440,462 489,452.451L 472,326.457C 477,294 482,261 504,238.961C 526,216 565,204 604,191.464L 713,197.206L 734,227.956L 592,227.462L 510,279.959L 526,404.453C 533,442 540,480 534,510.698C 528,541 509,563 490,585.944C 461,591 432,596 411,615.598C 390,635 376,670 362,703.873L 436,717.373L 462,660.94C 510,649 558,638 587,618.443C 617,599 628,571 639,543.946L 634,420.952C 647,400 660,380 680,365.205C 700,350 727,341 754,332.457L 774,330.373L 780,370.373L 780,410.123C 760,415 741,419 726,440.646C 712,462 702,500 693,537.947L 703,599.443L 631,666.94L 546,704.438L 460,716.438L 362,704.04L 304,679.206L 238,633.942L 187,573.019L 156,510.948L 144,478 Z ""/>
       <Path Width=""8.06"" Height=""21"" Canvas.Left=""71"" Canvas.Top=""453"" Stretch=""Fill"" Fill=""#FFC8C8C8"" Data=""F1 M 72,473.796L 71,469.361L 78,452.832L 79,458.879L 72,474 Z ""/>
       <Path Width=""11.9"" Height=""6.05"" Canvas.Left=""70"" Canvas.Top=""446"" Stretch=""Fill"" Fill=""#FF434343"" Data=""F1 M 70,447.591L 71,445.575L 82,446.18L 78,451.623L 70,448 Z ""/>
@@ -48,10 +55,10 @@ public static class XmlSamples
       <Path Width=""77"" Height=""78"" Canvas.Left=""209"" Canvas.Top=""468"" Stretch=""Fill"" Fill=""#FFBCBCBC"" Data=""F1 M 209,533.028L 210,542.435L 212,545.66L 236,536.253L 256,540.822L 265,544.047L 286,521.311L 274,510.989L 275,499.163L 271,478.468L 262,467.986L 246,481.693L 233,506.151L 220,518.514L 209,533 Z ""/>
       <Path Width=""85"" Height=""77"" Canvas.Left=""138"" Canvas.Top=""456"" Stretch=""Fill"" Fill=""#FF8F8F8F"" Data=""F1 M 138,457.705L 209,533.028L 222,527.115L 223,517.439L 145,455.622L 138,458 Z ""/>
       <Path Width=""35"" Height=""41"" Canvas.Left=""308"" Canvas.Top=""411"" Stretch=""Fill"" Fill=""#FF434343"" Data=""F1 M 308,451.599L 317,425.529L 318,416.391L 317,411.015L 333,416.122L 343,413.703L 332,420.422L 321,424.991L 312,451.599L 308,452 Z ""/>
-      <Ellipse Width=""42"" Height=""44"" Canvas.Left=""310"" Canvas.Top=""374"" Stretch=""Fill"" Fill=""#FF000000""/>
-      <Ellipse Width=""49"" Height=""49"" Canvas.Left=""107"" Canvas.Top=""402"" Stretch=""Fill"" Fill=""#FF000000""/>
-      <Ellipse Width=""44"" Height=""44"" Canvas.Left=""310"" Canvas.Top=""369"" Stretch=""Fill"" Fill=""#FF952727""/>
-      <Ellipse Width=""49"" Height=""49"" Canvas.Left=""108"" Canvas.Top=""394"" Stretch=""Fill"" Fill=""#FF952727""/>
+      <Ellipse Width=""42"" Height=""44"" Canvas.Left=""310"" Canvas.Top=""374"" Stretch=""Fill"" Fill=""#FF000000""></Ellipse>
+      <Ellipse Width=""49"" Height=""49"" Canvas.Left=""107"" Canvas.Top=""402"" Stretch=""Fill"" Fill=""#FF000000""></Ellipse>
+      <Ellipse Width=""44"" Height=""44"" Canvas.Left=""310"" Canvas.Top=""369"" Stretch=""Fill"" Fill=""#FF952727""></Ellipse>
+      <Ellipse Width=""49"" Height=""49"" Canvas.Left=""108"" Canvas.Top=""394"" Stretch=""Fill"" Fill=""#FF952727""></Ellipse>
       <Path Width=""131"" Height=""33"" Canvas.Left=""212"" Canvas.Top=""518"" Stretch=""Fill"" Fill=""#FF393939"" Data=""F1 M 212,544.047L 237,533.028L 270,539.209L 285,519.698L 295,527.921L 312,523.621L 336,517.708L 342,519.967L 324,535.178C 319,538 313,541 306,543.086C 299,545 291,546 285,547.162C 279,548 275,548 271,547.409C 268,547 264,545 261,543.377C 259,543 256,542 252,542.414C 248,543 242,545 236,547.81C 231,549 226,550 223,550.442C 220,550 217,549 216,547.874C 214,547 213,546 212,544.753L 212,544 Z ""/>
       <Path Width=""85"" Height=""64"" Canvas.Left=""271"" Canvas.Top=""467"" Stretch=""Fill"" Fill=""#FF8D8D8D"" Data=""F1 M 276,500.885L 271,507.47C 279,516 286,524 294,528.03C 302,532 311,531 318,529.665C 325,528 331,526 335,524.581C 339,523 341,522 344,518.332C 347,515 351,509 353,503.841C 355,499 356,494 356,489.496C 356,485 356,481 355,477.816C 354,475 352,472 351,470.117L 349,467.783L 346,467.221L 276,501 Z ""/>
       <Path Width=""40"" Height=""81"" Canvas.Left=""262"" Canvas.Top=""408"" Stretch=""Fill"" Fill=""#FF747474"" Data=""F1 M 301,451.805L 299,442.331L 299,408.466L 270,412.498L 267,458.659L 262,471.963L 267,470.955L 274,489.903L 302,452.612L 301,452 Z ""/>
@@ -62,8 +69,8 @@ public static class XmlSamples
       <Path Width=""200"" Height=""64"" Canvas.Left=""220"" Canvas.Top=""346"" Stretch=""Fill"" Fill=""#FF6C6C6C"" Data=""F1 M 325,352.955C 372,344 420,343 420,353.86C 420,361 409,369 392,377.606C 373,387 345,396 320,401.503C 304,405 283,409 265,409.72C 242,411 223,409 220,402.784C 216,384 289,360 325,353 Z ""/>
       <Path Width=""123"" Height=""39"" Canvas.Left=""263"" Canvas.Top=""366"" Stretch=""Fill"" Fill=""#FFADADAD"" Data=""F1 M 328,370.491C 357,365 386,364 386,371.047C 386,375 380,381 369,385.62C 357,392 340,397 325,400.287C 315,402 302,405 291,405.33C 277,406 265,405 263,401.073C 261,389 306,375 328,370 Z ""/>
       <Path Width=""50"" Height=""16.1"" Canvas.Left=""300"" Canvas.Top=""388"" Stretch=""Fill"" Fill=""#FF0096FF"" Data=""F1 M 327,389.844C 339,388 351,387 351,390.071C 351,392 348,394 344,396.038C 339,398 332,401 325,402.043C 321,403 316,404 312,404.107C 306,404 301,404 300,402.365C 299,398 318,392 327,390 Z ""/>
-      <Ellipse Width=""81"" Height=""76"" Canvas.Left=""272"" Canvas.Top=""450"" Stretch=""Fill"" Fill=""#FF505050""/>
-      <Ellipse Width=""63"" Height=""63"" Canvas.Left=""287"" Canvas.Top=""453"" Stretch=""Fill"" Fill=""#FF0096FF""/>
+      <Ellipse Width=""81"" Height=""76"" Canvas.Left=""272"" Canvas.Top=""450"" Stretch=""Fill"" Fill=""#FF505050""></Ellipse>
+      <Ellipse Width=""63"" Height=""63"" Canvas.Left=""287"" Canvas.Top=""453"" Stretch=""Fill"" Fill=""#FF0096FF""></Ellipse>
       <Path Width=""26"" Height=""6.76"" Canvas.Left=""277"" Canvas.Top=""441"" Stretch=""Fill"" Fill=""#FFD6B84D"" Data=""F1 M 290,441.358C 297,440 303,441 303,442C 303,443 298,446 290,446.735C 283,448 277,448 277,446.093C 277,445 282,442 290,441 Z ""/>
       <Path Width=""140"" Height=""72"" Canvas.Left=""132"" Canvas.Top=""447"" Stretch=""Fill"" Fill=""#FF6C6C6C"" Data=""F1 M 272,482.776L 267,469.338L 258,470.682L 243,484.12C 239,492 236,499 233,503.382C 230,508 227,508 224,509.384C 217,506 209,502 202,497.245C 194,492 187,486 179,479.551L 149,447.299L 132,457.468L 139,458.05L 142,460.737L 146,458.587L 211,517.179L 221,519.598L 226,517.447L 256,473.907L 263,471.925L 272,485.867L 272,483 Z ""/>
       <Path Width=""19.4"" Height=""40"" Canvas.Left=""90"" Canvas.Top=""432"" Stretch=""Fill"" Fill=""#FF8F8F8F"" Data=""F1 M 91,469.361L 109,431.667L 110,433.078L 90,471.982L 91,469 Z ""/>
