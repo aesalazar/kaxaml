@@ -24,6 +24,14 @@ I welcome any feedback.
 
 # Changelog
 
+## 9.5.0 - Improve XAML Scrubber
+- Add Undo/Redo support to the Scrubber logic
+- Refactor out core logic to Helper classes to allow Unit Tests
+- Change whitespace and indentation logic to make more consistent
+- Sneak in change to plugin dll resolution to void using csproj files
+- Add Scurbber option to keep empty non-self-closing tags on one line
+- Add Scrubber option to wrap long lines
+
 ## 9.4.1 - Fix Folding on Non-Compliant XML
 - Change Folding Strategy to us TurboXml instead of native XmlTextReader
 - Folding now supports non-compliant XML, e.g. Snippets without declared Namespaces
