@@ -794,6 +794,14 @@ public partial class KaxamlTextEditor : IKaxamlInfoTextEditor
         TextEditor.ActiveTextAreaControl.TextArea.MotherTextEditorControl.EndUpdate();
     }
 
+    public void ReplaceAllText(string s)
+    {
+        var area = TextEditor.ActiveTextAreaControl.TextArea;
+        area.MotherTextEditorControl.BeginUpdate();
+        area.Document.Replace(0, area.Document.TextLength, s);
+        area.MotherTextEditorControl.EndUpdate();
+    }
+
     #endregion
 
     #region Code Completion

@@ -118,5 +118,41 @@ namespace Kaxaml.Plugins.XamlScrubber.Properties {
                 this["SpaceCount"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool IsEmptyNonSelfClosingSingleLine {
+            get {
+                return ((bool)(this["IsEmptyNonSelfClosingSingleLine"]));
+            }
+            set {
+                this["IsEmptyNonSelfClosingSingleLine"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IsLongLineWrapping {
+            get {
+                return ((bool)(this["IsLongLineWrapping"]));
+            }
+            set {
+                this["IsLongLineWrapping"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int LongLineWrappingThreshold {
+            get {
+                return ((int)(this["LongLineWrappingThreshold"]));
+            }
+            set {
+                this["LongLineWrappingThreshold"] = value;
+            }
+        }
     }
 }

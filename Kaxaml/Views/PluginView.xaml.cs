@@ -19,8 +19,6 @@ namespace Kaxaml.Views;
 
 public partial class PluginView
 {
-    public const string PluginSubDir = "\\plugins";
-
     public static readonly DependencyProperty PluginsProperty = DependencyProperty.Register(
         nameof(Plugins),
         typeof(List<Plugin>),
@@ -93,9 +91,9 @@ public partial class PluginView
 
         Plugins.Add(find);
         _findPlugin = find;
-        var pluginDir = ApplicationDiServiceProvider.StartupPath + PluginSubDir;
 
         // if the plugin directory doesn't exist, then we're done
+        var pluginDir = ApplicationDiServiceProvider.StartupPath;
         _logger.LogInformation("Loading plugin folder: {Folder}", pluginDir);
         if (!Directory.Exists(pluginDir))
         {
@@ -107,8 +105,11 @@ public partial class PluginView
         var d = new DirectoryInfo(pluginDir);
 
         // load each of the plugins in the directory
-        var pluginFiles = d.GetFiles("*.dll");
-        _logger.LogInformation("Processing {Count} discovered files...", pluginFiles.Length);
+        var pluginFiles = ApplicationDiServiceProvider.PluginLibraryFiles
+            .Select(fileName => new FileInfo(Path.Combine(d.FullName, fileName)))
+            .ToList();
+
+        _logger.LogInformation("Processing {Count} discovered files...", pluginFiles.Count);
 
         foreach (var f in pluginFiles)
         {

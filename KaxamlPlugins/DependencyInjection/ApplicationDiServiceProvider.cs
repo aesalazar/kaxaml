@@ -57,6 +57,16 @@ public static class ApplicationDiServiceProvider
         ?? throw new ConfigurationErrorsException($"Missing app.config entry: {ConfigurationKeySnippetFolder}"));
 
     /// <summary>
+    /// Collection of plugin library filenames to load on startup.
+    /// </summary>
+    public static IReadOnlyCollection<string> PluginLibraryFiles { get; } =
+    [
+        "ColorPickerPlugin.dll",
+        "SnapshotPlugin.dll",
+        "XamlScrubberPlugin.dll"
+    ];
+
+    /// <summary>
     /// Allows reference to DI container from UI Controls.
     /// </summary>
     /// <remarks>
