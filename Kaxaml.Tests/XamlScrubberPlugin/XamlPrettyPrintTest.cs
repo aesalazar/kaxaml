@@ -1,5 +1,4 @@
 ﻿using Kaxaml.Plugins.XamlScrubber.XamlPrettyPrint;
-using Xunit.Abstractions;
 
 namespace Kaxaml.Tests.XamlScrubberPlugin;
 
@@ -637,12 +636,12 @@ Line 3
 ";
         var printer = CreatePrinter(
             indentWidth: 4,
-            isLongLineWrapping:true,
+            isLongLineWrapping: true,
             longLineWrappingThreshold: 5);
         var result = printer.Indent(input);
         var splits = result.Split(Environment.NewLine);
         output.WriteLine(result);
-        
+
         Assert.Equal(8, splits.Length);
         Assert.Contains("<!--Comment0 Line0 Line1-->", splits[0]);
         Assert.Contains("<Page>", splits[1]);
