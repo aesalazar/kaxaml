@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using KaxamlPlugins.Utilities;
-using Xunit.Abstractions;
 
 namespace Kaxaml.Tests.Utilities;
 
