@@ -24,6 +24,11 @@ I welcome any feedback.
 
 # Changelog
 
+## 10.0.0 - Upgrade to .NET 10
+- Upgrade csproj monikers to .NET 10
+- Upgrade all nuget packages
+- Move xunit from version 2 (deprecated) to 3
+
 ## 9.5.0 - Improve XAML Scrubber
 - Add Undo/Redo support to the Scrubber logic
 - Refactor out core logic to Helper classes to allow Unit Tests
